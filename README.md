@@ -95,7 +95,10 @@ Alla moduler har motsvarande testfiler i `tests/`. Testerna är uppdelade i:
 
 
 NextGenAITrader/
-├── modules/                        # Alla kärnmoduler
+├── main.py                      # Startpunkt för systemet
+├── requirements.txt             # Pythonberoenden
+
+├── modules/                     # Alla kärnmoduler
 │   ├── data_ingestion.py
 │   ├── strategy_engine.py
 │   ├── risk_manager.py
@@ -117,7 +120,7 @@ NextGenAITrader/
 │   ├── introspection_panel.py
 │   └── system_monitor.py
 
-├── tests/                          # Testfiler per modul
+├── tests/                       # Testfiler per modul
 │   ├── test_data_ingestion.py
 │   ├── test_strategy_engine.py
 │   ├── test_risk_manager.py
@@ -139,7 +142,7 @@ NextGenAITrader/
 │   ├── test_introspection_panel.py
 │   └── test_system_monitor.py
 
-├── dashboards/                     # Dash-paneler
+├── dashboards/                  # Dash-paneler för visualisering
 │   ├── portfolio_overview.py
 │   ├── rl_metrics.py
 │   ├── feedback_flow.py
@@ -148,30 +151,33 @@ NextGenAITrader/
 │   ├── agent_evolution.py
 │   └── system_status.py
 
-├── docs/                           # Dokumentation
+├── docs/                        # Dokumentation och onboarding
 │   ├── README.md
 │   ├── README_sprints.md
+│   ├── onboarding_guide.md
 │   ├── sprint_plan.yaml
 │   ├── structure.yaml
+│   ├── functions.yaml
 │   ├── indicator_map.yaml
-│   └── onboarding_guide.md
-
-├── config/                         # Inställningar och nycklar
-│   ├── finnhub_keys.yaml
 │   ├── agent_profiles.yaml
 │   ├── consensus_models.yaml
-│   └── action_chains.yaml
+│   ├── action_chains.yaml
+│   ├── test_map.yaml
+│   └── introspection_config.yaml
 
-├── logs/                           # Loggar och historik
+├── config/                      # Inställningar och nycklar
+│   ├── finnhub_keys.yaml
+│   ├── agent_roles.yaml
+│   ├── chain_templates.yaml
+│   └── rl_parameters.yaml
+
+├── logs/                        # Loggar och historik
 │   ├── feedback_log.json
 │   ├── decision_history.json
 │   ├── agent_performance.json
 │   └── trade_log.json
 
-├── data/                           # Lokala datakällor
+├── data/                        # Lokala datakällor och cache
 │   ├── cached_indicators/
 │   ├── simulation_results/
 │   └── snapshots/
-
-├── main.py                         # Startpunkt för systemet
-└── requirements.txt                # Pythonberoenden
