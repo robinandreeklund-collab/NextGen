@@ -213,6 +213,10 @@ class WebSocketTester:
             symbol: Aktiesymbol
             price: Aktuellt pris
         """
+        # Spara priset för execution_engine
+        self.current_prices = getattr(self, 'current_prices', {})
+        self.current_prices[symbol] = price
+        
         # Strategy engine genererar förslag (tar symbol)
         proposal = self.strategy_engine.generate_proposal(symbol)
         
@@ -245,22 +249,44 @@ class WebSocketTester:
                   f"(confidence: {decision.get('confidence', 0):.2f})")
         
         if decision and decision.get('action') != 'HOLD':
+            # Sätt aktuellt pris för execution
+            decision['current_price'] = price
+            
             # Execution engine exekverar
             execution_result = self.execution_engine.execute_trade(decision)
             
-            if self.debug_mode and self.stats['decisions_made'] < 5:
-                print(f"   ✅ Execution: {execution_result.get('success', False)} "
-                      f"@ ${execution_result.get('price', 0):.2f}")
+            # Debug: Visa execution detaljer
+            if self.debug_mode and self.stats['decisions_made'] < 10:
+                print(f"\n   🔨 EXECUTION #{self.stats['decisions_made'] + 1}:")
+                print(f"      {execution_result.get('action')} {execution_result.get('quantity')} {symbol}")
+                print(f"      @ ${execution_result.get('executed_price', 0):.2f} "
+                      f"(market: ${execution_result.get('market_price', 0):.2f})")
+                print(f"      Cost: ${execution_result.get('total_cost', 0):.2f}")
+                print(f"      Slippage: {execution_result.get('slippage', 0)*100:.3f}%")
             
             # Portfolio manager uppdaterar
             self.portfolio_manager.update_portfolio(execution_result)
             
-            if self.debug_mode and self.stats['decisions_made'] < 5:
+            if self.debug_mode and self.stats['decisions_made'] < 10:
                 portfolio = self.portfolio_manager.get_status()
                 print(f"   💰 Portfolio: ${portfolio.get('cash', 0):.2f} cash, "
                       f"${portfolio.get('total_value', 0):.2f} total")
+                
+                # Visa positioner
+                if portfolio.get('positions'):
+                    print(f"   📊 Positioner:")
+                    for sym, pos in list(portfolio['positions'].items())[:3]:
+                        print(f"      {sym}: {pos['quantity']} @ avg ${pos['avg_price']:.2f}")
             
             self.stats['decisions_made'] += 1
+            
+            # Logga till strategic memory
+            self.strategic_memory.log_decision({
+                'symbol': symbol,
+                'action': decision.get('action'),
+                'price': price,
+                'execution_result': execution_result
+            })
             
             # Kontrollera evolution events
             if len(self.meta_evolution.evolution_history) > self.stats['evolution_events']:
@@ -418,10 +444,19 @@ class WebSocketTester:
         # Strategic memory
         memory_summary = self.strategic_memory.get_performance_summary()
         print(f"   Strategic Memory: {memory_summary['total_decisions']} beslut loggade")
+        print(f"   Strategic Memory: {memory_summary['total_executions']} executions loggade")
         
         # Feedback router
         feedback_count = len(self.feedback_router.feedback_log)
         print(f"   Feedback Router: {feedback_count} feedback events")
+        
+        # Execution engine och portfolio status
+        portfolio = self.portfolio_manager.get_status()
+        print(f"\n📊 EXECUTION & PORTFOLIO:")
+        print(f"   Totalt beslut (BUY/SELL): {self.stats['decisions_made']}")
+        print(f"   Portfolio cash: ${portfolio.get('cash', 0):.2f}")
+        print(f"   Portfolio värde: ${portfolio.get('total_value', 0):.2f}")
+        print(f"   Antal positioner: {len(portfolio.get('positions', {}))}")
         
         if self.stats['decisions_made'] == 0 and self.stats['trades_processed'] > 0:
             print(f"\n⚠️  DIAGNOS: Inga TRADES exekverade (alla beslut = HOLD)!")
@@ -441,6 +476,12 @@ class WebSocketTester:
             print(f"      1. Kör längre tid (RSI oscillerar, passerar <30 eller >70)")
             print(f"      2. Live WebSocket-data + tid = större variation")
             print(f"      3. Inga fasta stub-värden längre - allt beräknas dynamiskt")
+        elif portfolio.get('total_value', 1000) == 1000 and self.stats['decisions_made'] > 0:
+            print(f"\n⚠️  OBS: Portfolio värde oförändrat trots {self.stats['decisions_made']} trades!")
+            print(f"   Möjliga orsaker:")
+            print(f"   - Execution prices använder live market data nu")
+            print(f"   - Strategic memory loggar nu alla trades korrekt")
+            print(f"   - Portfolio uppdateras efter varje execution")
         
         print("\n" + "="*80)
         print("Tack för att du testade NextGen AI Trader! 🚀")

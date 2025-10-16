@@ -83,8 +83,15 @@ Detta hjälper dig förstå **exakt** vad som händer i varje modul och varför 
       Reasoning: RSI oversold (65.0) + MACD bullish (0.3)
    ⚠️  Risk assessment: LOW (score: 0.25)
    ⚖️  Final decision: BUY (confidence: 0.82)
-   ✅ Execution: True @ $150.30
-   💰 Portfolio: $850.00 cash, $1000.50 total
+   
+   🔨 EXECUTION #1:
+      BUY 10 AAPL
+      @ $150.30 (market: $150.25)
+      Cost: $1503.00
+      Slippage: 0.033%
+   💰 Portfolio: $-503.00 cash, $1503.00 total
+   📊 Positioner:
+      AAPL: 10 @ avg $150.30
 
 ================================================================================
 ⏱️  Runtime: 1m 23s

@@ -464,4 +464,22 @@ class StrategicMemoryEngine:
         }
         
         return summary
+    
+    def log_decision(self, decision_data: Dict[str, Any]) -> None:
+        """
+        Loggar ett handelsbeslut manuellt (används av websocket_test).
+        
+        Args:
+            decision_data: Beslutdata att logga
+        """
+        decision_entry = {
+            **decision_data,
+            'timestamp': time.time(),
+            'logged_at': time.strftime('%Y-%m-%d %H:%M:%S')
+        }
+        self.decision_history.append(decision_entry)
+        
+        # Om execution_result finns, logga det också
+        if 'execution_result' in decision_data:
+            self._on_execution(decision_data['execution_result'])
 
