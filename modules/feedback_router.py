@@ -73,29 +73,93 @@ class FeedbackRouter:
         self.feedback_log.append(feedback)
         
         # Routa feedback till relevanta moduler
-        self.route_feedback(feedback)
+        # VIKTIGT: Anropa inte route_feedback här för att undvika infinite loop
+        # route_feedback används för extern routing
+        pass
     
     def route_feedback(self, feedback: Dict[str, Any]) -> None:
         """
         Routar feedback till rätt mottagare baserat på källa och triggers.
+        Denna metod används för manuell routing, inte för automatisk callback.
         
         Args:
             feedback: Feedback event att distribuera
         """
-        # Sprint 2: Implementera grundläggande routing
         source = feedback.get('source', 'unknown')
         triggers = feedback.get('triggers', [])
         
-        # Routing enligt feedback_loop.yaml:
-        # - Alla feedback till rl_controller (hanteras via prenumeration)
-        # - Feedback till feedback_analyzer (hanteras via prenumeration)
-        # - Memory-relevanta triggers till strategic_memory_engine
+        # Sprint 3: Intelligent filtrering och prioritering av feedback
         
-        # Notera: Routing sker automatiskt via message_bus prenumerationer
-        # Router agerar som logger och kan filtrera i framtida sprintar
+        # Prioritera feedback baserat på triggers
+        priority = self._calculate_priority(feedback)
         
-        # I Sprint 3: Intelligent filtrering och prioritering av feedback
-        pass
+        # Lägg till metadata
+        enriched_feedback = {
+            **feedback,
+            'priority': priority,
+            'routed_by': 'feedback_router',
+            'route_timestamp': self._get_timestamp()
+        }
+        
+        # Logga enriched feedback
+        self.feedback_log.append(enriched_feedback)
+        
+        # Специфик routing baserat på trigger-typ till specifika topics
+        # INTE tillbaka till 'feedback_event' för att undvika loop
+        if 'slippage' in triggers and priority == 'high':
+            # Hög slippage → direkt till rl_controller för omedelbar justering
+            self.message_bus.publish('high_priority_feedback', enriched_feedback)
+        
+        if 'capital_change' in triggers:
+            # Kapitalförändringar → strategic_memory för långsiktig analys
+            self.message_bus.publish('memory_update', enriched_feedback)
+        
+        if 'indicator_correlation' in triggers:
+            # Indikatorkorrelation → meta_agent_evolution för strategi-förbättring
+            self.message_bus.publish('evolution_insight', enriched_feedback)
+        
+        return enriched_feedback
+    
+    def _calculate_priority(self, feedback: Dict[str, Any]) -> str:
+        """
+        Beräknar prioritet för feedback baserat på triggers och data.
+        
+        Args:
+            feedback: Feedback event
+            
+        Returns:
+            Priority level: 'low', 'medium', 'high', 'critical'
+        """
+        triggers = feedback.get('triggers', [])
+        data = feedback.get('data', {})
+        
+        # Critical: Stora kapitalförluster eller systemfel
+        if 'capital_change' in triggers:
+            change = data.get('change', 0)
+            if change < -100:  # Förlust > $100
+                return 'critical'
+        
+        # High: Hög slippage eller låg success rate
+        if 'slippage' in triggers:
+            slippage = data.get('slippage', 0)
+            if slippage > 0.005:  # > 0.5%
+                return 'high'
+        
+        if 'trade_result' in triggers:
+            success = data.get('success', True)
+            if not success:
+                return 'high'
+        
+        # Medium: Standard operational feedback
+        if triggers:
+            return 'medium'
+        
+        return 'low'
+    
+    def _get_timestamp(self) -> float:
+        """Returnerar nuvarande timestamp."""
+        import time
+        return time.time()
     
     def get_feedback_log(self) -> List[Dict[str, Any]]:
         """

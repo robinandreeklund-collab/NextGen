@@ -7,9 +7,41 @@ Ett självreflekterande, modulärt och RL-drivet handelssystem byggt för transp
 ## 📍 Sprintstatus
 
 **Sprint 1 färdig ✅** – Kärnsystem och demoportfölj komplett
-**Sprint 2 pågår 🔄** – RL och belöningsflöde under utveckling
+**Sprint 2 färdig ✅** – RL och belöningsflöde komplett
+**Sprint 3 pågår 🔄** – Feedbackloopar och introspektion under utveckling
 
-### Sprint 2: RL och belöningsflöde (PÅGÅR)
+### Sprint 3: Feedbackloopar och introspektion (PÅGÅR)
+
+**Mål:** Inför feedback mellan moduler och visualisera kommunikation.
+
+**Moduler i fokus:**
+- `message_bus` - Central pub/sub-kommunikation (förbättrad)
+- `feedback_router` - Intelligent feedback-routing med prioritering
+- `feedback_analyzer` - Avancerad mönsteranalys och detektering
+- `introspection_panel` - Dashboard-data för Dash-visualisering
+
+**Nya indikatorer i Sprint 3:**
+- News Sentiment - Marknadssentiment från nyhetsflöden
+- Insider Sentiment - Insiderhandel och confidence-signaler
+
+**Implementerat:**
+- ✅ Intelligent feedback-routing med prioritering (critical, high, medium, low)
+- ✅ Performance pattern detection (slippage, success rate, capital changes)
+- ✅ Indicator mismatch detection för korrelationsanalys
+- ✅ Agent drift detection för performance degradation
+- ✅ Dashboard-data med agent adaptation metrics
+- ✅ Modul-kopplingar och kommunikationsflöden
+- ✅ Dash-baserad feedback flow visualisering
+- ✅ 23 tester för feedback-systemet (alla passerar)
+
+**Testresultat:**
+- ✅ Modulkommunikation fungerar via message_bus
+- ✅ Feedbackflöde routas och loggas med prioriteter
+- ✅ Mönsteranalys identifierar 3+ pattern-typer
+- ✅ Dashboard genererar rik visualiseringsdata
+- ✅ Agent adaptation tracking visar trends
+
+### Sprint 2: RL och belöningsflöde ✅
 
 **Mål:** Inför PPO-agenter i strategi, risk och beslut. Belöning via portfölj.
 
@@ -191,7 +223,142 @@ strategic_memory ──┘                                           ├──�
 
 ---
 
-## 🔄 Sprint 1: Systemflöde och Arkitektur
+## 🔄 Sprint 3: Feedbackloopar och Introspektion
+
+### Feedback-arkitektur
+
+Sprint 3 introducerar ett omfattande feedback-system för att övervaka och förbättra systemets performance i realtid.
+
+```
+┌─────────────────┐
+│ execution_engine│──┐
+│ portfolio_mgr   │  │
+│ strategic_mem   │  │ feedback_event
+└─────────────────┘  │
+                     ▼
+            ┌────────────────┐
+            │ feedback_router│
+            │ (Prioritering) │
+            └────────┬───────┘
+                     │
+        ┌────────────┼────────────┐
+        │            │            │
+        ▼            ▼            ▼
+┌──────────────┐ ┌────────────┐ ┌──────────────┐
+│ rl_controller│ │ feedback   │ │ strategic    │
+│              │ │ analyzer   │ │ memory       │
+└──────────────┘ └─────┬──────┘ └──────────────┘
+                       │
+                       ▼ feedback_insight
+              ┌──────────────────┐
+              │ meta_agent       │
+              │ evolution_engine │
+              └──────────────────┘
+```
+
+### Feedback-routing med intelligent prioritering
+
+**FeedbackRouter** klassificerar feedback i fyra prioritetsnivåer:
+
+| Prioritet | Trigger Exempel | Användning |
+|-----------|-----------------|------------|
+| **Critical** | Stora kapitalförluster (>$100) | Omedelbar åtgärd krävs |
+| **High** | Hög slippage (>0.5%), misslyckade trades | Snabb respons önskvärd |
+| **Medium** | Standard trade results, feedback | Normal processing |
+| **Low** | Informativa events utan triggers | Loggning endast |
+
+### Mönsteranalys i FeedbackAnalyzer
+
+**FeedbackAnalyzer** identifierar tre huvudtyper av mönster:
+
+#### 1. Performance Patterns
+- **High Slippage**: Genomsnittlig slippage > 0.3%
+- **Trade Success Rate**: Beräknar success rate över alla trades
+- **Low Success Rate**: Varning när success rate < 50%
+- **Capital Change Trends**: Genomsnittlig kapitalförändring över tid
+
+#### 2. Indicator Mismatch
+- Korrelerar indikator-signaler med trade outcomes
+- Identifierar när indikatorer ger dåliga prediktioner (< 40% success)
+- Föreslår strategi-justeringar baserat på korrelation
+
+#### 3. Agent Drift
+- Jämför agent performance över tid (första vs andra halvan av historik)
+- Detekterar performance degradation > 15%
+- Triggar reträning eller parameteråterställning
+
+### Introspection Dashboard
+
+**IntrospectionPanel** genererar rik data för visualisering:
+
+**Dashboard Metrics:**
+- Total feedback events och events/minut rate
+- Events per källa (execution, portfolio, etc.)
+- Events per prioritet (critical, high, medium, low)
+
+**Agent Adaptation Tracking:**
+- Adaptation rate: Hur snabbt agenter förbättras
+- Performance trend: improving, stable, eller declining
+- Learning progress: Aktuell performance-nivå
+- Recent performances: Senaste 5 performance-värden
+
+**Modul-kopplingar:**
+- Nätverksanalys av kommunikation mellan moduler
+- Connection strength baserat på antal events
+- Visualisering av feedback flow-paths
+
+### Sprint 3 Indikatorer
+
+**News Sentiment (0.0 - 1.0)**
+- Aggregerat sentiment från nyhetsartiklar
+- 0.0 = Bearish, 0.5 = Neutral, 1.0 = Bullish
+- Används av: strategy_engine, feedback_analyzer
+- Syfte: Fånga marknadssentiment och reaktioner
+
+**Insider Sentiment (0.0 - 1.0)**
+- Baserat på insiderhandel och SEC-filings
+- 0.0 = Insiders säljer, 0.5 = Neutral, 1.0 = Insiders köper
+- Används av: strategy_engine, meta_agent_evolution_engine
+- Syfte: Interna confidence-signaler från företagsledning
+
+### Dash Visualisering
+
+Sprint 3 inkluderar en komplett Dash-baserad dashboard (`dashboards/feedback_flow.py`):
+
+**Komponenter:**
+1. **Network Graph**: Visuell representation av modulkommunikation
+2. **Metrics Cards**: Real-time feedback statistics
+3. **Priority Distribution**: Pie chart över feedback-prioriteter
+4. **Timeline**: Feedback events över tid per källa
+5. **Recent Events Table**: Senaste feedback events med detaljer
+
+**Kör dashboard:**
+```bash
+python dashboards/feedback_flow.py
+# Öppna http://localhost:8050 i webbläsare
+```
+
+### Demo och Testning
+
+**Kör Sprint 3 Demo:**
+```bash
+python demo_sprint3.py
+```
+
+**Kör Sprint 3 Tester:**
+```bash
+pytest tests/test_feedback_analyzer.py -v
+```
+
+**Testresultat:** 23/23 tester passerar
+- FeedbackAnalyzer: 7 tester
+- FeedbackRouter: 6 tester
+- IntrospectionPanel: 8 tester
+- Integrerade system-tester: 2 tester
+
+---
+
+## 🔄 Sprint 2: RL och Belöningsflöde
 
 ### Dataflöde och Modulanslutningar
 
@@ -421,8 +588,8 @@ Projektet är uppdelat i 7 sprintar. Se `sprint_plan.yaml` för detaljer.
 | Sprint | Fokus                                | Status  |
 |--------|--------------------------------------|---------|
 | 1      | Kärnsystem och demoportfölj          | ✅ Färdig|
-| 2      | RL och belöningsflöde                | 🔄 Pågår|
-| 3      | Feedbackloopar och introspektion     | ⏳ Planerad|
+| 2      | RL och belöningsflöde                | ✅ Färdig|
+| 3      | Feedbackloopar och introspektion     | 🔄 Pågår|
 | 4      | Strategiskt minne och agentutveckling| ⏳ Planerad|
 | 5      | Simulering och konsensus             | ⏳ Planerad|
 | 6      | Tidsanalys och action chains         | ⏳ Planerad|

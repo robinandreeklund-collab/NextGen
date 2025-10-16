@@ -91,10 +91,10 @@ class FeedbackAnalyzer:
         Returns:
             Dict med feedback_insight
         """
-        # Stub: I Sprint 3 kommer avancerad mönsteranalys
+        import time
         
         insight = {
-            'timestamp': 'timestamp_placeholder',
+            'timestamp': time.time(),
             'samples_analyzed': len(self.feedback_buffer),
             'patterns': [],
             'anomalies': [],
@@ -103,24 +103,56 @@ class FeedbackAnalyzer:
         
         # Analysera sources
         sources = defaultdict(int)
+        triggers_by_source = defaultdict(list)
+        
         for fb in self.feedback_buffer:
             source = fb.get('source', 'unknown')
             sources[source] += 1
+            triggers = fb.get('triggers', [])
+            triggers_by_source[source].extend(triggers)
         
-        # Identifiera performance patterns (stub)
-        if sources.get('execution_engine', 0) > 5:
-            insight['patterns'].append({
-                'type': 'high_execution_activity',
-                'description': 'Många execution events detekterade'
+        # Sprint 3: Identifiera performance patterns
+        performance_patterns = self.detect_performance_patterns()
+        insight['patterns'].extend(performance_patterns)
+        
+        # Identifiera hög aktivitet från specifika moduler
+        for source, count in sources.items():
+            if count > 5:
+                insight['patterns'].append({
+                    'type': 'high_activity',
+                    'source': source,
+                    'count': count,
+                    'description': f'Hög aktivitet från {source} ({count} events)'
+                })
+        
+        # Sprint 3: Identifiera indicator-response mismatch
+        mismatch_patterns = self.detect_indicator_mismatch()
+        insight['patterns'].extend(mismatch_patterns)
+        
+        # Sprint 3: Identifiera agent drift
+        drift_patterns = self.detect_agent_drift()
+        if drift_patterns:
+            insight['anomalies'].extend(drift_patterns)
+        
+        # Generera rekommendationer baserat på mönster
+        if len(insight['patterns']) > 3:
+            insight['recommendations'].append({
+                'type': 'pattern_overload',
+                'description': 'Många mönster detekterade - överväg justeringar',
+                'action': 'review_module_thresholds'
             })
         
-        # Identifiera indicator-response mismatch (stub)
-        # Detta kräver korrelation mellan indicators och outcomes
-        
-        # Identifiera agent drift (stub)
-        # Detta kräver jämförelse av agent behavior över tid
+        if any(p['type'] == 'high_slippage' for p in insight['patterns']):
+            insight['recommendations'].append({
+                'type': 'execution_quality',
+                'description': 'Hög slippage detekterad - justera execution timing',
+                'action': 'adjust_execution_strategy'
+            })
         
         self.analysis_count += 1
+        
+        # Cacha insights för historisk analys
+        self.pattern_cache[f'analysis_{self.analysis_count}'] = insight
         
         # Publicera insight
         self.publish_insight(insight)
@@ -147,8 +179,76 @@ class FeedbackAnalyzer:
         Returns:
             Lista med identifierade mönster
         """
-        # Stub: Implementeras i Sprint 3
-        return []
+        patterns = []
+        
+        # Analysera slippage patterns
+        slippage_events = [
+            fb for fb in self.feedback_buffer 
+            if 'slippage' in fb.get('triggers', [])
+        ]
+        
+        if len(slippage_events) > 3:
+            avg_slippage = sum(
+                fb.get('data', {}).get('slippage', 0) 
+                for fb in slippage_events
+            ) / len(slippage_events)
+            
+            if avg_slippage > 0.003:  # > 0.3%
+                patterns.append({
+                    'type': 'high_slippage',
+                    'count': len(slippage_events),
+                    'avg_value': avg_slippage,
+                    'description': f'Hög genomsnittlig slippage: {avg_slippage:.4f}'
+                })
+        
+        # Analysera trade_result patterns
+        trade_results = [
+            fb for fb in self.feedback_buffer 
+            if 'trade_result' in fb.get('triggers', [])
+        ]
+        
+        if len(trade_results) > 5:
+            successful = sum(
+                1 for fb in trade_results 
+                if fb.get('data', {}).get('success', False)
+            )
+            success_rate = successful / len(trade_results)
+            
+            patterns.append({
+                'type': 'trade_success_rate',
+                'success_rate': success_rate,
+                'total_trades': len(trade_results),
+                'description': f'Trade success rate: {success_rate:.2%}'
+            })
+            
+            if success_rate < 0.5:
+                patterns.append({
+                    'type': 'low_success_rate',
+                    'success_rate': success_rate,
+                    'description': 'Låg trade success rate - överväg strategi-justering'
+                })
+        
+        # Analysera capital_change patterns
+        capital_changes = [
+            fb for fb in self.feedback_buffer 
+            if 'capital_change' in fb.get('triggers', [])
+        ]
+        
+        if len(capital_changes) > 3:
+            changes = [
+                fb.get('data', {}).get('change', 0) 
+                for fb in capital_changes
+            ]
+            avg_change = sum(changes) / len(changes)
+            
+            patterns.append({
+                'type': 'avg_capital_change',
+                'avg_change': avg_change,
+                'total_events': len(capital_changes),
+                'description': f'Genomsnittlig kapitalförändring: ${avg_change:.2f}'
+            })
+        
+        return patterns
     
     def detect_indicator_mismatch(self) -> List[Dict[str, Any]]:
         """
@@ -157,8 +257,35 @@ class FeedbackAnalyzer:
         Returns:
             Lista med mismatch-fall
         """
-        # Stub: Implementeras i Sprint 3
-        return []
+        mismatches = []
+        
+        # Analysera korrelation mellan indikator-signaler och outcomes
+        # Detta kräver tillgång till både indicator_data och trade outcomes
+        
+        # Exempel: Analysera om RSI-signaler resulterar i förväntade outcomes
+        # För Sprint 3, implementera grundläggande korrelationsanalys
+        
+        # Samla feedback med indikator-information
+        indicator_related = [
+            fb for fb in self.feedback_buffer 
+            if fb.get('data', {}).get('indicators') is not None
+        ]
+        
+        if len(indicator_related) > 5:
+            # Analysera om indikator-baserade beslut ger bra resultat
+            good_outcomes = sum(
+                1 for fb in indicator_related 
+                if fb.get('data', {}).get('outcome', 'neutral') == 'positive'
+            )
+            
+            if good_outcomes < len(indicator_related) * 0.4:  # < 40% success
+                mismatches.append({
+                    'type': 'low_indicator_correlation',
+                    'success_rate': good_outcomes / len(indicator_related),
+                    'description': 'Indikatorer korrelerar dåligt med outcomes'
+                })
+        
+        return mismatches
     
     def detect_agent_drift(self) -> List[Dict[str, Any]]:
         """
@@ -167,8 +294,46 @@ class FeedbackAnalyzer:
         Returns:
             Lista med drift-fall
         """
-        # Stub: Implementeras i Sprint 3
-        return []
+        drift_cases = []
+        
+        # Analysera agent performance över tid för att detektera drift
+        # Drift = när agent behavior förändras på ett sätt som minskar performance
+        
+        # Samla agent-relaterade feedback
+        agent_feedback = [
+            fb for fb in self.feedback_buffer 
+            if fb.get('source') in ['rl_controller', 'strategy_engine', 'decision_engine', 'risk_manager']
+        ]
+        
+        if len(agent_feedback) > 10:
+            # Dela upp i första halvan och andra halvan
+            mid = len(agent_feedback) // 2
+            first_half = agent_feedback[:mid]
+            second_half = agent_feedback[mid:]
+            
+            # Jämför performance metrics
+            def get_avg_performance(feedback_list):
+                perfs = [
+                    fb.get('data', {}).get('performance', 0.5) 
+                    for fb in feedback_list 
+                    if fb.get('data', {}).get('performance') is not None
+                ]
+                return sum(perfs) / len(perfs) if perfs else 0.5
+            
+            first_perf = get_avg_performance(first_half)
+            second_perf = get_avg_performance(second_half)
+            
+            # Om performance sjunker signifikant, indikera drift
+            if first_perf > 0.6 and second_perf < first_perf * 0.85:
+                drift_cases.append({
+                    'type': 'performance_degradation',
+                    'first_half_perf': first_perf,
+                    'second_half_perf': second_perf,
+                    'degradation': (first_perf - second_perf) / first_perf,
+                    'description': f'Agent performance sjönk från {first_perf:.2f} till {second_perf:.2f}'
+                })
+        
+        return drift_cases
     
     def receive_feedback(self, feedback: Dict[str, Any]) -> None:
         """
