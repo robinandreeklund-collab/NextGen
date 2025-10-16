@@ -312,23 +312,15 @@ class WebSocketTester:
             # Sätt aktuellt pris för execution
             decision['current_price'] = price
             
-            # Räkna beslut
-            action = decision.get('action')
-            if action == 'BUY':
-                self.stats['buy_count'] += 1
-            elif action == 'SELL':
-                self.stats['sell_count'] += 1
-            
-            # Kontrollera om det är insufficient funds/holdings INNAN execution
-            portfolio = self.portfolio_manager.get_status(self.current_prices)
-            original_action = action
-            original_qty = decision.get('quantity', 0)
+            # Spara original action för tracking
+            original_action = decision.get('action')
             
             # Execution engine exekverar
             execution_result = self.execution_engine.execute_trade(decision)
             
-            # Kontrollera om trade blev HOLD p.g.a. insufficient funds/holdings
+            # Räkna endast faktiska executions (inte decisions som blockerades)
             if execution_result.get('action') == 'HOLD':
+                # Beslut blockerat p.g.a. insufficient funds/holdings
                 if original_action == 'BUY':
                     self.stats['insufficient_funds_count'] += 1
                 elif original_action == 'SELL':
@@ -345,8 +337,7 @@ class WebSocketTester:
                     'timestamp': time.time()
                 })
                 
-                # Räkna faktiska executions (inte decisions)
-                # Inkrementera endast vid faktisk execution
+                # Räkna endast faktiska genomförda executions
                 if executed_action == 'BUY':
                     self.stats['buy_count'] += 1
                 elif executed_action == 'SELL':
@@ -419,17 +410,18 @@ class WebSocketTester:
         print(f"🎯 Beslut fattade: {self.stats['decisions_made']}")
         print(f"🧬 Evolution events: {self.stats['evolution_events']}")
         
-        # Visa status om beslut med BUY/SELL/HOLD percentages
+        # Visa status om genomförda executions
         if self.stats['trades_processed'] > 50:
             total_decision_points = self.stats['trades_processed'] // 10
-            buy_pct = (self.stats['buy_count'] / total_decision_points * 100) if total_decision_points > 0 else 0
-            sell_pct = (self.stats['sell_count'] / total_decision_points * 100) if total_decision_points > 0 else 0
-            hold_pct = (self.stats['hold_count'] / total_decision_points * 100) if total_decision_points > 0 else 0
             
-            print(f"\n📊 Beslutsdistribution ({total_decision_points} totalt):")
-            print(f"   🟢 BUY:  {self.stats['buy_count']} ({buy_pct:.1f}%)")
-            print(f"   🔴 SELL: {self.stats['sell_count']} ({sell_pct:.1f}%)")
-            print(f"   ⚪ HOLD: {self.stats['hold_count']} ({hold_pct:.1f}%)")
+            print(f"\n📊 Genomförda Executions ({total_decision_points} beslutspunkter):")
+            print(f"   🟢 BUY:  {self.stats['buy_count']} genomförda")
+            print(f"   🔴 SELL: {self.stats['sell_count']} genomförda")
+            print(f"   ⚪ HOLD: {self.stats['hold_count']} ingen trade")
+            
+            # Visa blockerade om det finns några
+            if self.stats['insufficient_funds_count'] > 0 or self.stats['insufficient_holdings_count'] > 0:
+                print(f"   ⚠️  Blockerade: {self.stats['insufficient_funds_count']} BUY, {self.stats['insufficient_holdings_count']} SELL")
         
         # Portfolio status med current prices
         portfolio_status = self.portfolio_manager.get_status(self.current_prices if hasattr(self, 'current_prices') else None)
@@ -516,16 +508,24 @@ class WebSocketTester:
         print(f"🎯 Totalt beslut: {self.stats['decisions_made']}")
         print(f"🧬 Evolution events: {self.stats['evolution_events']}")
         
-        # Beslutsdistribution
+        # Execution distribution (faktiska genomförda trades)
         total_decision_points = self.stats['trades_processed'] // 10 if self.stats['trades_processed'] > 0 else 1
-        buy_pct = (self.stats['buy_count'] / total_decision_points * 100)
-        sell_pct = (self.stats['sell_count'] / total_decision_points * 100)
-        hold_pct = (self.stats['hold_count'] / total_decision_points * 100)
+        total_executions = self.stats['buy_count'] + self.stats['sell_count'] + self.stats['hold_count']
         
-        print(f"\n📊 BESLUTSDISTRIBUTION:")
-        print(f"   🟢 BUY:  {self.stats['buy_count']} ({buy_pct:.1f}%)")
-        print(f"   🔴 SELL: {self.stats['sell_count']} ({sell_pct:.1f}%)")
-        print(f"   ⚪ HOLD: {self.stats['hold_count']} ({hold_pct:.1f}%)")
+        print(f"\n📊 EXECUTION DISTRIBUTION (Genomförda trades):")
+        print(f"   Totalt beslutspunkter: {total_decision_points}")
+        print(f"   Genomförda executions: {total_executions}")
+        print(f"   🟢 BUY:  {self.stats['buy_count']} genomförda köp")
+        print(f"   🔴 SELL: {self.stats['sell_count']} genomförda försäljningar")
+        print(f"   ⚪ HOLD: {self.stats['hold_count']} inget genomfört")
+        
+        # Visa blockerade trades om det finns några
+        if self.stats['insufficient_funds_count'] > 0 or self.stats['insufficient_holdings_count'] > 0:
+            print(f"\n   ⚠️  Blockerade trades:")
+            if self.stats['insufficient_funds_count'] > 0:
+                print(f"      BUY blockerade (insufficient funds): {self.stats['insufficient_funds_count']}")
+            if self.stats['insufficient_holdings_count'] > 0:
+                print(f"      SELL blockerade (insufficient holdings): {self.stats['insufficient_holdings_count']}")
         
         # Portfolio resultat med current prices
         portfolio_status = self.portfolio_manager.get_status(self.current_prices if hasattr(self, 'current_prices') else None)
@@ -714,14 +714,6 @@ class WebSocketTester:
         if self.stats['execution_log']:
             print(f"\n   📝 GENOMFÖRDA TRADES (senaste 10):")
             for trade in self.stats['execution_log'][-10:]:
-                action_emoji = "🟢" if trade['action'] == 'BUY' else "🔴"
-                print(f"      {action_emoji} {trade['action']} {trade['quantity']} {trade['symbol']} "
-                      f"@ ${trade['price']:.2f} (cost: ${trade['cost']:.2f})")
-        
-        # Visa execution log för genomförda trades
-        if self.stats['execution_log']:
-            print(f"\n   📝 GENOMFÖRDA TRADES (senaste 10):")
-            for i, trade in enumerate(list(self.stats['execution_log'])[-10:], 1):
                 action_emoji = "🟢" if trade['action'] == 'BUY' else "🔴"
                 print(f"      {action_emoji} {trade['action']} {trade['quantity']} {trade['symbol']} "
                       f"@ ${trade['price']:.2f} (cost: ${trade['cost']:.2f})")
