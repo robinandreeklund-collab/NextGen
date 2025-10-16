@@ -50,9 +50,16 @@ Indikatorer från indicator_map.yaml för Sprint 2:
     Fundamentala:
     - Analyst Ratings: external confidence and sentiment
 
+Indikatorer från indicator_map.yaml för Sprint 4:
+    Fundamentala:
+    - ROE: capital efficiency (Return on Equity)
+    - ROA: asset productivity (Return on Assets)
+    - ESG: ethical risk and long-term viability
+    - Earnings Calendar: event-based risk and timing
+
 Uppdateringsintervall: 5 min (från indicator_map.yaml)
 
-Används i Sprint: 1, 2, 7
+Används i Sprint: 1, 2, 3, 4, 7
 """
 
 from typing import Dict, Any
@@ -123,24 +130,47 @@ class IndicatorRegistry:
             symbol: Aktiesymbol
             
         Returns:
-            Dict med fundamentala indikatorer (EPS, ROE, ROA, Analyst Ratings, etc.)
+            Dict med fundamentala indikatorer (EPS, ROE, ROA, Analyst Ratings, Earnings Calendar, etc.)
         """
         # Stub: Skulle hämta från Finnhub API
         
-        # Sprint 2: Lägg till Analyst Ratings
+        # Sprint 2: Analyst Ratings
         analyst_ratings = {
             'AAPL': {'buy': 25, 'hold': 10, 'sell': 2, 'consensus': 'BUY', 'target_price': 180.0},
             'TSLA': {'buy': 15, 'hold': 15, 'sell': 8, 'consensus': 'HOLD', 'target_price': 250.0},
             'MSFT': {'buy': 30, 'hold': 5, 'sell': 1, 'consensus': 'STRONG_BUY', 'target_price': 350.0}
         }
         
+        # Sprint 4: ROE, ROA, Earnings Calendar
+        roe_values = {
+            'AAPL': 0.196,   # 19.6% - Stark kapitaleffektivitet
+            'TSLA': 0.142,   # 14.2% - God kapitaleffektivitet
+            'MSFT': 0.478    # 47.8% - Mycket stark kapitaleffektivitet
+        }
+        
+        roa_values = {
+            'AAPL': 0.287,   # 28.7% - Stark tillgångsproduktivitet
+            'TSLA': 0.083,   # 8.3% - Medel tillgångsproduktivitet
+            'MSFT': 0.245    # 24.5% - Stark tillgångsproduktivitet
+        }
+        
+        # Earnings calendar (dagar till nästa earnings release)
+        earnings_calendar = {
+            'AAPL': {'days_until': 15, 'date': '2025-11-01', 'estimated_eps': 1.45},
+            'TSLA': {'days_until': 45, 'date': '2025-12-01', 'estimated_eps': 0.85},
+            'MSFT': {'days_until': 8, 'date': '2025-10-24', 'estimated_eps': 2.65}
+        }
+        
         return {
             'EPS': 5.2,
-            'ROE': 0.18,
-            'ROA': 0.12,
+            'ROE': roe_values.get(symbol, 0.15),  # Sprint 4
+            'ROA': roa_values.get(symbol, 0.10),  # Sprint 4
             'ProfitMargin': 0.25,
             'AnalystRatings': analyst_ratings.get(symbol, {
                 'buy': 10, 'hold': 10, 'sell': 5, 'consensus': 'HOLD', 'target_price': 150.0
+            }),
+            'EarningsCalendar': earnings_calendar.get(symbol, {  # Sprint 4
+                'days_until': 30, 'date': '2025-11-15', 'estimated_eps': 1.20
             })
         }
     
@@ -152,13 +182,36 @@ class IndicatorRegistry:
             symbol: Aktiesymbol
             
         Returns:
-            Dict med alternativa indikatorer (News Sentiment, ESG, etc.)
+            Dict med alternativa indikatorer (News Sentiment, Insider Sentiment, ESG, etc.)
         """
         # Stub: Skulle hämta från Finnhub API
+        
+        # Sprint 3: News Sentiment, Insider Sentiment
+        news_sentiment = {
+            'AAPL': 0.72,   # 0.72 = Bullish sentiment
+            'TSLA': 0.58,   # 0.58 = Slight bullish
+            'MSFT': 0.68    # 0.68 = Bullish sentiment
+        }
+        
+        insider_sentiment = {
+            'AAPL': 0.65,   # 0.65 = Insiders buying
+            'TSLA': 0.45,   # 0.45 = Mixed signals
+            'MSFT': 0.70    # 0.70 = Strong insider buying
+        }
+        
+        # Sprint 4: ESG Score (Environmental, Social, Governance)
+        esg_scores = {
+            'AAPL': {'total': 82, 'environmental': 85, 'social': 80, 'governance': 81},
+            'TSLA': {'total': 68, 'environmental': 90, 'social': 55, 'governance': 60},
+            'MSFT': {'total': 88, 'environmental': 90, 'social': 87, 'governance': 87}
+        }
+        
         return {
-            'NewsSentiment': 0.65,
-            'InsiderSentiment': 0.55,
-            'ESG': {'total': 75, 'environmental': 80, 'social': 70, 'governance': 75}
+            'NewsSentiment': news_sentiment.get(symbol, 0.50),           # Sprint 3
+            'InsiderSentiment': insider_sentiment.get(symbol, 0.50),     # Sprint 3
+            'ESG': esg_scores.get(symbol, {                              # Sprint 4
+                'total': 70, 'environmental': 70, 'social': 70, 'governance': 70
+            })
         }
     
     def get_indicators(self, symbol: str, timeframe: str = '1D') -> Dict[str, Any]:
