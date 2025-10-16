@@ -64,7 +64,7 @@ Sprint 4.3 extends the adaptive parameter control from Sprint 4.2 to the entire 
 - **introspection_panel**: Visualizes parameter history and trends
 
 ### 3. Documentation
-- **docs/adaptive_parameters.yaml**: Complete specification of all 12 parameters
+- **docs/adaptive_parameters.yaml**: Complete specification of all 13 parameters
 - **docs/adaptive_parameter_sprint4_3/**: Full YAML documentation
   - sprint_4_3.yaml
   - flowchart_2.yaml
