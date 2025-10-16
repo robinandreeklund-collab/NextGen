@@ -33,6 +33,20 @@ python websocket_test.py
 python websocket_test.py
 ```
 
+### Debug Mode
+
+Testet körs automatiskt i **debug mode** som visar detaljerad information om:
+- ✅ Första trades för varje symbol
+- ✅ Indikatorhämtningar (var 5:e trade)
+- ✅ Beslutprocess (var 10:e trade) inklusive:
+  - Strategy proposal (action, confidence, reasoning)
+  - Risk assessment (risk level, risk score)
+  - Final decision (action, confidence)
+  - Execution results (success, price)
+  - Portfolio status (cash, total value)
+
+Detta hjälper dig förstå **exakt** vad som händer i varje modul och varför beslut fattas eller inte.
+
 ### Exempel på output
 
 ```
@@ -53,6 +67,24 @@ python websocket_test.py
 
 🚀 Live trading-systemet körs nu!
 ⏹️  Tryck Ctrl+C för att stoppa och visa sammanfattning
+
+💡 DEBUG MODE: Aktiv - visar detaljerad info för första trades och beslut
+   Beslut fattas var 10:e trade, indikatorer uppdateras var 5:e trade
+
+📊 Trade #1: AAPL @ $150.25 (vol: 100)
+
+📊 Trade #2: TSLA @ $245.80 (vol: 500)
+   📈 Indikatorer hämtade för TSLA
+      RSI: 25.0
+      MACD: -0.6
+
+🤔 Beslut #1 för AAPL:
+   💡 Strategy proposal: BUY (confidence: 0.75)
+      Reasoning: RSI oversold (65.0) + MACD bullish (0.3)
+   ⚠️  Risk assessment: LOW (score: 0.25)
+   ⚖️  Final decision: BUY (confidence: 0.82)
+   ✅ Execution: True @ $150.30
+   💰 Portfolio: $850.00 cash, $1000.50 total
 
 ================================================================================
 ⏱️  Runtime: 1m 23s
@@ -200,6 +232,47 @@ Alla dessa moduler körs live under testet:
 14. **PortfolioManager** - Kapitalhantering
 
 ## Felsökning
+
+### Inga beslut fattas (0 decisions trots många trades)
+
+Detta är **normalt beteende** när marknadssignaler inte uppfyller kriterierna för köp/sälj:
+
+**Förklaring:**
+- Systemet fattar endast beslut när indikatorer ger tydliga signaler
+- HOLD är ett giltigt beslut som betyder "inget läge att handla nu"
+- Beslut fattas var 10:e trade (för att simulera thoughtful trading)
+
+**Vad du ser i debug output:**
+```
+🤔 Beslut #1 för AAPL:
+   💡 Strategy proposal: HOLD (confidence: 0.50)
+      Reasoning: Väntar på signal
+   ⚠️  Risk assessment: MEDIUM (score: 0.00)
+   ⚖️  Final decision: HOLD (confidence: 0.50)
+   ⏸️  Decision: HOLD - ingen trade
+```
+
+**För att få fler handelsbeslut:**
+1. Öka antal trades (kör längre tid)
+2. Justera indicator thresholds i modules/strategy_engine.py
+3. Testa under mer volatila marknadstider
+4. Kolla modul diagnostik i slutrapporten för att se indikatorstatus
+
+**Modul Diagnostik visas vid avslut:**
+```
+🔍 MODUL DIAGNOSTIK:
+   Strategy Engine: 10 symboler med indikatorer
+   Risk Manager: 10 symboler med riskdata
+   Decision Engine: 0 aktiva förslag
+   Strategic Memory: 0 beslut loggade
+   Feedback Router: 15 feedback events
+
+⚠️  DIAGNOS: Inga beslut fattade!
+   Möjliga orsaker:
+   1. Indikatorer når inte strategy/risk/decision engines
+   2. Alla beslut blir HOLD (kontrollera indikator-logik)
+   3. Message bus-kommunikation fungerar inte korrekt
+```
 
 ### WebSocket-anslutning misslyckas
 

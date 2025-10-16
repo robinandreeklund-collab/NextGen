@@ -93,6 +93,10 @@ class WebSocketTester:
         # Signal handler för graceful shutdown
         signal.signal(signal.SIGINT, self.signal_handler)
         signal.signal(signal.SIGTERM, self.signal_handler)
+        
+        # Debug mode för detaljerad loggning
+        self.debug_mode = True
+        self.debug_counter = 0
     
     def setup_modules(self) -> None:
         """Initialiserar alla Sprint 1-4 moduler."""
@@ -176,6 +180,10 @@ class WebSocketTester:
         if symbol in self.stats['symbol_counts']:
             self.stats['symbol_counts'][symbol] += 1
         
+        # Debug: Visa första trades för varje symbol
+        if self.debug_mode and self.stats['symbol_counts'][symbol] <= 2:
+            print(f"\n📊 Trade #{self.stats['trades_processed']}: {symbol} @ ${price:.2f} (vol: {volume})")
+        
         # 1. Publicera market data
         self.message_bus.publish('market_data', {
             'symbol': symbol,
@@ -187,6 +195,11 @@ class WebSocketTester:
         # 2. Hämta indikatorer (cachar och uppdaterar var 5:e trade)
         if self.stats['trades_processed'] % 5 == 0:
             indicators = self.indicator_registry.get_indicators(symbol)
+            if self.debug_mode and self.debug_counter < 3:
+                print(f"   📈 Indikatorer hämtade för {symbol}")
+                print(f"      RSI: {indicators.get('technical', {}).get('RSI', 'N/A')}")
+                print(f"      MACD: {indicators.get('technical', {}).get('MACD', {}).get('histogram', 'N/A')}")
+                self.debug_counter += 1
         
         # 3. Strategibeslut (varje 10:e trade för att simulera thoughtful decisions)
         if self.stats['trades_processed'] % 10 == 0:
@@ -203,18 +216,42 @@ class WebSocketTester:
         # Strategy engine genererar förslag (tar symbol)
         proposal = self.strategy_engine.generate_proposal(symbol)
         
+        # Debug: Visa decision flow för första besluten
+        if self.debug_mode and self.stats['decisions_made'] < 5:
+            print(f"\n🤔 Beslut #{self.stats['trades_processed']//10} för {symbol}:")
+            print(f"   💡 Strategy proposal: {proposal.get('action')} "
+                  f"(confidence: {proposal.get('confidence', 0):.2f})")
+            print(f"      Reasoning: {proposal.get('reasoning', 'N/A')}")
+        
         # Risk manager bedömer risk (tar symbol)
         risk_profile = self.risk_manager.assess_risk(symbol)
         
+        if self.debug_mode and self.stats['decisions_made'] < 5:
+            print(f"   ⚠️  Risk assessment: {risk_profile.get('risk_level', 'N/A')} "
+                  f"(score: {risk_profile.get('risk_score', 0):.2f})")
+        
         # Decision engine fattar beslut (tar symbol)
         decision = self.decision_engine.make_decision(symbol)
+        
+        if self.debug_mode and self.stats['decisions_made'] < 5:
+            print(f"   ⚖️  Final decision: {decision.get('action')} "
+                  f"(confidence: {decision.get('confidence', 0):.2f})")
         
         if decision and decision.get('action') != 'HOLD':
             # Execution engine exekverar
             execution_result = self.execution_engine.execute_trade(decision)
             
+            if self.debug_mode and self.stats['decisions_made'] < 5:
+                print(f"   ✅ Execution: {execution_result.get('success', False)} "
+                      f"@ ${execution_result.get('price', 0):.2f}")
+            
             # Portfolio manager uppdaterar
             self.portfolio_manager.update_portfolio(execution_result)
+            
+            if self.debug_mode and self.stats['decisions_made'] < 5:
+                portfolio = self.portfolio_manager.get_status()
+                print(f"   💰 Portfolio: ${portfolio.get('cash', 0):.2f} cash, "
+                      f"${portfolio.get('total_value', 0):.2f} total")
             
             self.stats['decisions_made'] += 1
             
@@ -222,6 +259,8 @@ class WebSocketTester:
             if len(self.meta_evolution.evolution_history) > self.stats['evolution_events']:
                 self.stats['evolution_events'] = len(self.meta_evolution.evolution_history)
                 print(f"\n🧬 Evolution event detekterad!")
+        elif self.debug_mode and self.stats['decisions_made'] < 5:
+            print(f"   ⏸️  Decision: HOLD - ingen trade")
     
     def print_progress(self) -> None:
         """Skriver ut progress-information."""
@@ -235,6 +274,11 @@ class WebSocketTester:
         print(f"💹 Trades processade: {self.stats['trades_processed']}")
         print(f"🎯 Beslut fattade: {self.stats['decisions_made']}")
         print(f"🧬 Evolution events: {self.stats['evolution_events']}")
+        
+        # Visa varning om inga beslut fattats
+        if self.stats['trades_processed'] > 50 and self.stats['decisions_made'] == 0:
+            print(f"\n⚠️  VARNING: Inga beslut fattade trots {self.stats['trades_processed']} trades!")
+            print(f"   Kontrollera att indikatorer genereras korrekt.")
         
         # Portfolio status
         portfolio_status = self.portfolio_manager.get_status()
@@ -344,6 +388,37 @@ class WebSocketTester:
             percentage = (count / self.stats['trades_processed'] * 100) if self.stats['trades_processed'] > 0 else 0
             print(f"   {symbol}: {count} trades ({percentage:.1f}%)")
         
+        # Modul diagnostik
+        print(f"\n🔍 MODUL DIAGNOSTIK:")
+        
+        # Strategy engine
+        strategy_indicators = len(self.strategy_engine.current_indicators)
+        print(f"   Strategy Engine: {strategy_indicators} symboler med indikatorer")
+        
+        # Risk manager
+        risk_indicators = len(self.risk_manager.current_indicators)
+        print(f"   Risk Manager: {risk_indicators} symboler med riskdata")
+        
+        # Decision engine
+        decision_proposals = len(self.decision_engine.trade_proposals)
+        print(f"   Decision Engine: {decision_proposals} aktiva förslag")
+        
+        # Strategic memory
+        memory_summary = self.strategic_memory.get_performance_summary()
+        print(f"   Strategic Memory: {memory_summary['total_decisions']} beslut loggade")
+        
+        # Feedback router
+        feedback_count = len(self.feedback_router.feedback_log)
+        print(f"   Feedback Router: {feedback_count} feedback events")
+        
+        if self.stats['decisions_made'] == 0 and self.stats['trades_processed'] > 0:
+            print(f"\n⚠️  DIAGNOS: Inga beslut fattade!")
+            print(f"   Möjliga orsaker:")
+            print(f"   1. Indikatorer når inte strategy/risk/decision engines")
+            print(f"   2. Alla beslut blir HOLD (kontrollera indikator-logik)")
+            print(f"   3. Message bus-kommunikation fungerar inte korrekt")
+            print(f"\n   💡 Tips: Kör ett test med högre debug-output för att se flödet")
+        
         print("\n" + "="*80)
         print("Tack för att du testade NextGen AI Trader! 🚀")
         print("="*80 + "\n")
@@ -373,7 +448,9 @@ class WebSocketTester:
             print(f"   ✓ {symbol}")
         
         print(f"\n🚀 Live trading-systemet körs nu!")
-        print(f"⏹️  Tryck Ctrl+C för att stoppa och visa sammanfattning\n")
+        print(f"⏹️  Tryck Ctrl+C för att stoppa och visa sammanfattning")
+        print(f"\n💡 DEBUG MODE: Aktiv - visar detaljerad info för första trades och beslut")
+        print(f"   Beslut fattas var 10:e trade, indikatorer uppdateras var 5:e trade\n")
     
     def signal_handler(self, sig, frame) -> None:
         """Hanterar Ctrl+C för graceful shutdown."""
