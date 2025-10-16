@@ -274,6 +274,13 @@ class RewardTunerAgent:
             'timestamp': time.time()
         })
         
+        # Backward compatibility: Also publish to old 'reward' topic for tests
+        self.message_bus.publish('reward', {
+            'value': tuned_reward,
+            'source': 'reward_tuner',
+            'portfolio_value': metrics.get('base_reward', 0.0)
+        })
+        
         # Publish reward_metrics for introspection_panel
         self.message_bus.publish('reward_metrics', metrics)
     

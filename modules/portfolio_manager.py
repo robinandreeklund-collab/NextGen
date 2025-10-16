@@ -255,13 +255,6 @@ class PortfolioManager:
             'portfolio_value': current_value,
             'num_trades': len(self.trade_history)
         })
-        
-        # Backward compatibility: Publicera också till 'reward' för existerande tester
-        self.message_bus.publish('reward', {
-            'value': reward,
-            'source': 'portfolio_manager',
-            'portfolio_value': current_value
-        })
     
     def generate_feedback(self, execution_result: Dict[str, Any]) -> None:
         """
