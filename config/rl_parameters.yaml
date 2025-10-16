@@ -1,1 +1,46 @@
-# RL-parametrar
+# RL-parametrar för PPO-agenter
+
+algorithm: PPO
+learning_rate: 0.0003
+gamma: 0.99  # Discount factor för framtida belöningar
+gae_lambda: 0.95  # Generalized Advantage Estimation
+clip_epsilon: 0.2  # PPO clip parameter
+value_coef: 0.5  # Value function coefficient
+entropy_coef: 0.01  # Entropy coefficient för exploration
+max_grad_norm: 0.5  # Gradient clipping
+
+# Agent-specifika parametrar
+agents:
+  strategy_engine:
+    state_dim: 10  # OHLC, Volume, SMA, RSI, MACD, portfolio info
+    action_dim: 3  # BUY, SELL, HOLD
+    hidden_layers: [64, 64]
+    
+  risk_manager:
+    state_dim: 8  # Volume, ATR, volatility, portfolio exposure
+    action_dim: 3  # LOW, MEDIUM, HIGH risk
+    hidden_layers: [32, 32]
+    
+  decision_engine:
+    state_dim: 12  # Strategy proposal, risk profile, memory insights
+    action_dim: 3  # ACCEPT, MODIFY, REJECT
+    hidden_layers: [64, 32]
+    
+  execution_engine:
+    state_dim: 6  # Price, volume, timing, slippage
+    action_dim: 2  # EXECUTE_NOW, WAIT
+    hidden_layers: [32, 32]
+
+# Träningsparametrar
+training:
+  batch_size: 32
+  epochs_per_update: 4
+  buffer_size: 2048
+  update_frequency: 10  # Uppdatera agenter var 10:e reward
+  
+# Reward shaping
+reward_shaping:
+  portfolio_change_weight: 1.0
+  trade_profitability_weight: 0.5
+  execution_quality_weight: 0.3
+  risk_adjustment_weight: 0.2

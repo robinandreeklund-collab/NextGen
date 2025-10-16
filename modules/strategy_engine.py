@@ -45,6 +45,12 @@ Indikatorer från indicator_map.yaml för Sprint 1:
     - SMA: trend detection, smoothing
     - RSI: overbought/oversold detection
 
+Indikatorer från indicator_map.yaml för Sprint 2:
+    Använder:
+    - MACD: momentum and trend strength
+    - ATR: volatility-based risk adjustment (för quantity-justering)
+    - Analyst Ratings: external confidence and sentiment
+
 Används i Sprint: 1, 2
 """
 
@@ -64,11 +70,14 @@ class StrategyEngine:
         self.message_bus = message_bus
         self.current_indicators: Dict[str, Any] = {}
         self.portfolio_status: Dict[str, Any] = {}
-        self.rl_agent = None  # Kommer från rl_controller i Sprint 2
+        self.rl_agent = None  # Uppdateras från rl_controller
+        self.rl_enabled = False
+        self.agent_performance = 0.0
         
-        # Prenumerera på indicator_data och portfolio_status
+        # Prenumerera på indicator_data, portfolio_status och agent_update
         self.message_bus.subscribe('indicator_data', self._on_indicator_data)
         self.message_bus.subscribe('portfolio_status', self._on_portfolio_status)
+        self.message_bus.subscribe('agent_update', self._on_agent_update)
     
     def _on_indicator_data(self, data: Dict[str, Any]) -> None:
         """
@@ -89,6 +98,18 @@ class StrategyEngine:
         """
         self.portfolio_status = status
     
+    def _on_agent_update(self, update: Dict[str, Any]) -> None:
+        """
+        Callback för agent updates från rl_controller.
+        
+        Args:
+            update: Agent update med nya parametrar
+        """
+        if update.get('module') == 'strategy_engine':
+            self.rl_enabled = update.get('policy_updated', False)
+            metrics = update.get('metrics', {})
+            self.agent_performance = metrics.get('average_reward', 0.0)
+    
     def generate_proposal(self, symbol: str) -> Dict[str, Any]:
         """
         Genererar ett tradeförslag för en symbol.
@@ -101,31 +122,86 @@ class StrategyEngine:
         """
         indicators = self.current_indicators.get(symbol, {})
         
-        # Stub: Enkel regelbaserad logik för Sprint 1
-        # I Sprint 2 kommer RL-agent att användas här
+        # Sprint 2: Använd både regel-baserad logik och RL
         proposal = {
             'symbol': symbol,
             'action': 'HOLD',
             'quantity': 0,
             'reasoning': 'Väntar på signal',
-            'confidence': 0.5
+            'confidence': 0.5,
+            'rl_enabled': self.rl_enabled
         }
         
-        # Exempel på indikatoranalys (stub)
-        if indicators:
-            technical = indicators.get('technical', {})
-            rsi = technical.get('RSI', 50)
+        if not indicators:
+            return proposal
+        
+        technical = indicators.get('technical', {})
+        fundamental = indicators.get('fundamental', {})
+        
+        # Hämta indikatorer
+        rsi = technical.get('RSI', 50)
+        macd_data = technical.get('MACD', {})
+        macd_histogram = macd_data.get('histogram', 0.0)
+        atr = technical.get('ATR', 2.0)
+        
+        analyst_ratings = fundamental.get('AnalystRatings', {})
+        analyst_consensus = analyst_ratings.get('consensus', 'HOLD')
+        
+        # Kombinerad analys med flera indikatorer
+        buy_signals = 0
+        sell_signals = 0
+        reasons = []
+        
+        # RSI-analys
+        if rsi < 30:
+            buy_signals += 2  # Stark köpsignal
+            reasons.append(f'RSI översåld ({rsi:.1f})')
+        elif rsi > 70:
+            sell_signals += 2  # Stark säljsignal
+            reasons.append(f'RSI överköpt ({rsi:.1f})')
+        
+        # MACD-analys (Sprint 2)
+        if macd_histogram > 0.5:
+            buy_signals += 1
+            reasons.append(f'MACD positiv ({macd_histogram:.2f})')
+        elif macd_histogram < -0.5:
+            sell_signals += 1
+            reasons.append(f'MACD negativ ({macd_histogram:.2f})')
+        
+        # Analyst Ratings-analys (Sprint 2)
+        if analyst_consensus in ['BUY', 'STRONG_BUY']:
+            buy_signals += 1
+            reasons.append(f'Analystconsensus: {analyst_consensus}')
+        elif analyst_consensus == 'SELL':
+            sell_signals += 1
+            reasons.append(f'Analystconsensus: {analyst_consensus}')
+        
+        # Fatta beslut baserat på signaler
+        if buy_signals > sell_signals and buy_signals >= 2:
+            # Justera quantity baserat på ATR (volatilitet)
+            base_quantity = 10
+            if atr > 5.0:  # Hög volatilitet
+                quantity = max(5, int(base_quantity * 0.7))
+                reasons.append(f'Reducerad position pga hög volatilitet (ATR: {atr:.1f})')
+            else:
+                quantity = base_quantity
             
-            if rsi < 30:
-                proposal['action'] = 'BUY'
-                proposal['quantity'] = 10
-                proposal['reasoning'] = f'RSI översåld ({rsi}), köpsignal'
-                proposal['confidence'] = 0.75
-            elif rsi > 70:
-                proposal['action'] = 'SELL'
-                proposal['quantity'] = 10
-                proposal['reasoning'] = f'RSI överköpt ({rsi}), säljsignal'
-                proposal['confidence'] = 0.75
+            proposal['action'] = 'BUY'
+            proposal['quantity'] = quantity
+            proposal['reasoning'] = ', '.join(reasons)
+            proposal['confidence'] = min(0.9, 0.5 + (buy_signals * 0.1))
+            
+        elif sell_signals > buy_signals and sell_signals >= 2:
+            proposal['action'] = 'SELL'
+            proposal['quantity'] = 10
+            proposal['reasoning'] = ', '.join(reasons)
+            proposal['confidence'] = min(0.9, 0.5 + (sell_signals * 0.1))
+        
+        # RL-justering (om aktiverad)
+        if self.rl_enabled and self.agent_performance > 0:
+            # Öka confidence om RL-agent presterar bra
+            proposal['confidence'] = min(1.0, proposal['confidence'] * 1.1)
+            proposal['reasoning'] += f' (RL-förstärkt, perf: {self.agent_performance:.2f})'
         
         return proposal
     

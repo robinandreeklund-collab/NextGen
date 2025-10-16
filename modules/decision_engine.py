@@ -70,12 +70,15 @@ class DecisionEngine:
         self.trade_proposals: Dict[str, Any] = {}
         self.risk_profiles: Dict[str, Any] = {}
         self.memory_insights: Optional[Dict[str, Any]] = None
-        self.rl_agent = None  # Kommer från rl_controller i Sprint 2
+        self.rl_agent = None  # Uppdateras från rl_controller
+        self.rl_enabled = False
+        self.agent_performance = 0.0
         
         # Prenumerera på relevanta topics
         self.message_bus.subscribe('decision_proposal', self._on_trade_proposal)
         self.message_bus.subscribe('risk_profile', self._on_risk_profile)
         self.message_bus.subscribe('memory_insights', self._on_memory_insights)
+        self.message_bus.subscribe('agent_update', self._on_agent_update)
     
     def _on_trade_proposal(self, proposal: Dict[str, Any]) -> None:
         """
@@ -106,6 +109,18 @@ class DecisionEngine:
         """
         self.memory_insights = insights
     
+    def _on_agent_update(self, update: Dict[str, Any]) -> None:
+        """
+        Callback för agent updates från rl_controller.
+        
+        Args:
+            update: Agent update med nya parametrar
+        """
+        if update.get('module') == 'decision_engine':
+            self.rl_enabled = update.get('policy_updated', False)
+            metrics = update.get('metrics', {})
+            self.agent_performance = metrics.get('average_reward', 0.0)
+    
     def make_decision(self, symbol: str) -> Dict[str, Any]:
         """
         Fattar slutgiltigt beslut för en symbol baserat på alla inputs.
@@ -119,27 +134,52 @@ class DecisionEngine:
         proposal = self.trade_proposals.get(symbol, {})
         risk_profile = self.risk_profiles.get(symbol, {})
         
-        # Stub: Enkel logik för Sprint 1
-        # I Sprint 2 kommer RL-agent att användas här
+        # Sprint 2: Förbättrad beslutslogik med risk-justering och RL
         decision = {
             'symbol': symbol,
             'action': proposal.get('action', 'HOLD'),
             'quantity': proposal.get('quantity', 0),
-            'confidence': 0.5,
-            'reasoning': 'Baserat på strategi och risk'
+            'confidence': proposal.get('confidence', 0.5),
+            'reasoning': proposal.get('reasoning', 'Baserat på strategi'),
+            'rl_enabled': self.rl_enabled
         }
         
         # Justera baserat på risk
         risk_level = risk_profile.get('risk_level', 'MEDIUM')
+        risk_confidence = risk_profile.get('confidence', 0.5)
+        
         if risk_level == 'HIGH':
             # Minska quantity vid hög risk
+            original_qty = decision['quantity']
             decision['quantity'] = int(decision['quantity'] * 0.5)
-            decision['reasoning'] += f', reducerad position pga hög risk'
-            decision['confidence'] *= 0.8
+            decision['reasoning'] += f', reducerad position från {original_qty} till {decision["quantity"]} pga hög risk'
+            decision['confidence'] *= 0.7
+            
+            # Vid mycket hög risk, överväg att avbryta
+            if risk_confidence > 0.7 and decision['action'] in ['BUY', 'SELL']:
+                decision['action'] = 'HOLD'
+                decision['quantity'] = 0
+                decision['reasoning'] = f'Avbrutet: {decision["reasoning"]} (för hög risk)'
+                decision['confidence'] = 0.3
+                
         elif risk_level == 'LOW':
             # Öka confidence vid låg risk
-            decision['confidence'] *= 1.2
-            decision['confidence'] = min(decision['confidence'], 1.0)
+            decision['confidence'] = min(1.0, decision['confidence'] * 1.2)
+            decision['reasoning'] += ' (låg risk, hög confidence)'
+            
+        elif risk_level == 'MEDIUM':
+            # Balansera confidence
+            decision['confidence'] = (proposal.get('confidence', 0.5) + risk_confidence) / 2
+        
+        # RL-justering (om aktiverad)
+        if self.rl_enabled and self.agent_performance > 0:
+            # Förbättra confidence om RL-agent presterar bra
+            decision['confidence'] = min(1.0, decision['confidence'] * 1.15)
+            decision['reasoning'] += f' [RL-optimerat, perf: {self.agent_performance:.2f}]'
+        elif self.rl_enabled and self.agent_performance < -0.5:
+            # Minska confidence om RL-agent presterar dåligt
+            decision['confidence'] *= 0.8
+            decision['reasoning'] += ' [RL försiktig pga negativ trend]'
         
         return decision
     
