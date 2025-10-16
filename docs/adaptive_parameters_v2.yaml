@@ -1,7 +1,7 @@
 adaptive_parameters:
+  # Meta-agent evolution (Sprint 4.2)
   evolution_threshold:
-    type: adaptive
-    controlled_by: rl_controller
+    module: meta_agent_evolution_engine
     agent: MetaParameterAgent
     reward_signal: agent_performance_gain
     bounds: [0.05, 0.5]
@@ -9,8 +9,7 @@ adaptive_parameters:
     default: 0.25
 
   min_samples:
-    type: adaptive
-    controlled_by: rl_controller
+    module: meta_agent_evolution_engine
     agent: MetaParameterAgent
     reward_signal: feedback_consistency
     bounds: [5, 50]
@@ -18,8 +17,7 @@ adaptive_parameters:
     default: 20
 
   update_frequency:
-    type: adaptive
-    controlled_by: rl_controller
+    module: rl_controller
     agent: MetaParameterAgent
     reward_signal: reward_volatility
     bounds: [1, 100]
@@ -27,10 +25,86 @@ adaptive_parameters:
     default: 10
 
   agent_entropy_threshold:
-    type: adaptive
-    controlled_by: rl_controller
+    module: rl_controller
     agent: MetaParameterAgent
     reward_signal: decision_diversity
     bounds: [0.1, 0.9]
     update_frequency: every_5_decisions
     default: 0.3
+
+  # Strategy Engine
+  signal_threshold:
+    module: strategy_engine
+    agent: StrategyTunerAgent
+    reward_signal: trade_success_rate
+    bounds: [0.1, 0.9]
+    update_frequency: every_20_trades
+    default: 0.5
+
+  indicator_weighting:
+    module: strategy_engine
+    agent: StrategyTunerAgent
+    reward_signal: cumulative_reward
+    bounds: [0.0, 1.0]
+    update_frequency: every_epoch
+    default: 0.33
+
+  # Risk Manager
+  risk_tolerance:
+    module: risk_manager
+    agent: RiskAdaptAgent
+    reward_signal: drawdown_avoidance
+    bounds: [0.01, 0.5]
+    update_frequency: every_10_trades
+    default: 0.1
+
+  max_drawdown:
+    module: risk_manager
+    agent: RiskAdaptAgent
+    reward_signal: portfolio_stability
+    bounds: [0.01, 0.3]
+    update_frequency: every_epoch
+    default: 0.15
+
+  # Decision Engine
+  consensus_threshold:
+    module: decision_engine
+    agent: DecisionBalancerAgent
+    reward_signal: decision_accuracy
+    bounds: [0.5, 1.0]
+    update_frequency: every_50_decisions
+    default: 0.75
+
+  memory_weighting:
+    module: decision_engine
+    agent: DecisionBalancerAgent
+    reward_signal: historical_alignment
+    bounds: [0.0, 1.0]
+    update_frequency: every_epoch
+    default: 0.4
+
+  # Vote Engine
+  agent_vote_weight:
+    module: vote_engine
+    agent: MeritVoteAgent
+    reward_signal: agent_hit_rate
+    bounds: [0.1, 2.0]
+    update_frequency: every_epoch
+    default: 1.0
+
+  # Execution Engine
+  execution_delay:
+    module: execution_engine
+    agent: TimingAgent
+    reward_signal: slippage_reduction
+    bounds: [0, 10]
+    update_frequency: every_trade
+    default: 0
+
+  slippage_tolerance:
+    module: execution_engine
+    agent: TimingAgent
+    reward_signal: execution_efficiency
+    bounds: [0.001, 0.05]
+    update_frequency: every_10_trades
+    default: 0.01
