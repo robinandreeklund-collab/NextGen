@@ -4,6 +4,7 @@ execution_engine.py - Exekveringsmotor för handel
 Beskrivning:
     Exekverar eller simulerar trades och loggar resultat.
     Hanterar faktisk orderhantering och slippage-simulering.
+    Sprint 4.3: Använder adaptiva parametrar (execution_delay, slippage_tolerance).
 
 Roll:
     - Tar emot final_decision från decision_engine
@@ -11,9 +12,11 @@ Roll:
     - Beräknar slippage och execution cost
     - Loggar execution_result för portfolio_manager
     - Genererar feedback om trade outcome
+    - Använder adaptiva parametrar från rl_controller (Sprint 4.3)
 
 Inputs:
     - final_decision: Dict - Slutgiltigt beslut från decision_engine/consensus_engine
+    - parameter_adjustment: Dict - Adaptiva parametrar från rl_controller (Sprint 4.3)
 
 Outputs:
     - execution_result: Dict - Resultat av trade (executed_price, quantity, cost, slippage)
@@ -24,9 +27,11 @@ Publicerar till message_bus:
 
 Prenumererar på (från functions.yaml):
     - final_decision (från decision_engine eller consensus_engine)
+    - parameter_adjustment (från rl_controller, Sprint 4.3)
 
 Använder RL: Ja (från functions.yaml)
 Tar emot feedback: Ja (från portfolio_manager)
+Har adaptiva parametrar: Ja (från functions_2.yaml, Sprint 4.3)
 
 Anslutningar (från flowchart.yaml - execution_flow):
     Från: consensus_engine (eller decision_engine i Sprint 1)
@@ -40,6 +45,10 @@ RL-anslutning (från feedback_loop.yaml):
     - Genererar feedback_event med triggers: trade_result, slippage, latency
     - Belöning baserad på execution quality
 
+Adaptiva parametrar (Sprint 4.3):
+    - execution_delay (0-10, default 0): Fördröjning för optimal timing
+    - slippage_tolerance (0.001-0.05, default 0.01): Tolerans för slippage
+
 Feedback-generering (från feedback_loop.yaml):
     Triggers:
     - trade_result: Om trade lyckades/misslyckades
@@ -51,11 +60,12 @@ Indikatorer från indicator_map.yaml:
     - OHLC: entry/exit signals
     - VWAP: price fairness, execution quality
 
-Används i Sprint: 1, 2, 3
+Används i Sprint: 1, 2, 3, 4.3
 """
 
 from typing import Dict, Any
 import random
+import time
 
 
 class ExecutionEngine:
@@ -73,8 +83,13 @@ class ExecutionEngine:
         self.simulation_mode = simulation_mode
         self.rl_agent = None  # Kommer från rl_controller i Sprint 2
         
-        # Prenumerera på final_decision
+        # Sprint 4.3: Adaptiva parametrar
+        self.execution_delay = 0  # Default från adaptive_parameters.yaml
+        self.slippage_tolerance = 0.01  # Default från adaptive_parameters.yaml
+        
+        # Prenumerera på final_decision och parameter_adjustment
         self.message_bus.subscribe('final_decision', self._on_final_decision)
+        self.message_bus.subscribe('parameter_adjustment', self._on_parameter_adjustment)
     
     def _on_final_decision(self, decision: Dict[str, Any]) -> None:
         """
@@ -87,9 +102,27 @@ class ExecutionEngine:
             result = self.execute_trade(decision)
             self.publish_result(result)
     
+    def _on_parameter_adjustment(self, adjustment: Dict[str, Any]) -> None:
+        """
+        Callback för parameter adjustments från rl_controller (Sprint 4.3).
+        
+        Args:
+            adjustment: Justerade parametrar med värden
+        """
+        params = adjustment.get('parameters', {})
+        
+        # Uppdatera execution_delay om justerad
+        if 'execution_delay' in params:
+            self.execution_delay = params['execution_delay']
+        
+        # Uppdatera slippage_tolerance om justerad
+        if 'slippage_tolerance' in params:
+            self.slippage_tolerance = params['slippage_tolerance']
+    
     def execute_trade(self, decision: Dict[str, Any]) -> Dict[str, Any]:
         """
         Exekverar en trade (simulerad eller verklig).
+        Sprint 4.3: Använder adaptiva parametrar (execution_delay, slippage_tolerance).
         
         Args:
             decision: Handelsbeslut med action, symbol, quantity, current_price
@@ -100,6 +133,10 @@ class ExecutionEngine:
         symbol = decision['symbol']
         action = decision['action']
         quantity = decision['quantity']
+        
+        # Sprint 4.3: Använd adaptiv execution_delay för timing
+        if self.simulation_mode and self.execution_delay > 0:
+            time.sleep(self.execution_delay)
         
         # Använd aktuellt pris från decision (krävs nu)
         market_price = decision.get('current_price')
@@ -114,11 +151,14 @@ class ExecutionEngine:
                 'total_cost': 0,
                 'success': False,
                 'error': 'No market price available',
-                'timestamp': self._get_timestamp()
+                'timestamp': self._get_timestamp(),
+                'execution_delay': self.execution_delay,  # Sprint 4.3
+                'slippage_tolerance': self.slippage_tolerance  # Sprint 4.3
             }
         
-        # Simulera slippage (0-0.5%)
-        slippage_pct = random.uniform(0, 0.005)
+        # Sprint 4.3: Simulera slippage med adaptiv slippage_tolerance som max
+        # Slippage mellan 0 och slippage_tolerance
+        slippage_pct = random.uniform(0, self.slippage_tolerance)
         if action == 'BUY':
             executed_price = market_price * (1 + slippage_pct)
         else:  # SELL
@@ -136,7 +176,9 @@ class ExecutionEngine:
             'slippage': slippage_pct,
             'total_cost': total_cost,
             'success': True,
-            'timestamp': self._get_timestamp()
+            'timestamp': self._get_timestamp(),
+            'execution_delay': self.execution_delay,  # Sprint 4.3
+            'slippage_tolerance': self.slippage_tolerance  # Sprint 4.3
         }
         
         # Generera feedback för feedback_loop

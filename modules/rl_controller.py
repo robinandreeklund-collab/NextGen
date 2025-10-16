@@ -4,8 +4,8 @@ rl_controller.py - RL-kontroller för agentträning
 Beskrivning:
     Tränar PPO-agenter och distribuerar belöning till moduler med RL-kapacitet.
     Central för reinforcement learning och agentoptimering.
-    Sprint 4.2: Styr även meta-parametrar som evolution_threshold, min_samples, update_frequency
-    och agent_entropy_threshold via MetaParameterAgent.
+    Sprint 4.2: Styr meta-parametrar (evolution_threshold, min_samples, etc.)
+    Sprint 4.3: Styr även alla modulspecifika parametrar via MetaParameterAgent.
 
 Roll:
     - Tar emot reward från portfolio_manager
@@ -13,8 +13,8 @@ Roll:
     - Tränar PPO-agenter för strategy_engine, risk_manager, decision_engine, execution_engine
     - Distribuerar agent_update till tränade moduler
     - Publicerar agent_status för introspektion
-    - Justerar meta-parametrar via MetaParameterAgent (Sprint 4.2)
-    - Publicerar parameter_adjustment för systemmoduler
+    - Justerar alla adaptiva parametrar via MetaParameterAgent (Sprint 4.2 + 4.3)
+    - Publicerar parameter_adjustment för alla systemmoduler
 
 Inputs:
     - reward: Dict - Belöning från portfolio_manager
@@ -23,11 +23,11 @@ Inputs:
 Outputs:
     - agent_update: Dict - Uppdaterade agentparametrar
     - agent_status: Dict - Agentperformance och metrics
-    - parameter_adjustment: Dict - Justerade meta-parametrar (Sprint 4.2)
+    - parameter_adjustment: Dict - Justerade parametrar (Sprint 4.2 + 4.3)
 
 Publicerar till message_bus:
     - agent_status: Status för alla RL-agenter
-    - parameter_adjustment: Justerade meta-parametrar
+    - parameter_adjustment: Justerade parametrar för alla moduler
 
 Prenumererar på (från functions_v2.yaml):
     - reward (från portfolio_manager)
@@ -41,10 +41,11 @@ Anslutningar (från flowchart_v2.yaml - rl_training):
     - portfolio_manager (reward)
     - feedback_router (feedback)
     Till:
-    - strategy_engine (agent_update)
-    - risk_manager (agent_update)
-    - decision_engine (agent_update)
-    - execution_engine (agent_update)
+    - strategy_engine (agent_update, parameter_adjustment)
+    - risk_manager (agent_update, parameter_adjustment)
+    - decision_engine (agent_update, parameter_adjustment)
+    - execution_engine (agent_update, parameter_adjustment)
+    - vote_engine (parameter_adjustment)
     - meta_agent_evolution_engine (agent_status, parameter_adjustment)
     - strategic_memory_engine (parameter_adjustment)
     - agent_manager (parameter_adjustment)
@@ -56,23 +57,31 @@ RL Response (från feedback_loop_v2.yaml):
     - decision_engine: Optimerar beslutsfattande
     - execution_engine: Förbättrar execution timing
     
-    Updates meta-parameters (Sprint 4.2):
+    Updates parameters (Sprint 4.2 + 4.3):
+    Sprint 4.2 Meta-parameters:
     - evolution_threshold: Dynamisk evolutionströskel
     - min_samples: Adaptivt antal samples för analys
     - update_frequency: Adaptiv uppdateringsfrekvens
     - agent_entropy_threshold: Dynamisk entropitröskel
     
+    Sprint 4.3 Module parameters:
+    - signal_threshold, indicator_weighting (strategy_engine)
+    - risk_tolerance, max_drawdown (risk_manager)
+    - consensus_threshold, memory_weighting (decision_engine)
+    - execution_delay, slippage_tolerance (execution_engine)
+    - agent_vote_weight (vote_engine)
+    
     Reward sources:
     - portfolio_manager: Portfolio value change
     - strategic_memory_engine: Historisk performance
     - feedback_router: Feedback quality metrics
-    - meta_agent_evolution_engine: Agent improvement signals (Sprint 4.2)
+    - meta_agent_evolution_engine: Agent improvement signals
 
 Algoritm: PPO (Proximal Policy Optimization)
 Hyperparametrar: config/rl_parameters.yaml
-Adaptive Parameters: docs/adaptive_parameters_v2.yaml
+Adaptive Parameters: docs/adaptive_parameters.yaml
 
-Används i Sprint: 2, 3, 4, 4.2
+Används i Sprint: 2, 3, 4, 4.2, 4.3
 """
 
 from typing import Dict, Any, List
@@ -382,13 +391,17 @@ class RLController:
     
     def _initialize_meta_parameter_agent(self) -> MetaParameterAgent:
         """
-        Initialiserar meta-parameter agent (Sprint 4.2).
+        Initialiserar meta-parameter agent (Sprint 4.2 + 4.3).
+        
+        Sprint 4.2: Meta-parametrar för evolution
+        Sprint 4.3: Modulspecifika parametrar för adaptiv styrning
         
         Returns:
             MetaParameterAgent instance
         """
-        # Läs konfiguration från adaptive_parameters_v2.yaml
+        # Läs konfiguration från adaptive_parameters.yaml
         parameter_configs = {
+            # Sprint 4.2: Meta-parametrar
             'evolution_threshold': {
                 'bounds': [0.05, 0.5],
                 'default': 0.25,
@@ -408,6 +421,62 @@ class RLController:
                 'bounds': [0.1, 0.9],
                 'default': 0.3,
                 'reward_signal': 'decision_diversity'
+            },
+            
+            # Sprint 4.3: Modulspecifika parametrar
+            # Strategy Engine
+            'signal_threshold': {
+                'bounds': [0.1, 0.9],
+                'default': 0.5,
+                'reward_signal': 'trade_success_rate'
+            },
+            'indicator_weighting': {
+                'bounds': [0.0, 1.0],
+                'default': 0.33,
+                'reward_signal': 'cumulative_reward'
+            },
+            
+            # Risk Manager
+            'risk_tolerance': {
+                'bounds': [0.01, 0.5],
+                'default': 0.1,
+                'reward_signal': 'drawdown_avoidance'
+            },
+            'max_drawdown': {
+                'bounds': [0.01, 0.3],
+                'default': 0.15,
+                'reward_signal': 'portfolio_stability'
+            },
+            
+            # Decision Engine
+            'consensus_threshold': {
+                'bounds': [0.5, 1.0],
+                'default': 0.75,
+                'reward_signal': 'decision_accuracy'
+            },
+            'memory_weighting': {
+                'bounds': [0.0, 1.0],
+                'default': 0.4,
+                'reward_signal': 'historical_alignment'
+            },
+            
+            # Execution Engine
+            'execution_delay': {
+                'bounds': [0, 10],
+                'default': 0,
+                'reward_signal': 'slippage_reduction'
+            },
+            'slippage_tolerance': {
+                'bounds': [0.001, 0.05],
+                'default': 0.01,
+                'reward_signal': 'execution_efficiency'
+            },
+            
+            # Vote Engine
+            'agent_vote_weight': {
+                'bounds': [0.1, 2.0],
+                'default': 1.0,
+                'reward_signal': 'agent_hit_rate'
             }
         }
         
@@ -569,43 +638,62 @@ class RLController:
     
     def update_meta_parameters(self) -> None:
         """
-        Uppdaterar meta-parametrar via MetaParameterAgent (Sprint 4.2).
+        Uppdaterar alla adaptiva parametrar via MetaParameterAgent (Sprint 4.2 + 4.3).
+        
+        Sprint 4.2: Meta-parametrar
+        Sprint 4.3: Modulspecifika parametrar
         
         Beräknar reward signals och justerar parametrar.
         """
         import time
         
         # Beräkna reward signals från olika källor
-        reward_signals = self._calculate_meta_parameter_rewards()
+        reward_signals = self._calculate_all_parameter_rewards()
         
         # Justera parametrar
         adjusted_params = self.meta_parameter_agent.adjust_parameters(reward_signals)
         
-        # Publicera parameter_adjustment
+        # Publicera parameter_adjustment med både 'adjusted_parameters' och 'parameters' keys
+        # för bakåtkompatibilitet
         parameter_adjustment = {
             'timestamp': time.time(),
             'training_step': self.training_steps,
-            'adjusted_parameters': adjusted_params,
+            'adjusted_parameters': adjusted_params,  # Sprint 4.2 kompatibilitet
+            'parameters': adjusted_params,  # Sprint 4.3 format
             'reward_signals': reward_signals,
             'source': 'rl_controller'
         }
         
         self.message_bus.publish('parameter_adjustment', parameter_adjustment)
     
-    def _calculate_meta_parameter_rewards(self) -> Dict[str, float]:
+    def _calculate_all_parameter_rewards(self) -> Dict[str, float]:
         """
-        Beräknar reward signals för meta-parameter optimization (Sprint 4.2).
+        Beräknar reward signals för alla parametrar (Sprint 4.2 + 4.3).
         
         Returns:
-            Dict med reward signals
+            Dict med reward signals för alla parametrar
         """
         rewards = {
+            # Sprint 4.2: Meta-parameter signals
             'agent_performance_gain': 0.0,
             'feedback_consistency': 0.0,
             'reward_volatility': 0.0,
             'decision_diversity': 0.0,
-            'overfitting_penalty': 0.0
+            'overfitting_penalty': 0.0,
+            
+            # Sprint 4.3: Module parameter signals
+            'trade_success_rate': 0.0,
+            'cumulative_reward': 0.0,
+            'drawdown_avoidance': 0.0,
+            'portfolio_stability': 0.0,
+            'decision_accuracy': 0.0,
+            'historical_alignment': 0.0,
+            'slippage_reduction': 0.0,
+            'execution_efficiency': 0.0,
+            'agent_hit_rate': 0.0
         }
+        
+        # === Sprint 4.2 Signals ===
         
         # 1. Agent performance gain
         if hasattr(self, '_recent_agent_statuses') and len(self._recent_agent_statuses) >= 2:
@@ -618,30 +706,25 @@ class RLController:
                 
                 if older_avg != 0:
                     rewards['agent_performance_gain'] = (recent_avg - older_avg) / abs(older_avg)
-                else:
-                    rewards['agent_performance_gain'] = 0.0
         
-        # 2. Feedback consistency - baserat på reward volatility
+        # 2. Feedback consistency
         if len(self.reward_history) >= 10:
             recent_rewards = self.reward_history[-10:]
             volatility = np.std(recent_rewards) if len(recent_rewards) > 1 else 0.0
-            # Lägre volatility = högre consistency reward
             rewards['feedback_consistency'] = 1.0 - min(volatility, 1.0)
         
-        # 3. Reward volatility - används för update_frequency parameter
+        # 3. Reward volatility
         if len(self.reward_history) >= 20:
             volatility = np.std(self.reward_history[-20:])
-            rewards['reward_volatility'] = -volatility  # Negativ reward för hög volatility
+            rewards['reward_volatility'] = -volatility
         
-        # 4. Decision diversity - estimera från agent entropy
+        # 4. Decision diversity
         if hasattr(self, '_recent_agent_statuses') and self._recent_agent_statuses:
-            # Approximera diversity från spread i agent performance
             performances = [s.get('average_reward', 0) for s in self._recent_agent_statuses[-10:]]
             if len(performances) > 1:
-                diversity = np.std(performances)
-                rewards['decision_diversity'] = diversity
+                rewards['decision_diversity'] = np.std(performances)
         
-        # 5. Overfitting penalty - om performance är för stabil kan det tyda på overfitting
+        # 5. Overfitting penalty
         if len(self.reward_history) >= 50:
             recent = self.reward_history[-10:]
             historical = self.reward_history[-50:-10]
@@ -649,9 +732,80 @@ class RLController:
             recent_std = np.std(recent) if len(recent) > 1 else 0.0
             historical_std = np.std(historical) if len(historical) > 1 else 0.0
             
-            # Om recent volatility är mycket lägre kan det tyda på overfitting
             if historical_std > 0 and recent_std < historical_std * 0.3:
                 rewards['overfitting_penalty'] = -0.5
+        
+        # === Sprint 4.3 Signals ===
+        
+        # 6. Trade success rate (för signal_threshold)
+        if len(self.reward_history) >= 5:
+            # Success = positive reward
+            recent_rewards = self.reward_history[-20:]
+            successes = sum(1 for r in recent_rewards if r > 0)
+            rewards['trade_success_rate'] = successes / len(recent_rewards) if recent_rewards else 0.0
+        
+        # 7. Cumulative reward (för indicator_weighting)
+        if len(self.reward_history) >= 10:
+            rewards['cumulative_reward'] = np.sum(self.reward_history[-10:])
+        
+        # 8. Drawdown avoidance (för risk_tolerance)
+        if len(self.reward_history) >= 10:
+            # Check for drawdowns (negative reward streaks)
+            recent = self.reward_history[-10:]
+            max_drawdown = 0
+            current_drawdown = 0
+            for r in recent:
+                if r < 0:
+                    current_drawdown += abs(r)
+                    max_drawdown = max(max_drawdown, current_drawdown)
+                else:
+                    current_drawdown = 0
+            # Reward for avoiding drawdowns
+            rewards['drawdown_avoidance'] = 1.0 - min(max_drawdown, 1.0)
+        
+        # 9. Portfolio stability (för max_drawdown)
+        if len(self.reward_history) >= 20:
+            volatility = np.std(self.reward_history[-20:])
+            # Lägre volatility = högre stability
+            rewards['portfolio_stability'] = 1.0 - min(volatility, 1.0)
+        
+        # 10. Decision accuracy (för consensus_threshold)
+        if len(self.reward_history) >= 10:
+            # Approximera från reward consistency
+            recent = self.reward_history[-10:]
+            positive_ratio = sum(1 for r in recent if r > 0) / len(recent)
+            rewards['decision_accuracy'] = positive_ratio
+        
+        # 11. Historical alignment (för memory_weighting)
+        if len(self.reward_history) >= 30:
+            # Compare recent vs historical trend
+            recent = np.mean(self.reward_history[-10:])
+            historical = np.mean(self.reward_history[-30:-10])
+            # High alignment if both positive or both negative
+            if (recent > 0 and historical > 0) or (recent < 0 and historical < 0):
+                rewards['historical_alignment'] = 0.8
+            else:
+                rewards['historical_alignment'] = 0.2
+        
+        # 12. Slippage reduction (för execution_delay)
+        # Approximera från reward stability
+        if len(self.reward_history) >= 5:
+            recent = self.reward_history[-5:]
+            avg_reward = np.mean(recent)
+            # Higher reward = better execution
+            rewards['slippage_reduction'] = max(0, min(1.0, avg_reward + 0.5))
+        
+        # 13. Execution efficiency (för slippage_tolerance)
+        if len(self.reward_history) >= 10:
+            recent = self.reward_history[-10:]
+            efficiency = np.mean(recent) if recent else 0
+            rewards['execution_efficiency'] = max(0, min(1.0, efficiency + 0.5))
+        
+        # 14. Agent hit rate (för agent_vote_weight)
+        if len(self.reward_history) >= 10:
+            recent = self.reward_history[-10:]
+            hit_rate = sum(1 for r in recent if r > 0) / len(recent)
+            rewards['agent_hit_rate'] = hit_rate
         
         return rewards
     

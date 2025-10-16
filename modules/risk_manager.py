@@ -4,16 +4,19 @@ risk_manager.py - Riskhantering
 Beskrivning:
     Bedömer risknivå baserat på volatilitet, ESG och fundamentala indikatorer.
     Justerar strategier och beslut baserat på riskprofil.
+    Sprint 4.3: Använder adaptiva parametrar (risk_tolerance, max_drawdown).
 
 Roll:
     - Analyserar indikatordata för riskbedömning
     - Beräknar volatilitet och risk metrics
     - Genererar risk_profile för decision_engine
     - Tränas av RL-controller för riskoptimering
+    - Använder adaptiva parametrar från rl_controller (Sprint 4.3)
 
 Inputs:
     - indicator_data: Dict - Indikatorer från indicator_registry
     - portfolio_status: Dict - Portföljstatus från portfolio_manager
+    - parameter_adjustment: Dict - Adaptiva parametrar från rl_controller (Sprint 4.3)
 
 Outputs:
     - risk_profile: Dict - Riskbedömning (risk_level, volatility, recommendations)
@@ -24,9 +27,11 @@ Publicerar till message_bus:
 Prenumererar på (från functions.yaml):
     - indicator_data (från indicator_registry)
     - portfolio_status (från portfolio_manager)
+    - parameter_adjustment (från rl_controller, Sprint 4.3)
 
 Använder RL: Ja (från functions.yaml)
 Tar emot feedback: Ja (från portfolio_manager, execution_engine)
+Har adaptiva parametrar: Ja (från functions_2.yaml, Sprint 4.3)
 
 Anslutningar (från flowchart.yaml - risk_flow):
     Från: indicator_registry (indicator_data)
@@ -37,6 +42,10 @@ Anslutningar (från flowchart.yaml - risk_flow):
 RL-anslutning (från feedback_loop.yaml):
     - Tar emot agent_update från rl_controller
     - Belöning baserad på risk-adjusted returns
+
+Adaptiva parametrar (Sprint 4.3):
+    - risk_tolerance (0.01-0.5, default 0.1): Systemets risktolerans för trades
+    - max_drawdown (0.01-0.3, default 0.15): Maximalt tillåten drawdown
 
 Indikatorer från indicator_map.yaml:
     Använder (Sprint 1-2):
@@ -53,7 +62,7 @@ Indikatorer från indicator_map.yaml:
     - ROE, ROA: capital efficiency
     - ESG Score: ethical risk and long-term viability
 
-Används i Sprint: 2, 4
+Används i Sprint: 2, 4, 4.3
 """
 
 from typing import Dict, Any
@@ -76,10 +85,15 @@ class RiskManager:
         self.rl_enabled = False
         self.agent_performance = 0.0
         
-        # Prenumerera på indicator_data, portfolio_status och agent_update
+        # Sprint 4.3: Adaptiva parametrar
+        self.risk_tolerance = 0.1  # Default från adaptive_parameters.yaml
+        self.max_drawdown = 0.15  # Default från adaptive_parameters.yaml
+        
+        # Prenumerera på indicator_data, portfolio_status, agent_update och parameter_adjustment
         self.message_bus.subscribe('indicator_data', self._on_indicator_data)
         self.message_bus.subscribe('portfolio_status', self._on_portfolio_status)
         self.message_bus.subscribe('agent_update', self._on_agent_update)
+        self.message_bus.subscribe('parameter_adjustment', self._on_parameter_adjustment)
     
     def _on_indicator_data(self, data: Dict[str, Any]) -> None:
         """
@@ -112,9 +126,27 @@ class RiskManager:
             metrics = update.get('metrics', {})
             self.agent_performance = metrics.get('average_reward', 0.0)
     
+    def _on_parameter_adjustment(self, adjustment: Dict[str, Any]) -> None:
+        """
+        Callback för parameter adjustments från rl_controller (Sprint 4.3).
+        
+        Args:
+            adjustment: Justerade parametrar med värden
+        """
+        params = adjustment.get('parameters', {})
+        
+        # Uppdatera risk_tolerance om justerad
+        if 'risk_tolerance' in params:
+            self.risk_tolerance = params['risk_tolerance']
+        
+        # Uppdatera max_drawdown om justerad
+        if 'max_drawdown' in params:
+            self.max_drawdown = params['max_drawdown']
+    
     def assess_risk(self, symbol: str) -> Dict[str, Any]:
         """
         Bedömer risk för en symbol.
+        Sprint 4.3: Använder adaptiva parametrar (risk_tolerance, max_drawdown).
         
         Args:
             symbol: Aktiesymbol att bedöma risk för
@@ -132,7 +164,9 @@ class RiskManager:
             'volatility': 0.5,
             'recommendations': [],
             'confidence': 0.5,
-            'rl_enabled': self.rl_enabled
+            'rl_enabled': self.rl_enabled,
+            'risk_tolerance': self.risk_tolerance,  # Sprint 4.3
+            'max_drawdown': self.max_drawdown  # Sprint 4.3
         }
         
         if not indicators:
@@ -177,23 +211,47 @@ class RiskManager:
             risk_score += 1
             risk_profile['recommendations'].append(f'Negativ analytiker-sentiment ({consensus})')
         
-        # Portföljexponering
+        # Sprint 4.3: Använd adaptiv risk_tolerance och max_drawdown för portföljexponering
         total_value = self.portfolio_status.get('total_value', 1000.0)
+        starting_value = self.portfolio_status.get('starting_capital', 1000.0)
         positions = self.portfolio_status.get('positions', {})
+        
+        # Beräkna aktuell drawdown
+        current_drawdown = (starting_value - total_value) / starting_value if starting_value > 0 else 0
+        
+        # Justera risk baserat på adaptiv max_drawdown
+        if current_drawdown > self.max_drawdown:
+            risk_score += 2
+            risk_profile['recommendations'].append(
+                f'Drawdown ({current_drawdown*100:.1f}%) överstiger max ({self.max_drawdown*100:.1f}%)'
+            )
+        
+        # Portföljexponering med adaptiv risk_tolerance
         if symbol in positions:
             position_value = positions[symbol]['quantity'] * positions[symbol]['avg_price']
             exposure = position_value / total_value
-            if exposure > 0.3:  # Mer än 30% exponering
+            
+            # Sprint 4.3: Använd risk_tolerance som exponeringströskel
+            exposure_threshold = self.risk_tolerance * 3  # Skala till rimlig exponeringsnivå (0.03-1.5)
+            
+            if exposure > exposure_threshold:
                 risk_score += 1
-                risk_profile['recommendations'].append(f'Hög portföljexponering ({exposure*100:.1f}%)')
+                risk_profile['recommendations'].append(
+                    f'Hög portföljexponering ({exposure*100:.1f}%) överstiger tolerans ({exposure_threshold*100:.1f}%)'
+                )
         
-        # Bestäm risknivå baserat på score
+        # Bestäm risknivå baserat på score och adaptiv risk_tolerance
         risk_profile['risk_score'] = float(risk_score)  # Spara numerical score
         
-        if risk_score >= 3:
+        # Sprint 4.3: Justera risknivå-trösklar baserat på risk_tolerance
+        # Högre risk_tolerance = mer tillåtande trösklar
+        high_threshold = 3 - int(self.risk_tolerance * 10)  # 3 vid låg tolerance, 2 vid hög
+        low_threshold = -2 + int(self.risk_tolerance * 5)   # -2 vid låg tolerance, -1 vid hög
+        
+        if risk_score >= high_threshold:
             risk_profile['risk_level'] = 'HIGH'
             risk_profile['confidence'] = 0.8
-        elif risk_score <= -2:
+        elif risk_score <= low_threshold:
             risk_profile['risk_level'] = 'LOW'
             risk_profile['confidence'] = 0.8
         else:

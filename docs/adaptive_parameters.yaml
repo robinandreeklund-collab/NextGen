@@ -1,5 +1,16 @@
 adaptive_parameters:
-  # Meta-agent evolution (Sprint 4.2)
+  description: >
+    Full adaptiv parameterstyrning för Sprint 4.3. Alla parametrar justeras dynamiskt av PPO-agenter
+    baserat på belöningssignaler, feedbackmönster och systemperformance. Parametrar är organiserade
+    per modul med koppling till agent, reward signal och uppdateringsfrekvens.
+  
+  controller: rl_controller
+  agent_type: PPO
+  logging_module: strategic_memory_engine
+  visualization_module: introspection_panel
+  versioning_module: agent_manager
+  
+  # Sprint 4.2 & 4.3: Meta-agent evolution
   evolution_threshold:
     module: meta_agent_evolution_engine
     agent: MetaParameterAgent
@@ -7,6 +18,7 @@ adaptive_parameters:
     bounds: [0.05, 0.5]
     update_frequency: every_10_decisions
     default: 0.25
+    description: Styr när agenter ska evolutionärt uppdateras
 
   min_samples:
     module: meta_agent_evolution_engine
@@ -15,7 +27,9 @@ adaptive_parameters:
     bounds: [5, 50]
     update_frequency: every_epoch
     default: 20
+    description: Minimum antal samples för evolutionsanalys
 
+  # Sprint 4.2 & 4.3: RL Controller
   update_frequency:
     module: rl_controller
     agent: MetaParameterAgent
@@ -23,6 +37,7 @@ adaptive_parameters:
     bounds: [1, 100]
     update_frequency: every_epoch
     default: 10
+    description: Hur ofta agenter uppdateras
 
   agent_entropy_threshold:
     module: rl_controller
@@ -31,8 +46,9 @@ adaptive_parameters:
     bounds: [0.1, 0.9]
     update_frequency: every_5_decisions
     default: 0.3
+    description: Styr agenternas explorations-/exploitationsbalans
 
-  # Strategy Engine
+  # Sprint 4.3: Strategy Engine
   signal_threshold:
     module: strategy_engine
     agent: StrategyTunerAgent
@@ -40,6 +56,7 @@ adaptive_parameters:
     bounds: [0.1, 0.9]
     update_frequency: every_20_trades
     default: 0.5
+    description: Tröskelvärde för tradingsignaler
 
   indicator_weighting:
     module: strategy_engine
@@ -48,8 +65,9 @@ adaptive_parameters:
     bounds: [0.0, 1.0]
     update_frequency: every_epoch
     default: 0.33
+    description: Viktning mellan olika indikatorer (RSI, MACD, etc.)
 
-  # Risk Manager
+  # Sprint 4.3: Risk Manager
   risk_tolerance:
     module: risk_manager
     agent: RiskAdaptAgent
@@ -57,6 +75,7 @@ adaptive_parameters:
     bounds: [0.01, 0.5]
     update_frequency: every_10_trades
     default: 0.1
+    description: Systemets risktolerans för trades
 
   max_drawdown:
     module: risk_manager
@@ -65,8 +84,9 @@ adaptive_parameters:
     bounds: [0.01, 0.3]
     update_frequency: every_epoch
     default: 0.15
+    description: Maximalt tillåten drawdown innan riskreduktion
 
-  # Decision Engine
+  # Sprint 4.3: Decision Engine
   consensus_threshold:
     module: decision_engine
     agent: DecisionBalancerAgent
@@ -74,6 +94,7 @@ adaptive_parameters:
     bounds: [0.5, 1.0]
     update_frequency: every_50_decisions
     default: 0.75
+    description: Tröskelvärde för konsensus i beslutsfattande
 
   memory_weighting:
     module: decision_engine
@@ -82,8 +103,9 @@ adaptive_parameters:
     bounds: [0.0, 1.0]
     update_frequency: every_epoch
     default: 0.4
+    description: Vikt för historiska insikter i beslut
 
-  # Vote Engine
+  # Sprint 4.3: Vote Engine
   agent_vote_weight:
     module: vote_engine
     agent: MeritVoteAgent
@@ -91,8 +113,9 @@ adaptive_parameters:
     bounds: [0.1, 2.0]
     update_frequency: every_epoch
     default: 1.0
+    description: Röstvikt baserad på agentperformance (meritbaserad röstning)
 
-  # Execution Engine
+  # Sprint 4.3: Execution Engine
   execution_delay:
     module: execution_engine
     agent: TimingAgent
@@ -100,6 +123,7 @@ adaptive_parameters:
     bounds: [0, 10]
     update_frequency: every_trade
     default: 0
+    description: Fördröjning i sekunder för optimal execution timing
 
   slippage_tolerance:
     module: execution_engine
@@ -108,3 +132,88 @@ adaptive_parameters:
     bounds: [0.001, 0.05]
     update_frequency: every_10_trades
     default: 0.01
+    description: Tolerans för slippage vid trade execution
+
+# Sprint 4.3 - Reward signals
+reward_signals:
+  agent_performance_gain:
+    description: Förbättring i agentprestanda över tid
+    modules: [meta_agent_evolution_engine]
+  
+  feedback_consistency:
+    description: Frekvens och kvalitet av feedbacksignaler
+    modules: [meta_agent_evolution_engine]
+  
+  reward_volatility:
+    description: Stabilitet i belöningssignaler
+    modules: [rl_controller]
+  
+  decision_diversity:
+    description: Variation i beslut och agentbeteenden
+    modules: [rl_controller]
+  
+  trade_success_rate:
+    description: Andel framgångsrika trades
+    modules: [strategy_engine]
+  
+  cumulative_reward:
+    description: Ackumulerad belöning över tid
+    modules: [strategy_engine]
+  
+  drawdown_avoidance:
+    description: Förmåga att undvika stora kapitalförluster
+    modules: [risk_manager]
+  
+  portfolio_stability:
+    description: Stabilitet i portföljvärde över tid
+    modules: [risk_manager]
+  
+  decision_accuracy:
+    description: Träffsäkerhet i beslut
+    modules: [decision_engine]
+  
+  historical_alignment:
+    description: Överensstämmelse med historiska mönster
+    modules: [decision_engine]
+  
+  agent_hit_rate:
+    description: Träffsäkerhet per agent för meritbaserad viktning
+    modules: [vote_engine]
+  
+  slippage_reduction:
+    description: Minimering av slippage vid execution
+    modules: [execution_engine]
+  
+  execution_efficiency:
+    description: Effektivitet i trade execution
+    modules: [execution_engine]
+
+# Sprint 4.3 - Module summary
+modules_with_adaptive_parameters:
+  strategy_engine:
+    parameters: [signal_threshold, indicator_weighting]
+    has_adaptive_parameters: true
+  
+  risk_manager:
+    parameters: [risk_tolerance, max_drawdown]
+    has_adaptive_parameters: true
+  
+  decision_engine:
+    parameters: [consensus_threshold, memory_weighting]
+    has_adaptive_parameters: true
+  
+  vote_engine:
+    parameters: [agent_vote_weight]
+    has_adaptive_parameters: true
+  
+  execution_engine:
+    parameters: [execution_delay, slippage_tolerance]
+    has_adaptive_parameters: true
+  
+  rl_controller:
+    parameters: [update_frequency, agent_entropy_threshold]
+    has_adaptive_parameters: true
+  
+  meta_agent_evolution_engine:
+    parameters: [evolution_threshold, min_samples]
+    has_adaptive_parameters: true
