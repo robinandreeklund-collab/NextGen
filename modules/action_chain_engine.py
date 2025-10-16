@@ -6,7 +6,7 @@ Beskrivning:
 
 Roll:
     - Tar emot chain_definition
-    - Kör födefinierade action chains
+    - Kör fördefinierade action chains
     - Publicerar chain_execution
 
 Inputs:
