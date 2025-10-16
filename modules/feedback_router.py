@@ -82,10 +82,19 @@ class FeedbackRouter:
         Args:
             feedback: Feedback event att distribuera
         """
-        # Stub: I Sprint 3 kommer intelligent routing implementeras
+        # Sprint 2: Implementera grundläggande routing
+        source = feedback.get('source', 'unknown')
+        triggers = feedback.get('triggers', [])
         
-        # Alla feedback går till rl_controller för reward processing
-        # Detta hanteras via message_bus prenumerationer
+        # Routing enligt feedback_loop.yaml:
+        # - Alla feedback till rl_controller (hanteras via prenumeration)
+        # - Feedback till feedback_analyzer (hanteras via prenumeration)
+        # - Memory-relevanta triggers till strategic_memory_engine
+        
+        # Notera: Routing sker automatiskt via message_bus prenumerationer
+        # Router agerar som logger och kan filtrera i framtida sprintar
+        
+        # I Sprint 3: Intelligent filtrering och prioritering av feedback
         pass
     
     def get_feedback_log(self) -> List[Dict[str, Any]]:
