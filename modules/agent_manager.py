@@ -3,15 +3,18 @@ agent_manager.py - Agenthanterare
 
 Beskrivning:
     Hanterar agentprofiler, versioner och rolljusteringar.
+    Sprint 4.2: Spårar även meta-parameterversioner från RL-controller.
 
 Roll:
     - Tar emot agent_update från meta_agent_evolution_engine
     - Hanterar versioner av agenter
     - Lagrar agentprofiler och roller
     - Publicerar agent_profile
+    - Loggar parameterhistorik (Sprint 4.2)
 
 Inputs:
     - agent_update: Dict - Uppdaterad agentlogik
+    - parameter_adjustment: Dict - Parameterjusteringar från RL-controller (Sprint 4.2)
 
 Outputs:
     - agent_profile: Dict - Agentprofiler och konfiguration
@@ -19,13 +22,14 @@ Outputs:
 Publicerar till message_bus:
     - agent_profile: För systemet
 
-Prenumererar på (från functions.yaml):
+Prenumererar på (från functions_v2.yaml):
     - agent_update (från meta_agent_evolution_engine)
+    - parameter_adjustment (från rl_controller) - Sprint 4.2
 
 Använder RL: Nej
 Tar emot feedback: Nej
 
-Används i Sprint: 4
+Används i Sprint: 4, 4.2
 """
 
 from typing import Dict, Any, List
@@ -47,8 +51,14 @@ class AgentManager:
         self.agent_versions: Dict[str, List[Dict[str, Any]]] = {}
         self.active_agents: Dict[str, str] = {}  # agent_id -> current_version
         
+        # Sprint 4.2: Parameter history
+        self.parameter_history: List[Dict[str, Any]] = []
+        
         # Prenumerera på agent updates
         self.message_bus.subscribe('agent_update', self._on_agent_update)
+        
+        # Sprint 4.2: Prenumerera på parameter_adjustment
+        self.message_bus.subscribe('parameter_adjustment', self._on_parameter_adjustment)
         
         # Initiera default agent profiles
         self._initialize_default_profiles()
@@ -312,10 +322,25 @@ class AgentManager:
             'profile': self.agent_profiles[agent_id],
             'version_history': self.agent_versions.get(agent_id, []),
             'active_version': self.active_agents.get(agent_id),
-            'timestamp': time.time()
+            'timestamp': time.time(),
+            'parameter_history': self.parameter_history[-10:]  # Sprint 4.2: senaste 10
         }
         
         self.message_bus.publish('agent_profile', profile)
+    
+    def _on_parameter_adjustment(self, adjustment: Dict[str, Any]) -> None:
+        """
+        Callback för parameter adjustments från RL-controller (Sprint 4.2).
+        
+        Args:
+            adjustment: Parameterjusteringar
+        """
+        param_entry = {
+            **adjustment,
+            'timestamp': time.time(),
+            'logged_at': time.strftime('%Y-%m-%d %H:%M:%S')
+        }
+        self.parameter_history.append(param_entry)
     
     def get_agent_profile(self, agent_id: str) -> Dict[str, Any]:
         """
@@ -404,7 +429,8 @@ class AgentManager:
         """
         tree = {
             'total_agents': len(self.agent_profiles),
-            'agents': {}
+            'agents': {},
+            'parameter_adjustments': len(self.parameter_history)  # Sprint 4.2
         }
         
         for agent_id, profile in self.agent_profiles.items():
@@ -417,4 +443,16 @@ class AgentManager:
             }
         
         return tree
+    
+    def get_parameter_history(self, limit: int = 100) -> List[Dict[str, Any]]:
+        """
+        Hämtar parameterhistorik (Sprint 4.2).
+        
+        Args:
+            limit: Max antal entries
+        
+        Returns:
+            Lista med parameterjusteringar
+        """
+        return self.parameter_history[-limit:]
 

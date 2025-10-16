@@ -30,7 +30,10 @@ class TestMetaAgentEvolutionEngine:
         assert self.evolution_engine.agent_performance_history == {}
         assert self.evolution_engine.feedback_insights == []
         assert self.evolution_engine.evolution_history == []
-        assert self.evolution_engine.performance_threshold == 0.15
+        # Sprint 4.2: Uppdaterad default till adaptiv parameter
+        assert self.evolution_engine.performance_threshold == 0.25
+        assert self.evolution_engine.min_samples_for_evolution == 20
+        assert len(self.evolution_engine.parameter_history) == 0
     
     def test_agent_status_tracking(self):
         """Testar att agent status spåras."""
@@ -122,4 +125,48 @@ class TestMetaAgentEvolutionEngine:
         assert tree['agents']['agent_1']['evolution_count'] == 2
         assert tree['agents']['agent_2']['evolution_count'] == 1
         assert len(tree['system_wide_events']) == 1
+    
+    def test_parameter_adjustment_handling(self):
+        """Testar hantering av parameter adjustments (Sprint 4.2)."""
+        adjustment = {
+            'adjusted_parameters': {
+                'evolution_threshold': 0.3,
+                'min_samples': 25
+            },
+            'reward_signals': {
+                'agent_performance_gain': 0.5
+            }
+        }
+        
+        self.message_bus.publish('parameter_adjustment', adjustment)
+        
+        assert self.evolution_engine.performance_threshold == 0.3
+        assert self.evolution_engine.min_samples_for_evolution == 25
+        assert len(self.evolution_engine.parameter_history) == 1
+    
+    def test_get_current_parameters(self):
+        """Testar hämtning av nuvarande parametrar (Sprint 4.2)."""
+        params = self.evolution_engine.get_current_parameters()
+        
+        assert 'evolution_threshold' in params
+        assert 'min_samples' in params
+        assert params['evolution_threshold'] == 0.25
+        assert params['min_samples'] == 20
+    
+    def test_get_parameter_history(self):
+        """Testar hämtning av parameterhistorik (Sprint 4.2)."""
+        # Simulera parameter adjustments
+        for i in range(5):
+            adjustment = {
+                'adjusted_parameters': {
+                    'evolution_threshold': 0.2 + (i * 0.02),
+                    'min_samples': 20 + i
+                }
+            }
+            self.message_bus.publish('parameter_adjustment', adjustment)
+        
+        history = self.evolution_engine.get_parameter_history(limit=10)
+        
+        assert len(history) == 5
+        assert all('adjusted_parameters' in entry for entry in history)
 

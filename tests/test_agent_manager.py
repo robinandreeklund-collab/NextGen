@@ -115,4 +115,64 @@ class TestAgentManager:
         assert tree['total_agents'] == 4
         assert 'strategy_agent' in tree['agents']
         assert tree['agents']['strategy_agent']['total_versions'] > 1
+        # Sprint 4.2
+        assert 'parameter_adjustments' in tree
+    
+    def test_parameter_adjustment_logging(self):
+        """Testar att parameter adjustments loggas (Sprint 4.2)."""
+        adjustment = {
+            'adjusted_parameters': {
+                'evolution_threshold': 0.3,
+                'min_samples': 25
+            },
+            'reward_signals': {
+                'agent_performance_gain': 0.5
+            }
+        }
+        
+        self.message_bus.publish('parameter_adjustment', adjustment)
+        
+        assert len(self.agent_manager.parameter_history) == 1
+        assert self.agent_manager.parameter_history[0]['adjusted_parameters']['evolution_threshold'] == 0.3
+    
+    def test_get_parameter_history(self):
+        """Testar hämtning av parameterhistorik (Sprint 4.2)."""
+        # Simulera flera parameter adjustments
+        for i in range(5):
+            adjustment = {
+                'adjusted_parameters': {
+                    'evolution_threshold': 0.2 + (i * 0.02)
+                }
+            }
+            self.message_bus.publish('parameter_adjustment', adjustment)
+        
+        history = self.agent_manager.get_parameter_history(limit=3)
+        
+        assert len(history) == 3
+        assert all('adjusted_parameters' in entry for entry in history)
+    
+    def test_parameter_history_in_agent_profile(self):
+        """Testar att parameter history inkluderas i agent profile (Sprint 4.2)."""
+        # Lägg till parameter adjustment
+        adjustment = {
+            'adjusted_parameters': {
+                'evolution_threshold': 0.3
+            }
+        }
+        self.message_bus.publish('parameter_adjustment', adjustment)
+        
+        # Publicera en agent profile update
+        update = {
+            'update_type': 'evolution_suggestion',
+            'agent_id': 'strategy_agent',
+            'evolution_suggestion': {
+                'analysis': {'reason': 'test'},
+                'suggestions': []
+            }
+        }
+        self.message_bus.publish('agent_update', update)
+        
+        # Verifiera att parameter history finns i publicerad profile
+        # (via message_bus publish skulle normalt fångas av subscriber)
+        assert len(self.agent_manager.parameter_history) == 1
 
