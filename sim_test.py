@@ -75,14 +75,16 @@ class SimulatedTester:
         self.stats = {
             'iterations': 0,
             'trades_processed': 0,
-            'decisions_made': 0,
-            'buy_count': 0,
-            'sell_count': 0,
-            'hold_count': 0,
-            'insufficient_funds_count': 0,
-            'insufficient_holdings_count': 0,
+            'decisions_made': 0,  # Alla beslut (BUY/SELL/HOLD)
+            'buy_decisions': 0,   # BUY-beslut (före execution)
+            'sell_decisions': 0,  # SELL-beslut (före execution)
+            'hold_decisions': 0,  # HOLD-beslut
+            'buy_executions': 0,  # Genomförda BUY i portfolio
+            'sell_executions': 0, # Genomförda SELL i portfolio
+            'insufficient_funds_count': 0,  # BUY blockerade
+            'insufficient_holdings_count': 0,  # SELL blockerade
             'start_time': time.time(),
-            'execution_log': []
+            'execution_log': []  # Endast genomförda trades
         }
         
         # Signal handler för graceful shutdown
@@ -134,9 +136,12 @@ class SimulatedTester:
         Callback för parameter adjustments (Sprint 4.3).
         Loggar både meta-parametrar och modulparametrar.
         """
+        # Hantera både 'parameters' och 'adjusted_parameters' keys
+        params = adjustment.get('parameters', adjustment.get('adjusted_parameters', {}))
+        
         param_entry = {
             'timestamp': time.time(),
-            'parameters': adjustment.get('parameters', {}),
+            'parameters': params,
             'source': adjustment.get('source', 'unknown')
         }
         self.parameter_history.append(param_entry)
@@ -269,7 +274,16 @@ class SimulatedTester:
         # Decision engine fattar beslut
         decision = self.decision_engine.make_decision(symbol, current_price=price)
         
+        # Räkna alla beslut
+        self.stats['decisions_made'] += 1
+        
         if decision and decision.get('action') != 'HOLD':
+            # Räkna beslut per typ (före execution)
+            if decision.get('action') == 'BUY':
+                self.stats['buy_decisions'] += 1
+            elif decision.get('action') == 'SELL':
+                self.stats['sell_decisions'] += 1
+            
             # Sätt aktuellt pris för execution
             decision['current_price'] = price
             original_action = decision.get('action')
@@ -277,13 +291,15 @@ class SimulatedTester:
             # Execution engine exekverar
             execution_result = self.execution_engine.execute_trade(decision)
             
-            # Räkna executions
+            # Räkna vad som hände efter execution
             if execution_result.get('action') == 'HOLD':
+                # Beslut blockerat - räknas som blockerad
                 if original_action == 'BUY':
                     self.stats['insufficient_funds_count'] += 1
                 elif original_action == 'SELL':
                     self.stats['insufficient_holdings_count'] += 1
             elif execution_result.get('success'):
+                # Genomförd execution - hamnar i portfolio
                 executed_action = execution_result.get('action')
                 self.stats['execution_log'].append({
                     'symbol': symbol,
@@ -294,15 +310,14 @@ class SimulatedTester:
                     'timestamp': time.time()
                 })
                 
+                # Räkna genomförda executions
                 if executed_action == 'BUY':
-                    self.stats['buy_count'] += 1
+                    self.stats['buy_executions'] += 1
                 elif executed_action == 'SELL':
-                    self.stats['sell_count'] += 1
+                    self.stats['sell_executions'] += 1
             
             # Portfolio manager uppdaterar
             self.portfolio_manager.update_portfolio(execution_result)
-            
-            self.stats['decisions_made'] += 1
             
             # Logga till strategic memory
             self.strategic_memory.log_decision({
@@ -311,8 +326,21 @@ class SimulatedTester:
                 'price': price,
                 'execution_result': execution_result
             })
+            
+            # Publicera reward för att trigga RL parameter adjustments
+            # Reward baseras på portfolio performance
+            portfolio = self.portfolio_manager.get_status(self.current_prices)
+            portfolio_value = portfolio.get('total_value', 1000)
+            reward_value = (portfolio_value - 1000) / 1000  # Normalized reward
+            
+            self.message_bus.publish('reward', {
+                'value': reward_value,
+                'portfolio_value': portfolio_value,
+                'timestamp': time.time()
+            })
         else:
-            self.stats['hold_count'] += 1
+            # HOLD beslut
+            self.stats['hold_decisions'] += 1
     
     def print_progress(self) -> None:
         """Skriver ut progress med Sprint 4.3 adaptiva parametrar."""
@@ -320,23 +348,33 @@ class SimulatedTester:
         
         print(f"\n{'='*90}")
         print(f"⏱️  Iteration: {self.stats['iterations']} | Runtime: {int(runtime)}s")
-        print(f"💹 Trades: {self.stats['trades_processed']} | Beslut: {self.stats['decisions_made']}")
+        print(f"💹 Trades processade: {self.stats['trades_processed']}")
         
-        # Execution stats
-        print(f"\n📊 Executions:")
-        print(f"   🟢 BUY:  {self.stats['buy_count']}")
-        print(f"   🔴 SELL: {self.stats['sell_count']}")
-        print(f"   ⚪ HOLD: {self.stats['hold_count']}")
+        # Decisions (alla beslut fattade av decision_engine)
+        print(f"\n🎯 Decisions (Beslut):")
+        print(f"   Totalt: {self.stats['decisions_made']}")
+        print(f"   🟢 BUY:  {self.stats['buy_decisions']}")
+        print(f"   🔴 SELL: {self.stats['sell_decisions']}")
+        print(f"   ⚪ HOLD: {self.stats['hold_decisions']}")
+        
+        # Executions (endast de som verkligen hamnade i portfolio)
+        total_executions = self.stats['buy_executions'] + self.stats['sell_executions']
+        print(f"\n💼 Executions (I Portfolio):")
+        print(f"   Totalt: {total_executions}")
+        print(f"   ✅ BUY:  {self.stats['buy_executions']} genomförda köp")
+        print(f"   ✅ SELL: {self.stats['sell_executions']} genomförda försäljningar")
         if self.stats['insufficient_funds_count'] + self.stats['insufficient_holdings_count'] > 0:
-            print(f"   ⚠️  Blocked: {self.stats['insufficient_funds_count']} BUY, "
-                  f"{self.stats['insufficient_holdings_count']} SELL")
+            print(f"   ⚠️  Blockerade: {self.stats['insufficient_funds_count']} BUY (no funds), "
+                  f"{self.stats['insufficient_holdings_count']} SELL (no holdings)")
         
         # Portfolio
         portfolio = self.portfolio_manager.get_status(self.current_prices)
         pnl = portfolio.get('total_value', 1000) - 1000
-        print(f"\n💰 Portfolio: ${portfolio.get('cash', 0):.2f} cash | "
-              f"${portfolio.get('total_value', 0):.2f} total | "
-              f"P&L: ${pnl:.2f}")
+        print(f"\n💰 Portfolio:")
+        print(f"   Cash: ${portfolio.get('cash', 0):.2f}")
+        print(f"   Total värde: ${portfolio.get('total_value', 0):.2f}")
+        print(f"   P&L: ${pnl:.2f} ({(pnl/1000*100):+.1f}%)")
+        print(f"   Executions i portfolio: {total_executions} trades")
         
         # Positioner
         if portfolio.get('positions'):
@@ -357,6 +395,14 @@ class SimulatedTester:
         # Sprint 4.3: ALLA ADAPTIVA PARAMETRAR
         print(f"\n{'='*90}")
         print(f"🔧 ADAPTIVA PARAMETRAR (Sprint 4.3) - {len(self.parameter_history)} adjustments totalt")
+        
+        # Diagnostik om inga adjustments
+        if len(self.parameter_history) == 0 and self.stats['buy_executions'] + self.stats['sell_executions'] > 0:
+            reward_count = len(self.rl_controller.reward_history) if hasattr(self.rl_controller, 'reward_history') else 0
+            param_update_freq = self.rl_controller.config.get('parameter_update_frequency', 10)
+            print(f"   ℹ️  Väntar på parameter adjustment (krävs {param_update_freq} reward events)")
+            print(f"   📊 Reward events mottagna: {reward_count}/{param_update_freq}")
+        
         print(f"{'='*90}")
         
         # Strategy Engine parametrar
@@ -434,13 +480,21 @@ class SimulatedTester:
         print(f"💹 Trades processade: {self.stats['trades_processed']}")
         print(f"🎯 Beslut fattade: {self.stats['decisions_made']}")
         
-        # Execution distribution
-        print(f"\n📊 EXECUTION DISTRIBUTION:")
-        print(f"   🟢 BUY:  {self.stats['buy_count']} genomförda")
-        print(f"   🔴 SELL: {self.stats['sell_count']} genomförda")
-        print(f"   ⚪ HOLD: {self.stats['hold_count']} ingen trade")
-        print(f"   ⚠️  Blocked: {self.stats['insufficient_funds_count']} BUY, "
-              f"{self.stats['insufficient_holdings_count']} SELL")
+        # Decision distribution
+        print(f"\n🎯 DECISION DISTRIBUTION (Alla beslut):")
+        print(f"   Totalt beslut: {self.stats['decisions_made']}")
+        print(f"   🟢 BUY beslut:  {self.stats['buy_decisions']}")
+        print(f"   🔴 SELL beslut: {self.stats['sell_decisions']}")
+        print(f"   ⚪ HOLD beslut: {self.stats['hold_decisions']}")
+        
+        # Execution distribution (endast de som hamnade i portfolio)
+        total_executions = self.stats['buy_executions'] + self.stats['sell_executions']
+        print(f"\n💼 EXECUTION DISTRIBUTION (I Portfolio):")
+        print(f"   Totalt executions: {total_executions}")
+        print(f"   ✅ BUY:  {self.stats['buy_executions']} genomförda köp")
+        print(f"   ✅ SELL: {self.stats['sell_executions']} genomförda försäljningar")
+        print(f"   ⚠️  Blockerade: {self.stats['insufficient_funds_count']} BUY (no funds), "
+              f"{self.stats['insufficient_holdings_count']} SELL (no holdings)")
         
         # Portfolio resultat
         portfolio = self.portfolio_manager.get_status(self.current_prices)
