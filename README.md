@@ -6,9 +6,35 @@ Ett självreflekterande, modulärt och RL-drivet handelssystem byggt för transp
 
 ## 📍 Sprintstatus
 
-**Sprint 1 pågår** – Bygger kärnsystem och demoportfölj
+**Sprint 1 färdig ✅** – Kärnsystem och demoportfölj komplett
+**Sprint 2 pågår 🔄** – RL och belöningsflöde under utveckling
 
-### Sprintplan - Sprint 1: Kärnsystem och demoportfölj
+### Sprint 2: RL och belöningsflöde (PÅGÅR)
+
+**Mål:** Inför PPO-agenter i strategi, risk och beslut. Belöning via portfölj.
+
+**Moduler i fokus:**
+- `rl_controller` - PPO-agentträning och distribution
+- `strategy_engine` - RL-förbättrade strategier med MACD
+- `risk_manager` - RL-baserad riskbedömning med ATR
+- `decision_engine` - RL-optimerade beslut
+- `portfolio_manager` - Reward-generering för RL
+
+**Nya indikatorer i Sprint 2:**
+- MACD (Moving Average Convergence Divergence) - Momentum och trendstyrka
+- ATR (Average True Range) - Volatilitetsbaserad riskjustering
+- Analyst Ratings - Extern confidence och sentiment
+
+**Testresultat:**
+- ✅ RL-belöning beräknas från portfolio changes
+- ✅ PPO-agenter tränas i rl_controller
+- ✅ Agentuppdateringar distribueras till moduler (strategy, risk, decision, execution)
+- ✅ 4 RL-agenter aktiva och tränas parallellt
+- ✅ Feedback-flöde implementerat och loggas
+- ✅ Strategier använder flera indikatorer kombinerat (RSI + MACD + Analyst Ratings)
+- ✅ Riskbedömning anpassad efter volatilitet (ATR)
+
+### Sprintplan - Sprint 1: Kärnsystem och demoportfölj ✅
 
 **Mål:** Bygg ett fungerande end-to-end-flöde med verkliga data, strategi, beslut, exekvering och portfölj.
 
@@ -33,6 +59,135 @@ Ett självreflekterande, modulärt och RL-drivet handelssystem byggt för transp
 
 **Startkapital:** 1000 USD  
 **Transaktionsavgift:** 0.25%
+
+---
+
+## 🔄 Sprint 2: RL och Belöningsflöde
+
+### RL-arkitektur och PPO-agenter
+
+Sprint 2 introducerar reinforcement learning (RL) med PPO-agenter (Proximal Policy Optimization) för att optimera handelsbeslut baserat på portfolio performance.
+
+```
+┌─────────────────┐
+│ portfolio_mgr   │
+│ (Beräknar       │
+│  reward)        │
+└────────┬────────┘
+         │ reward
+         ▼
+┌─────────────────┐     agent_update      ┌──────────────────┐
+│ rl_controller   │────────────────────────▶│ strategy_engine  │
+│ (PPO-träning)   │                        │ (RL-förstärkt)   │
+└────────┬────────┘                        └──────────────────┘
+         │ agent_update
+         ├──────────────────────────────────▶┌──────────────────┐
+         │                                   │ risk_manager     │
+         │                                   │ (RL-förstärkt)   │
+         │                                   └──────────────────┘
+         │ agent_update
+         ├──────────────────────────────────▶┌──────────────────┐
+         │                                   │ decision_engine  │
+         │                                   │ (RL-optimerat)   │
+         │                                   └──────────────────┘
+         │ agent_update
+         └──────────────────────────────────▶┌──────────────────┐
+                                             │ execution_engine │
+                                             │ (RL-optimerat)   │
+                                             └──────────────────┘
+```
+
+### RL-agenter och deras roller
+
+**1. strategy_engine RL-agent:**
+- State: 10 dimensioner (OHLC, Volume, SMA, RSI, MACD, portfolio info)
+- Action: 3 möjligheter (BUY, SELL, HOLD)
+- Syfte: Optimera tradeförslag baserat på indikator-kombinationer
+- Förbättrar: Timing och kvantitet för trades
+
+**2. risk_manager RL-agent:**
+- State: 8 dimensioner (Volume, ATR, volatility, portfolio exposure)
+- Action: 3 nivåer (LOW, MEDIUM, HIGH risk)
+- Syfte: Justera riskbedömning baserat på historisk accuracy
+- Förbättrar: Risk-adjusted returns
+
+**3. decision_engine RL-agent:**
+- State: 12 dimensioner (Strategy proposal, risk profile, memory insights)
+- Action: 3 alternativ (ACCEPT, MODIFY, REJECT)
+- Syfte: Optimera slutgiltiga beslut med balans mellan risk och reward
+- Förbättrar: Confidence och beslutskvalitet
+
+**4. execution_engine RL-agent:**
+- State: 6 dimensioner (Price, volume, timing, slippage)
+- Action: 2 alternativ (EXECUTE_NOW, WAIT)
+- Syfte: Minimera slippage och förbättra execution quality
+- Förbättrar: Execution timing
+
+### Reward-beräkning och feedback
+
+**Reward-källor:**
+1. **Portfolio value change** (primär):
+   - Positiv reward när portfolio värde ökar
+   - Negativ reward när portfolio värde minskar
+   
+2. **Trade profitability**:
+   - Belönar lönsamma trades
+   - Straffar förlustbringande trades
+   
+3. **Risk-adjusted returns** (kommande):
+   - Högre reward för vinster med låg risk
+   - Lägre reward för vinster med hög risk
+
+**Feedback-flöde:**
+```
+execution_engine ──┐
+                   │
+portfolio_manager ─┼──▶ feedback_event ──▶ feedback_router ──┬──▶ rl_controller
+                   │                                           │
+strategic_memory ──┘                                           ├──▶ feedback_analyzer
+                                                               │
+                                                               └──▶ strategic_memory
+```
+
+### Sprint 2 indikatorer och användning
+
+| Indikator         | Modul            | Syfte                                    |
+|-------------------|------------------|------------------------------------------|
+| RSI               | strategy         | Overbought/oversold detection            |
+| MACD              | strategy         | Momentum och trend strength              |
+| ATR               | risk, strategy   | Volatility-based risk adjustment         |
+| Analyst Ratings   | risk, decision   | External confidence och sentiment        |
+| Volume            | strategy, risk   | Liquidity assessment                     |
+
+**MACD-användning:**
+- Histogram > 0.5: Köpsignal (bullish momentum)
+- Histogram < -0.5: Säljsignal (bearish momentum)
+- Kombineras med RSI för starkare signaler
+
+**ATR-användning:**
+- ATR > 5.0: Hög volatilitet → Reducera position size
+- ATR < 2.0: Låg volatilitet → Normal position size
+- Används för risk-adjusted quantity
+
+**Analyst Ratings-användning:**
+- BUY/STRONG_BUY: Ökar confidence, minskar risk
+- SELL: Minskar confidence, ökar risk
+- HOLD: Neutral påverkan
+
+### RL-träningsprocess
+
+1. **Trade execution** genererar portfolio change
+2. **Portfolio manager** beräknar reward baserat på change
+3. **RL controller** tar emot reward och tränar alla agenter
+4. **Agent updates** distribueras till moduler
+5. **Moduler** använder uppdaterade policies för nästa beslut
+6. **Feedback** från execution och portfolio förbättrar reward shaping
+
+**Träningsparametrar (config/rl_parameters.yaml):**
+- Learning rate: 0.0003
+- Gamma (discount factor): 0.99
+- Update frequency: Var 10:e trade
+- Batch size: 32
 
 ---
 
@@ -263,15 +418,15 @@ Alla indikatorer hämtas via `indicator_registry.py` och distribueras via `messa
 
 Projektet är uppdelat i 7 sprintar. Se `sprint_plan.yaml` för detaljer.
 
-| Sprint | Fokus                                |
-|--------|--------------------------------------|
-| 1      | Kärnsystem och demoportfölj          |
-| 2      | RL och belöningsflöde                |
-| 3      | Feedbackloopar och introspektion     |
-| 4      | Strategiskt minne och agentutveckling|
-| 5      | Simulering och konsensus             |
-| 6      | Tidsanalys och action chains         |
-| 7      | Indikatorvisualisering och översikt  |
+| Sprint | Fokus                                | Status  |
+|--------|--------------------------------------|---------|
+| 1      | Kärnsystem och demoportfölj          | ✅ Färdig|
+| 2      | RL och belöningsflöde                | 🔄 Pågår|
+| 3      | Feedbackloopar och introspektion     | ⏳ Planerad|
+| 4      | Strategiskt minne och agentutveckling| ⏳ Planerad|
+| 5      | Simulering och konsensus             | ⏳ Planerad|
+| 6      | Tidsanalys och action chains         | ⏳ Planerad|
+| 7      | Indikatorvisualisering och översikt  | ⏳ Planerad|
 
 Se `README_sprints.md` för detaljerad beskrivning av varje sprint.
 
