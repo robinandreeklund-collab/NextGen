@@ -114,3 +114,40 @@ Sprint 2 levererade ett fullt fungerande RL-system med PPO-agenter som tränas b
 Alla moduler har RL-integration och kan förbättras över tid. Feedback-systemet är på plats för Sprint 3:s fördjupade analys.
 
 ---
+
+## Sprint 3: Feedbackloopar och introspektion 🔄
+
+**Status:** PÅGÅR
+
+**Mål:** Inför feedback mellan moduler och visualisera kommunikation.
+
+### Implementerade moduler:
+- 🔄 `message_bus.py` - Central pub/sub-kommunikation (förbättrad)
+- 🔄 `feedback_router.py` - Distribuerar feedback mellan moduler (förbättrad)
+- 🔄 `feedback_analyzer.py` - Analyserar mönster i feedbackflöden (utökad)
+- 🔄 `introspection_panel.py` - Visualiserar modulstatus och kommunikation (Dash-integration)
+
+### Nya indikatorer i Sprint 3:
+- ✅ **News Sentiment** - Marknadssentiment från nyheter
+  - Används av: strategy_engine, feedback_analyzer
+  - Syfte: Market mood and reaction
+- ✅ **Insider Sentiment** - Insiderhandel och confidence
+  - Används av: strategy_engine, meta_agent_evolution_engine
+  - Syfte: Internal confidence signals
+
+### Testbara mål:
+- 🔄 Modulkommunikation fungerar mellan alla komponenter
+- 🔄 Feedbackflöde loggas och routas korrekt
+- 🔄 Dash-paneler visar realtidsdata
+- 🔄 Feedback-analys identifierar mönster
+- 🔄 Introspektionspanel visar agent adaptation
+
+### Implementation pågår:
+Sprint 3 utökar feedbacksystemet från Sprint 2 med:
+- Förbättrad feedback-routing med intelligent filtrering
+- Avancerad mönsteranalys i feedback_analyzer
+- Dash-baserade visualiseringspaneler
+- Realtidsvisualisering av modulkommunikation
+- Detektering av performance patterns, indicator mismatch och agent drift
+
+---
