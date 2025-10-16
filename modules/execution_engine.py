@@ -135,7 +135,7 @@ class ExecutionEngine:
         quantity = decision['quantity']
         
         # Sprint 4.3: Använd adaptiv execution_delay för timing
-        if self.execution_delay > 0:
+        if self.simulation_mode and self.execution_delay > 0:
             time.sleep(self.execution_delay)
         
         # Använd aktuellt pris från decision (krävs nu)
