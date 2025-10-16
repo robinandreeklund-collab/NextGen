@@ -1,0 +1,120 @@
+indicator_registry:
+  source: Finnhub
+  distribution: message_bus
+  update_interval: 5 min
+
+indicators:
+  - name: OHLC
+    type: technical
+    used_by: [strategy_engine, execution_engine]
+    purpose: price analysis, entry/exit signals
+
+  - name: Volume
+    type: technical
+    used_by: [strategy_engine, risk_manager]
+    purpose: liquidity assessment, volatility detection
+
+  - name: SMA
+    type: technical
+    used_by: [strategy_engine]
+    purpose: trend detection, smoothing
+
+  - name: EMA
+    type: technical
+    used_by: [strategy_engine]
+    purpose: short-term trend sensitivity
+
+  - name: RSI
+    type: technical
+    used_by: [strategy_engine, decision_engine]
+    purpose: overbought/oversold detection
+
+  - name: MACD
+    type: technical
+    used_by: [strategy_engine, meta_agent_evolution_engine]
+    purpose: momentum and trend strength
+
+  - name: Bollinger Bands
+    type: technical
+    used_by: [strategy_engine, risk_manager]
+    purpose: volatility and breakout detection
+
+  - name: ATR
+    type: technical
+    used_by: [risk_manager, decision_engine]
+    purpose: volatility-based risk adjustment
+
+  - name: VWAP
+    type: technical
+    used_by: [execution_engine, portfolio_manager]
+    purpose: price fairness, execution quality
+
+  - name: ADX
+    type: technical
+    used_by: [strategy_engine, risk_manager]
+    purpose: trend strength confirmation
+
+  - name: Stochastic Oscillator
+    type: technical
+    used_by: [strategy_engine]
+    purpose: momentum and reversal signals
+
+  - name: Analyst Ratings
+    type: fundamental
+    used_by: [risk_manager, decision_engine]
+    purpose: external confidence and sentiment
+
+  - name: EPS
+    type: fundamental
+    used_by: [risk_manager, strategic_memory_engine]
+    purpose: profitability assessment
+
+  - name: Revenue
+    type: fundamental
+    used_by: [risk_manager, strategic_memory_engine]
+    purpose: growth tracking
+
+  - name: Profit Margin
+    type: fundamental
+    used_by: [risk_manager]
+    purpose: efficiency and risk
+
+  - name: ROE
+    type: fundamental
+    used_by: [risk_manager, meta_agent_evolution_engine]
+    purpose: capital efficiency
+
+  - name: ROA
+    type: fundamental
+    used_by: [risk_manager, meta_agent_evolution_engine]
+    purpose: asset productivity
+
+  - name: Dividend Yield
+    type: fundamental
+    used_by: [portfolio_manager, strategy_engine]
+    purpose: income generation and valuation
+
+  - name: Insider Sentiment
+    type: alternative
+    used_by: [strategy_engine, meta_agent_evolution_engine]
+    purpose: internal confidence signals
+
+  - name: News Sentiment
+    type: alternative
+    used_by: [strategy_engine, feedback_analyzer]
+    purpose: market mood and reaction
+
+  - name: Social Media Sentiment
+    type: alternative
+    used_by: [strategy_engine, decision_engine]
+    purpose: crowd psychology and hype detection
+
+  - name: ESG Score
+    type: alternative
+    used_by: [risk_manager, meta_agent_evolution_engine]
+    purpose: ethical risk and long-term viability
+
+  - name: Earnings Calendar
+    type: fundamental
+    used_by: [strategy_engine, risk_manager]
+    purpose: event-based risk and timing
