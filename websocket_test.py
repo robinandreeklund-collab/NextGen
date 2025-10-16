@@ -502,6 +502,77 @@ class WebSocketTester:
                         trend = "↑" if diff > 0 else "↓" if diff < 0 else "→"
                         print(f"      {param}: {trend} ({diff:+.4f})" if isinstance(diff, float) else f"      {param}: {trend} ({int(diff):+d})")
         
+        # Sprint 4.4: RewardTunerAgent Debug Info
+        print(f"\n{'='*80}")
+        print(f"🎯 SPRINT 4.4 - RewardTunerAgent (Meta-belöningsjustering)")
+        print(f"{'='*80}")
+        
+        reward_metrics = self.reward_tuner.get_reward_metrics()
+        
+        # Current parameters
+        print(f"\n⚙️  RewardTuner Parametrar:")
+        current_params = reward_metrics['current_parameters']
+        print(f"   reward_scaling_factor:          {current_params['reward_scaling_factor']:.4f} (bounds: 0.5-2.0)")
+        print(f"   volatility_penalty_weight:      {current_params['volatility_penalty_weight']:.4f} (bounds: 0.0-1.0)")
+        print(f"   overfitting_detector_threshold: {current_params['overfitting_detector_threshold']:.4f} (bounds: 0.05-0.5)")
+        print(f"   → Reward signals: training_stability, reward_consistency, generalization_score")
+        
+        # Reward transformation statistics
+        base_rewards = reward_metrics['base_reward_history']
+        tuned_rewards = reward_metrics['tuned_reward_history']
+        
+        if base_rewards and tuned_rewards:
+            print(f"\n📊 Reward Transformation Stats:")
+            print(f"   Totalt rewards processade: {len(base_rewards)}")
+            
+            # Latest rewards
+            if len(base_rewards) > 0:
+                latest_base = base_rewards[-1]
+                latest_tuned = tuned_rewards[-1]
+                latest_ratio = latest_tuned / latest_base if latest_base != 0 else 1.0
+                print(f"   Senaste base_reward:   {latest_base:+.4f}")
+                print(f"   Senaste tuned_reward:  {latest_tuned:+.4f}")
+                print(f"   Transformation ratio:  {latest_ratio:.4f}")
+            
+            # Average transformation
+            if len(reward_metrics['transformation_ratios']) > 0:
+                avg_ratio = sum(reward_metrics['transformation_ratios']) / len(reward_metrics['transformation_ratios'])
+                print(f"   Genomsnittlig ratio:   {avg_ratio:.4f}")
+        
+        # Volatility metrics
+        volatility_hist = reward_metrics['volatility_history']
+        if volatility_hist:
+            print(f"\n📈 Volatility Metrics:")
+            recent_volatility = volatility_hist[-1] if volatility_hist else 0.0
+            avg_volatility = sum(volatility_hist) / len(volatility_hist) if volatility_hist else 0.0
+            print(f"   Senaste volatility:    {recent_volatility:.4f}")
+            print(f"   Genomsnittlig:         {avg_volatility:.4f}")
+            print(f"   Volatility samples:    {len(volatility_hist)}")
+        
+        # Overfitting events
+        overfitting_events = reward_metrics['overfitting_events']
+        if overfitting_events:
+            print(f"\n⚠️  Overfitting Detection:")
+            print(f"   Totalt events:         {len(overfitting_events)}")
+            if len(overfitting_events) > 0:
+                latest_event = overfitting_events[-1]
+                print(f"   Senaste score:         {latest_event.get('overfitting_score', 0):.4f}")
+                print(f"   Recent performance:    {latest_event.get('recent_performance', 0):.4f}")
+                print(f"   Long-term performance: {latest_event.get('long_term_performance', 0):.4f}")
+        else:
+            print(f"\n✅ Overfitting Detection:")
+            print(f"   Inga overfitting events detekterade")
+        
+        # Parameter adjustment history
+        param_hist = reward_metrics['parameter_history']
+        if param_hist:
+            print(f"\n🔧 Parameter Adjustments:")
+            print(f"   Totalt adjustments:    {len(param_hist)}")
+            if len(param_hist) >= 2:
+                first = param_hist[0]
+                latest = param_hist[-1]
+                print(f"   Scaling factor trend:  {first['reward_scaling_factor']:.4f} → {latest['reward_scaling_factor']:.4f}")
+        
         print(f"{'='*80}\n")
     
     def print_final_summary(self) -> None:
