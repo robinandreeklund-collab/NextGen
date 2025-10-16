@@ -281,14 +281,24 @@ class WebSocketTester:
                     self.stats['insufficient_holdings_count'] += 1
             elif execution_result.get('success'):
                 # Logga successful execution
+                executed_action = execution_result.get('action')
                 self.stats['execution_log'].append({
                     'symbol': symbol,
-                    'action': execution_result.get('action'),
+                    'action': executed_action,
                     'quantity': execution_result.get('quantity'),
                     'price': execution_result.get('executed_price'),
                     'cost': execution_result.get('total_cost'),
                     'timestamp': time.time()
                 })
+                
+                # Räkna faktiska executions (inte decisions)
+                # Detta fixar problemet där BUY count inte matchar insufficient funds count
+                if executed_action not in ['BUY', 'SELL']:
+                    # Om action blev HOLD i execution, minska räknaren som ökades tidigare
+                    if action == 'BUY':
+                        self.stats['buy_count'] -= 1
+                    elif action == 'SELL':
+                        self.stats['sell_count'] -= 1
             
             # Debug: Visa execution detaljer
             if self.debug_mode and self.stats['decisions_made'] < 10:
@@ -469,7 +479,8 @@ class WebSocketTester:
             print(f"   Genomsnittlig profit per round-trip: ${insights['average_profit']:.2f}")
         else:
             print(f"   Inga completed round-trips än")
-            print(f"   Execution success rate: {insights['success_rate']*100:.1f}%")
+            if insights['total_executions'] > 0:
+                print(f"   Execution success rate: {insights['success_rate']*100:.1f}%")
             print(f"   Genomsnittlig profit: ${insights['average_profit']:.2f}")
         
         if insights['best_indicators']:
@@ -546,6 +557,14 @@ class WebSocketTester:
         print(f"   Portfolio cash: ${portfolio.get('cash', 0):.2f}")
         print(f"   Portfolio värde: ${portfolio.get('total_value', 0):.2f}")
         print(f"   Antal positioner: {len(portfolio.get('positions', {}))}")
+        
+        # Visa execution log för genomförda trades (senaste 10)
+        if self.stats['execution_log']:
+            print(f"\n   📝 GENOMFÖRDA TRADES (senaste 10):")
+            for trade in self.stats['execution_log'][-10:]:
+                action_emoji = "🟢" if trade['action'] == 'BUY' else "🔴"
+                print(f"      {action_emoji} {trade['action']} {trade['quantity']} {trade['symbol']} "
+                      f"@ ${trade['price']:.2f} (cost: ${trade['cost']:.2f})")
         
         # Visa execution log för genomförda trades
         if self.stats['execution_log']:
