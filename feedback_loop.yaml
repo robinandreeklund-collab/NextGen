@@ -1,0 +1,70 @@
+feedback_loop:
+  source_modules:
+    - execution_engine
+    - portfolio_manager
+    - strategic_memory_engine
+
+  feedback_generation:
+    execution_engine:
+      triggers: [trade_result, slippage, latency]
+      emits: feedback_event
+    portfolio_manager:
+      triggers: [capital_change, transaction_cost]
+      emits: feedback_event
+    strategic_memory_engine:
+      triggers: [decision_outcome, indicator_correlation]
+      emits: feedback_event
+
+  routing:
+    router: feedback_router
+    distributes_to:
+      - rl_controller
+      - feedback_analyzer
+      - strategic_memory_engine
+      - meta_agent_evolution_engine
+
+  analysis:
+    analyzer: feedback_analyzer
+    detects:
+      - performance patterns
+      - indicator-response mismatch
+      - agent drift
+    emits: feedback_insight
+
+  rl_response:
+    controller: rl_controller
+    updates_agents:
+      - strategy_engine
+      - risk_manager
+      - decision_engine
+    reward_sources:
+      - portfolio_manager
+      - strategic_memory_engine
+      - feedback_router
+
+  evolution_response:
+    engine: meta_agent_evolution_engine
+    inputs:
+      - agent_performance
+      - feedback_insight
+    outputs:
+      - evolution_suggestion
+      - agent_update
+    forwarded_to: agent_manager
+
+  memory_integration:
+    engine: strategic_memory_engine
+    stores:
+      - feedback_event
+      - feedback_insight
+      - agent_response
+    provides_to:
+      - decision_engine
+      - introspection_panel
+
+  visualization:
+    panel: introspection_panel
+    displays:
+      - feedback flow
+      - agent adaptation
+      - reward trends
