@@ -1,0 +1,12 @@
+tests:
+  strategy_engine:
+    file: test_strategy_engine.py
+    goals: [indicator response, RL reward, trade proposal validity]
+
+  decision_engine:
+    file: test_decision_engine.py
+    goals: [decision synthesis, feedback integration, RL training]
+
+  portfolio_manager:
+    file: test_portfolio_manager.py
+    goals: [capital update, reward calculation, transaction cost logic]
