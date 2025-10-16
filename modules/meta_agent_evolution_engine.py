@@ -4,6 +4,7 @@ meta_agent_evolution_engine.py - Meta-agent evolution
 Beskrivning:
     Utvärderar agentperformance och föreslår logikjusteringar.
     Evolutionär utveckling av agentbeteende baserat på feedback och performance.
+    Sprint 4.2: Tar emot adaptiva meta-parametrar från RL-controller.
 
 Roll:
     - Analyserar agent_status från rl_controller
@@ -11,10 +12,12 @@ Roll:
     - Identifierar förbättringsmöjligheter i agentlogik
     - Föreslår evolution_suggestion för agenter
     - Skickar agent_update till agent_manager
+    - Använder adaptiva parametrar från RL-controller (Sprint 4.2)
 
 Inputs:
     - agent_status: Dict - Performance metrics från rl_controller
     - feedback_insight: Dict - Analyserade mönster från feedback_analyzer
+    - parameter_adjustment: Dict - Adaptiva parametrar från RL-controller (Sprint 4.2)
 
 Outputs:
     - evolution_suggestion: Dict - Förslag på agentförbättringar
@@ -23,20 +26,21 @@ Outputs:
 Publicerar till message_bus:
     - agent_update: För agent_manager
 
-Prenumererar på (från functions.yaml):
+Prenumererar på (från functions_v2.yaml):
     - agent_status (från rl_controller)
     - feedback_insight (från feedback_analyzer)
+    - parameter_adjustment (från rl_controller) - Sprint 4.2
 
-Använder RL: Ja (från functions.yaml)
+Använder RL: Ja (från functions_v2.yaml)
 Tar emot feedback: Ja (från agent_manager)
 
-Anslutningar (från flowchart.yaml - agent_evolution):
+Anslutningar (från flowchart_v2.yaml - agent_evolution):
     Från:
-    - rl_controller (agent_status)
+    - rl_controller (agent_status, parameter_adjustment)
     - feedback_analyzer (feedback_insight)
     Till: agent_manager (agent_update)
 
-Används i Sprint: 4
+Används i Sprint: 4, 4.2
 """
 
 from typing import Dict, Any, List
@@ -61,13 +65,25 @@ class MetaAgentEvolutionEngine:
         self.feedback_insights: List[Dict[str, Any]] = []
         self.evolution_history: List[Dict[str, Any]] = []
         
-        # Evolution thresholds
-        self.performance_threshold = 0.25  # 25% degradation triggers evolution (justerat från 15%)
-        self.min_samples_for_evolution = 20  # Minsta antal samples för analys (justerat från 10)
+        # Sprint 4.2: Adaptiva parametrar från RL-controller
+        self.current_parameters = {
+            'evolution_threshold': 0.25,  # Default, uppdateras från RL
+            'min_samples': 20  # Default, uppdateras från RL
+        }
+        
+        # Sprint 4.2: Parameter history
+        self.parameter_history: List[Dict[str, Any]] = []
+        
+        # Evolution thresholds (kommer justeras adaptivt i Sprint 4.2)
+        self.performance_threshold = self.current_parameters['evolution_threshold']
+        self.min_samples_for_evolution = int(self.current_parameters['min_samples'])
         
         # Prenumerera på relevanta events
         self.message_bus.subscribe('agent_status', self._on_agent_status)
         self.message_bus.subscribe('feedback_insight', self._on_feedback_insight)
+        
+        # Sprint 4.2: Prenumerera på parameter_adjustment
+        self.message_bus.subscribe('parameter_adjustment', self._on_parameter_adjustment)
     
     def _on_agent_status(self, status: Dict[str, Any]) -> None:
         """
@@ -109,6 +125,36 @@ class MetaAgentEvolutionEngine:
         
         # Analysera om insights triggar evolution
         self._analyze_insight_for_evolution(insight_entry)
+    
+    def _on_parameter_adjustment(self, adjustment: Dict[str, Any]) -> None:
+        """
+        Callback för parameter adjustments från RL-controller (Sprint 4.2).
+        
+        Args:
+            adjustment: Justerade parametervärden
+        """
+        adjusted_params = adjustment.get('adjusted_parameters', {})
+        
+        # Uppdatera lokala parametrar
+        if 'evolution_threshold' in adjusted_params:
+            self.current_parameters['evolution_threshold'] = adjusted_params['evolution_threshold']
+            self.performance_threshold = adjusted_params['evolution_threshold']
+        
+        if 'min_samples' in adjusted_params:
+            self.current_parameters['min_samples'] = adjusted_params['min_samples']
+            self.min_samples_for_evolution = int(adjusted_params['min_samples'])
+        
+        # Logga parameter change
+        param_entry = {
+            **adjustment,
+            'timestamp': time.time(),
+            'logged_at': time.strftime('%Y-%m-%d %H:%M:%S'),
+            'applied_parameters': {
+                'evolution_threshold': self.performance_threshold,
+                'min_samples': self.min_samples_for_evolution
+            }
+        }
+        self.parameter_history.append(param_entry)
     
     def _analyze_agent_evolution_need(self, agent_id: str) -> None:
         """
@@ -396,4 +442,29 @@ class MetaAgentEvolutionEngine:
                     tree['agents'][agent_id]['events'].append(event)
         
         return tree
+    
+    def get_current_parameters(self) -> Dict[str, Any]:
+        """
+        Hämtar nuvarande adaptiva parametrar (Sprint 4.2).
+        
+        Returns:
+            Dict med aktuella parametervärden
+        """
+        return {
+            'evolution_threshold': self.performance_threshold,
+            'min_samples': self.min_samples_for_evolution,
+            'parameter_source': 'adaptive_rl' if self.parameter_history else 'default'
+        }
+    
+    def get_parameter_history(self, limit: int = 50) -> List[Dict[str, Any]]:
+        """
+        Hämtar parameterhistorik (Sprint 4.2).
+        
+        Args:
+            limit: Max antal entries
+        
+        Returns:
+            Lista med parameterjusteringar
+        """
+        return self.parameter_history[-limit:]
 
