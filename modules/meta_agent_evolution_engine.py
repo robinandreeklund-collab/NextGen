@@ -62,8 +62,8 @@ class MetaAgentEvolutionEngine:
         self.evolution_history: List[Dict[str, Any]] = []
         
         # Evolution thresholds
-        self.performance_threshold = 0.15  # 15% degradation triggers evolution
-        self.min_samples_for_evolution = 10  # Minsta antal samples för analys
+        self.performance_threshold = 0.25  # 25% degradation triggers evolution (justerat från 15%)
+        self.min_samples_for_evolution = 20  # Minsta antal samples för analys (justerat från 10)
         
         # Prenumerera på relevanta events
         self.message_bus.subscribe('agent_status', self._on_agent_status)
