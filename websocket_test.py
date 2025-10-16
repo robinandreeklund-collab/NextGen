@@ -103,6 +103,10 @@ class WebSocketTester:
         # Debug mode för detaljerad loggning
         self.debug_mode = True
         self.debug_counter = 0
+        
+        # Sprint 4.2: Spåra parameter adjustments för debug-visning
+        self.parameter_history = []
+        self.last_parameter_display = 0
     
     def setup_modules(self) -> None:
         """Initialiserar alla Sprint 1-4 moduler."""
@@ -133,7 +137,57 @@ class WebSocketTester:
             transaction_fee=0.0025
         )
         
+        # Sprint 4.2: Prenumerera på parameter_adjustment för debug-visning
+        self.message_bus.subscribe('parameter_adjustment', self._on_parameter_adjustment)
+        
         print("✅ Alla moduler initialiserade")
+    
+    def _on_parameter_adjustment(self, adjustment: Dict[str, Any]) -> None:
+        """
+        Callback för parameter adjustments från RL-controller (Sprint 4.2).
+        Loggar parameterjusteringar för debug-visning.
+        
+        Args:
+            adjustment: Parameterjusteringar från RL-controller
+        """
+        import time
+        
+        param_entry = {
+            'timestamp': time.time(),
+            'adjusted_parameters': adjustment.get('adjusted_parameters', {}),
+            'reward_signals': adjustment.get('reward_signals', {}),
+            'training_step': adjustment.get('training_step', 0)
+        }
+        self.parameter_history.append(param_entry)
+        
+        # Behåll endast senaste 50 adjustments
+        if len(self.parameter_history) > 50:
+            self.parameter_history = self.parameter_history[-50:]
+        
+        # Visa parameter adjustment i debug mode
+        if self.debug_mode:
+            print(f"\n🔧 PARAMETER ADJUSTMENT #{len(self.parameter_history)}:")
+            print(f"   Training step: {param_entry['training_step']}")
+            
+            # Visa justerade parametrar
+            params = param_entry['adjusted_parameters']
+            if params:
+                print(f"   📊 Adjusted Parameters:")
+                if 'evolution_threshold' in params:
+                    print(f"      evolution_threshold: {params['evolution_threshold']:.4f}")
+                if 'min_samples' in params:
+                    print(f"      min_samples: {int(params['min_samples'])}")
+                if 'update_frequency' in params:
+                    print(f"      update_frequency: {int(params['update_frequency'])}")
+                if 'agent_entropy_threshold' in params:
+                    print(f"      agent_entropy_threshold: {params['agent_entropy_threshold']:.4f}")
+            
+            # Visa reward signals
+            signals = param_entry['reward_signals']
+            if signals:
+                print(f"   💰 Reward Signals:")
+                for signal_name, value in signals.items():
+                    print(f"      {signal_name}: {value:.4f}")
     
     def on_message(self, ws, message: str) -> None:
         """
@@ -258,23 +312,15 @@ class WebSocketTester:
             # Sätt aktuellt pris för execution
             decision['current_price'] = price
             
-            # Räkna beslut
-            action = decision.get('action')
-            if action == 'BUY':
-                self.stats['buy_count'] += 1
-            elif action == 'SELL':
-                self.stats['sell_count'] += 1
-            
-            # Kontrollera om det är insufficient funds/holdings INNAN execution
-            portfolio = self.portfolio_manager.get_status(self.current_prices)
-            original_action = action
-            original_qty = decision.get('quantity', 0)
+            # Spara original action för tracking
+            original_action = decision.get('action')
             
             # Execution engine exekverar
             execution_result = self.execution_engine.execute_trade(decision)
             
-            # Kontrollera om trade blev HOLD p.g.a. insufficient funds/holdings
+            # Räkna endast faktiska executions (inte decisions som blockerades)
             if execution_result.get('action') == 'HOLD':
+                # Beslut blockerat p.g.a. insufficient funds/holdings
                 if original_action == 'BUY':
                     self.stats['insufficient_funds_count'] += 1
                 elif original_action == 'SELL':
@@ -291,8 +337,7 @@ class WebSocketTester:
                     'timestamp': time.time()
                 })
                 
-                # Räkna faktiska executions (inte decisions)
-                # Inkrementera endast vid faktisk execution
+                # Räkna endast faktiska genomförda executions
                 if executed_action == 'BUY':
                     self.stats['buy_count'] += 1
                 elif executed_action == 'SELL':
@@ -365,17 +410,18 @@ class WebSocketTester:
         print(f"🎯 Beslut fattade: {self.stats['decisions_made']}")
         print(f"🧬 Evolution events: {self.stats['evolution_events']}")
         
-        # Visa status om beslut med BUY/SELL/HOLD percentages
+        # Visa status om genomförda executions
         if self.stats['trades_processed'] > 50:
             total_decision_points = self.stats['trades_processed'] // 10
-            buy_pct = (self.stats['buy_count'] / total_decision_points * 100) if total_decision_points > 0 else 0
-            sell_pct = (self.stats['sell_count'] / total_decision_points * 100) if total_decision_points > 0 else 0
-            hold_pct = (self.stats['hold_count'] / total_decision_points * 100) if total_decision_points > 0 else 0
             
-            print(f"\n📊 Beslutsdistribution ({total_decision_points} totalt):")
-            print(f"   🟢 BUY:  {self.stats['buy_count']} ({buy_pct:.1f}%)")
-            print(f"   🔴 SELL: {self.stats['sell_count']} ({sell_pct:.1f}%)")
-            print(f"   ⚪ HOLD: {self.stats['hold_count']} ({hold_pct:.1f}%)")
+            print(f"\n📊 Genomförda Executions ({total_decision_points} beslutspunkter):")
+            print(f"   🟢 BUY:  {self.stats['buy_count']} genomförda")
+            print(f"   🔴 SELL: {self.stats['sell_count']} genomförda")
+            print(f"   ⚪ HOLD: {self.stats['hold_count']} ingen trade")
+            
+            # Visa blockerade om det finns några
+            if self.stats['insufficient_funds_count'] > 0 or self.stats['insufficient_holdings_count'] > 0:
+                print(f"   ⚠️  Blockerade: {self.stats['insufficient_funds_count']} BUY, {self.stats['insufficient_holdings_count']} SELL")
         
         # Portfolio status med current prices
         portfolio_status = self.portfolio_manager.get_status(self.current_prices if hasattr(self, 'current_prices') else None)
@@ -415,6 +461,38 @@ class WebSocketTester:
         for agent_id, profile in list(agent_profiles.items())[:2]:
             print(f"   {profile['name']}: v{profile['version']}")
         
+        # Sprint 4.2: Visa nuvarande meta-parametrar
+        current_params = self.rl_controller.get_current_meta_parameters()
+        if current_params:
+            print(f"\n🔧 Adaptiva Meta-Parametrar (Sprint 4.2):")
+            print(f"   Totalt adjustments: {len(self.parameter_history)}")
+            
+            if len(self.parameter_history) == 0:
+                print(f"   Status: Väntar på första justering (kräver {self.rl_controller.config.get('parameter_update_frequency', 10)} reward events)")
+                print(f"   Reward events hittills: {self.rl_controller.parameter_update_counter}")
+            
+            print(f"   Nuvarande värden:")
+            if 'evolution_threshold' in current_params:
+                print(f"      evolution_threshold: {current_params['evolution_threshold']:.4f}")
+            if 'min_samples' in current_params:
+                print(f"      min_samples: {int(current_params['min_samples'])}")
+            if 'update_frequency' in current_params:
+                print(f"      update_frequency: {int(current_params['update_frequency'])}")
+            if 'agent_entropy_threshold' in current_params:
+                print(f"      agent_entropy_threshold: {current_params['agent_entropy_threshold']:.4f}")
+            
+            # Visa trend om vi har tillräckligt med historik
+            if len(self.parameter_history) >= 3:
+                latest = self.parameter_history[-1]['adjusted_parameters']
+                older = self.parameter_history[-3]['adjusted_parameters']
+                
+                print(f"   Trend (senaste 3 adjustments):")
+                for param in ['evolution_threshold', 'min_samples', 'update_frequency', 'agent_entropy_threshold']:
+                    if param in latest and param in older:
+                        diff = latest[param] - older[param]
+                        trend = "↑" if diff > 0 else "↓" if diff < 0 else "→"
+                        print(f"      {param}: {trend} ({diff:+.4f})" if isinstance(diff, float) else f"      {param}: {trend} ({int(diff):+d})")
+        
         print(f"{'='*80}\n")
     
     def print_final_summary(self) -> None:
@@ -430,16 +508,24 @@ class WebSocketTester:
         print(f"🎯 Totalt beslut: {self.stats['decisions_made']}")
         print(f"🧬 Evolution events: {self.stats['evolution_events']}")
         
-        # Beslutsdistribution
+        # Execution distribution (faktiska genomförda trades)
         total_decision_points = self.stats['trades_processed'] // 10 if self.stats['trades_processed'] > 0 else 1
-        buy_pct = (self.stats['buy_count'] / total_decision_points * 100)
-        sell_pct = (self.stats['sell_count'] / total_decision_points * 100)
-        hold_pct = (self.stats['hold_count'] / total_decision_points * 100)
+        total_executions = self.stats['buy_count'] + self.stats['sell_count'] + self.stats['hold_count']
         
-        print(f"\n📊 BESLUTSDISTRIBUTION:")
-        print(f"   🟢 BUY:  {self.stats['buy_count']} ({buy_pct:.1f}%)")
-        print(f"   🔴 SELL: {self.stats['sell_count']} ({sell_pct:.1f}%)")
-        print(f"   ⚪ HOLD: {self.stats['hold_count']} ({hold_pct:.1f}%)")
+        print(f"\n📊 EXECUTION DISTRIBUTION (Genomförda trades):")
+        print(f"   Totalt beslutspunkter: {total_decision_points}")
+        print(f"   Genomförda executions: {total_executions}")
+        print(f"   🟢 BUY:  {self.stats['buy_count']} genomförda köp")
+        print(f"   🔴 SELL: {self.stats['sell_count']} genomförda försäljningar")
+        print(f"   ⚪ HOLD: {self.stats['hold_count']} inget genomfört")
+        
+        # Visa blockerade trades om det finns några
+        if self.stats['insufficient_funds_count'] > 0 or self.stats['insufficient_holdings_count'] > 0:
+            print(f"\n   ⚠️  Blockerade trades:")
+            if self.stats['insufficient_funds_count'] > 0:
+                print(f"      BUY blockerade (insufficient funds): {self.stats['insufficient_funds_count']}")
+            if self.stats['insufficient_holdings_count'] > 0:
+                print(f"      SELL blockerade (insufficient holdings): {self.stats['insufficient_holdings_count']}")
         
         # Portfolio resultat med current prices
         portfolio_status = self.portfolio_manager.get_status(self.current_prices if hasattr(self, 'current_prices') else None)
@@ -510,6 +596,74 @@ class WebSocketTester:
             print(f"   {profile['name']}: v{profile['version']} "
                   f"({len(versions)} versioner)")
         
+        # Sprint 4.2: Adaptiva Meta-Parametrar sammanfattning
+        print(f"\n🔧 ADAPTIVA META-PARAMETRAR (Sprint 4.2):")
+        current_params = self.rl_controller.get_current_meta_parameters()
+        
+        if len(self.parameter_history) > 0:
+            print(f"   Total adjustments: {len(self.parameter_history)}")
+            
+            # Visa initial vs final values
+            initial_params = self.parameter_history[0]['adjusted_parameters']
+            final_params = self.parameter_history[-1]['adjusted_parameters']
+            
+            print(f"\n   📊 Parameter Evolution (Initial → Final):")
+            for param in ['evolution_threshold', 'min_samples', 'update_frequency', 'agent_entropy_threshold']:
+                if param in initial_params and param in final_params:
+                    initial = initial_params[param]
+                    final = final_params[param]
+                    change = final - initial
+                    change_pct = (change / initial * 100) if initial != 0 else 0
+                    
+                    if isinstance(initial, float):
+                        print(f"      {param}:")
+                        print(f"         {initial:.4f} → {final:.4f} (Δ {change:+.4f}, {change_pct:+.1f}%)")
+                    else:
+                        print(f"      {param}:")
+                        print(f"         {int(initial)} → {int(final)} (Δ {int(change):+d}, {change_pct:+.1f}%)")
+            
+            # Visa genomsnittliga reward signals
+            if self.parameter_history:
+                all_signals = {}
+                for entry in self.parameter_history:
+                    for signal_name, value in entry.get('reward_signals', {}).items():
+                        if signal_name not in all_signals:
+                            all_signals[signal_name] = []
+                        all_signals[signal_name].append(value)
+                
+                if all_signals:
+                    print(f"\n   💰 Genomsnittliga Reward Signals:")
+                    for signal_name, values in all_signals.items():
+                        avg_value = sum(values) / len(values)
+                        print(f"      {signal_name}: {avg_value:.4f}")
+            
+            # Visa parameter adjustment history (senaste 5)
+            print(f"\n   📝 Senaste Parameter Adjustments:")
+            for i, entry in enumerate(list(self.parameter_history)[-5:], 1):
+                print(f"      #{len(self.parameter_history) - 5 + i}:")
+                params = entry['adjusted_parameters']
+                for param_name, value in params.items():
+                    if isinstance(value, float):
+                        print(f"         {param_name}: {value:.4f}")
+                    else:
+                        print(f"         {param_name}: {int(value)}")
+        else:
+            # Inga adjustments gjorda
+            print(f"   Status: ⚠️  Inga parameter adjustments gjorda under sessionen")
+            print(f"   Reward events mottagna: {len(self.rl_controller.reward_history)}")
+            print(f"   Reward events krävs för justering: {self.rl_controller.config.get('parameter_update_frequency', 10)}")
+            print(f"\n   ℹ️  För att se parameter adjustments:")
+            print(f"      - Kör längre tid (mer än {self.rl_controller.config.get('parameter_update_frequency', 10)} reward events)")
+            print(f"      - Öka trading aktivitet (fler BUY/SELL beslut genererar rewards)")
+            
+            print(f"\n   📊 Nuvarande Parameter-värden (defaults):")
+            if current_params:
+                for param_name, value in current_params.items():
+                    if isinstance(value, float):
+                        print(f"      {param_name}: {value:.4f}")
+                    else:
+                        print(f"      {param_name}: {int(value)}")
+        
         # Trades per symbol
         print(f"\n📊 TRADES PER SYMBOL:")
         sorted_symbols = sorted(
@@ -560,14 +714,6 @@ class WebSocketTester:
         if self.stats['execution_log']:
             print(f"\n   📝 GENOMFÖRDA TRADES (senaste 10):")
             for trade in self.stats['execution_log'][-10:]:
-                action_emoji = "🟢" if trade['action'] == 'BUY' else "🔴"
-                print(f"      {action_emoji} {trade['action']} {trade['quantity']} {trade['symbol']} "
-                      f"@ ${trade['price']:.2f} (cost: ${trade['cost']:.2f})")
-        
-        # Visa execution log för genomförda trades
-        if self.stats['execution_log']:
-            print(f"\n   📝 GENOMFÖRDA TRADES (senaste 10):")
-            for i, trade in enumerate(list(self.stats['execution_log'])[-10:], 1):
                 action_emoji = "🟢" if trade['action'] == 'BUY' else "🔴"
                 print(f"      {action_emoji} {trade['action']} {trade['quantity']} {trade['symbol']} "
                       f"@ ${trade['price']:.2f} (cost: ${trade['cost']:.2f})")
@@ -633,7 +779,10 @@ class WebSocketTester:
         print(f"\n🚀 Live trading-systemet körs nu!")
         print(f"⏹️  Tryck Ctrl+C för att stoppa och visa sammanfattning")
         print(f"\n💡 DEBUG MODE: Aktiv - visar detaljerad info för första trades och beslut")
-        print(f"   Beslut fattas var 10:e trade, indikatorer uppdateras var 5:e trade\n")
+        print(f"   Beslut fattas var 10:e trade, indikatorer uppdateras var 5:e trade")
+        print(f"\n🔧 SPRINT 4.2 AKTIV: Adaptiv parameterstyrning via RL/PPO")
+        print(f"   Parametrar justeras automatiskt baserat på agent performance")
+        print(f"   Se parameter adjustments i realtid i debug output\n")
     
     def signal_handler(self, sig, frame) -> None:
         """Hanterar Ctrl+C för graceful shutdown."""

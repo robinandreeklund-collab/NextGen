@@ -227,4 +227,61 @@ class TestStrategicMemoryEngine:
         assert summary['total_decisions'] == 1
         assert summary['total_executions'] == 1
         assert summary['feedback_events'] >= 1  # execution_result genererar också feedback
+        # Sprint 4.2
+        assert 'parameter_adjustments' in summary
+    
+    def test_parameter_adjustment_logging(self):
+        """Testar att parameter adjustments loggas (Sprint 4.2)."""
+        adjustment = {
+            'adjusted_parameters': {
+                'evolution_threshold': 0.3,
+                'min_samples': 25
+            },
+            'reward_signals': {
+                'agent_performance_gain': 0.5
+            }
+        }
+        
+        self.message_bus.publish('parameter_adjustment', adjustment)
+        
+        assert len(self.memory_engine.parameter_history) == 1
+        assert self.memory_engine.parameter_history[0]['adjusted_parameters']['evolution_threshold'] == 0.3
+    
+    def test_parameter_context_in_decisions(self):
+        """Testar att parameter context läggs till beslut (Sprint 4.2)."""
+        # Lägg till beslut
+        self.message_bus.publish('final_decision', {'symbol': 'AAPL', 'action': 'BUY'})
+        
+        # Lägg till parameter adjustment
+        adjustment = {
+            'adjusted_parameters': {
+                'evolution_threshold': 0.3
+            },
+            'reward_signals': {
+                'agent_performance_gain': 0.5
+            }
+        }
+        self.message_bus.publish('parameter_adjustment', adjustment)
+        
+        # Senaste beslutet ska ha parameter context
+        assert len(self.memory_engine.decision_history) > 0
+        decision = self.memory_engine.decision_history[-1]
+        assert 'parameter_context' in decision
+        assert decision['parameter_context']['adjusted_parameters']['evolution_threshold'] == 0.3
+    
+    def test_get_parameter_history(self):
+        """Testar hämtning av parameterhistorik (Sprint 4.2)."""
+        # Simulera flera parameter adjustments
+        for i in range(5):
+            adjustment = {
+                'adjusted_parameters': {
+                    'evolution_threshold': 0.2 + (i * 0.02)
+                }
+            }
+            self.message_bus.publish('parameter_adjustment', adjustment)
+        
+        history = self.memory_engine.get_parameter_history(limit=3)
+        
+        assert len(history) == 3  # Limited to 3
+        assert all('adjusted_parameters' in entry for entry in history)
 

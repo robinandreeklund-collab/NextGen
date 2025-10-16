@@ -4,6 +4,7 @@ strategic_memory_engine.py - Strategiskt minne
 Beskrivning:
     Loggar beslut, indikatorer, utfall och reward för historisk analys.
     Identifierar mönster och ger insights till decision_engine.
+    Sprint 4.2: Loggar även parameterjusteringar från RL-controller.
 
 Roll:
     - Loggar alla beslut och deras utfall
@@ -11,11 +12,13 @@ Roll:
     - Analyserar historisk performance
     - Genererar memory_insights för decision_engine
     - Genererar feedback om decision outcomes och indicator correlations
+    - Loggar parameterjusteringar och deras effekter (Sprint 4.2)
 
 Inputs:
     - final_decision: Dict - Beslut från decision_engine
     - indicator_data: Dict - Indikatorer från indicator_registry
     - execution_result: Dict - Resultat från execution_engine
+    - parameter_adjustment: Dict - Parameterjusteringar från RL-controller (Sprint 4.2)
 
 Outputs:
     - memory_insights: Dict - Historiska lärdomar och mönster
@@ -24,36 +27,40 @@ Publicerar till message_bus:
     - memory_insights: Insights för decision_engine
     - feedback_event: Feedback om decision outcomes
 
-Prenumererar på (från functions.yaml):
+Prenumererar på (från functions_v2.yaml):
     - final_decision (från decision_engine)
     - indicator_data (från indicator_registry)
     - execution_result (från execution_engine)
+    - parameter_adjustment (från rl_controller) - Sprint 4.2
 
-Använder RL: Nej (från functions.yaml)
+Använder RL: Nej (från functions_v2.yaml)
 Tar emot feedback: Ja (från feedback_analyzer, meta_agent_evolution_engine)
 
-Anslutningar (från flowchart.yaml - memory_flow):
+Anslutningar (från flowchart_v2.yaml - memory_flow):
     Från:
     - decision_engine (final_decision)
     - indicator_registry (indicator_data)
     - execution_engine (execution_result)
     - risk_manager (risk_profile)
+    - rl_controller (parameter_adjustment) - Sprint 4.2
     Till:
     - decision_engine (memory_insights)
     - feedback_analyzer (historical data)
     - introspection_panel (för visualisering)
 
-Feedback-generering (från feedback_loop.yaml):
+Feedback-generering (från feedback_loop_v2.yaml):
     Triggers:
     - decision_outcome: Om beslut ledde till vinst/förlust
     - indicator_correlation: Vilka indikatorer korrelerade med utfall
+    - parameter_impact: Effekt av parameterjusteringar (Sprint 4.2)
     
     Stores:
     - feedback_event: Från andra moduler
     - feedback_insight: Från feedback_analyzer
     - agent_response: Från RL-agenter
+    - parameter_history: Från RL-controller (Sprint 4.2)
 
-Används i Sprint: 4, 6
+Används i Sprint: 4, 4.2, 6
 """
 
 from typing import Dict, Any, List, Tuple
@@ -78,6 +85,9 @@ class StrategicMemoryEngine:
         self.insight_storage: List[Dict[str, Any]] = []
         self.agent_responses: List[Dict[str, Any]] = []
         
+        # Sprint 4.2: Parameter history
+        self.parameter_history: List[Dict[str, Any]] = []
+        
         # Korrelationsanalys cache
         self.correlation_cache: Dict[str, Dict[str, Any]] = {}
         
@@ -89,6 +99,9 @@ class StrategicMemoryEngine:
         self.message_bus.subscribe('feedback_event', self._on_feedback)
         self.message_bus.subscribe('feedback_insight', self._on_insight)
         self.message_bus.subscribe('agent_status', self._on_agent_response)
+        
+        # Sprint 4.2: Prenumerera på parameter_adjustment
+        self.message_bus.subscribe('parameter_adjustment', self._on_parameter_adjustment)
     
     def _on_decision(self, decision: Dict[str, Any]) -> None:
         """
@@ -197,6 +210,27 @@ class StrategicMemoryEngine:
             'logged_at': time.strftime('%Y-%m-%d %H:%M:%S')
         }
         self.agent_responses.append(agent_entry)
+    
+    def _on_parameter_adjustment(self, adjustment: Dict[str, Any]) -> None:
+        """
+        Callback för parameter adjustments från RL-controller (Sprint 4.2).
+        
+        Args:
+            adjustment: Parameterjusteringar
+        """
+        param_entry = {
+            **adjustment,
+            'timestamp': time.time(),
+            'logged_at': time.strftime('%Y-%m-%d %H:%M:%S')
+        }
+        self.parameter_history.append(param_entry)
+        
+        # Koppla parameter adjustment till senaste beslut om det finns
+        if self.decision_history:
+            self.decision_history[-1]['parameter_context'] = {
+                'adjusted_parameters': adjustment.get('adjusted_parameters', {}),
+                'reward_signals': adjustment.get('reward_signals', {})
+            }
     
     def _link_execution_to_decision(self, execution: Dict[str, Any]) -> None:
         """
@@ -493,10 +527,23 @@ class StrategicMemoryEngine:
             'insights_received': len(self.insight_storage),
             'agent_responses': len(self.agent_responses),
             'symbols_tracked': len(self.indicator_history),
-            'correlations_analyzed': len(self.correlation_cache)
+            'correlations_analyzed': len(self.correlation_cache),
+            'parameter_adjustments': len(self.parameter_history)  # Sprint 4.2
         }
         
         return summary
+    
+    def get_parameter_history(self, limit: int = 100) -> List[Dict[str, Any]]:
+        """
+        Hämtar parameterhistorik (Sprint 4.2).
+        
+        Args:
+            limit: Max antal entries
+        
+        Returns:
+            Lista med parameterjusteringar
+        """
+        return self.parameter_history[-limit:]
     
     def _count_completed_trades(self) -> List[Dict[str, Any]]:
         """

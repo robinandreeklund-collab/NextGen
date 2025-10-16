@@ -98,7 +98,7 @@ sprints:
       - Parameterjustering via RL
       - Belöningssignal baserad på agentförbättring
       - Visualisering av parameterhistorik
-    status: ⏳ planerad
+    status: ✅ klar
 
   - sprint: 5
     name: Simulering och konsensus

@@ -4,6 +4,7 @@ introspection_panel.py - Introspektionspanel
 Beskrivning:
     Visualiserar modulstatus, RL-performance och kommunikation.
     Dashboard för transparens och debugging av systemet.
+    Sprint 4.2: Visualiserar även parameterhistorik och trends.
 
 Roll:
     - Prenumererar på agent_status, feedback_event, indicator_data
@@ -11,11 +12,13 @@ Roll:
     - Visar agent adaptation och RL-performance
     - Visar reward trends över tid
     - Renderar dashboard för Dash-applikation
+    - Visualiserar parameterhistorik och trends (Sprint 4.2)
 
 Inputs:
     - agent_status: Dict - Status från rl_controller
     - feedback_event: Dict - Feedback från feedback_router
     - indicator_data: Dict - Indikatorer från indicator_registry
+    - parameter_adjustment: Dict - Parameterjusteringar från RL-controller (Sprint 4.2)
 
 Outputs:
     - dashboard_render: Dict - Data för Dash-visualisering
@@ -23,17 +26,18 @@ Outputs:
 Publicerar till message_bus:
     - Ingen (konsumerar endast data)
 
-Prenumererar på (från functions.yaml):
+Prenumererar på (från functions_v2.yaml):
     - agent_status (från rl_controller)
     - feedback_event (från feedback_router)
     - indicator_data (från indicator_registry)
+    - parameter_adjustment (från rl_controller) - Sprint 4.2
 
-Använder RL: Nej (från functions.yaml)
-Tar emot feedback: Nej (från functions.yaml)
+Använder RL: Nej (från functions_v2.yaml)
+Tar emot feedback: Nej (från functions_v2.yaml)
 
-Anslutningar (från flowchart.yaml - visualization):
+Anslutningar (från flowchart_v2.yaml - visualization):
     Från:
-    - rl_controller (agent_status)
+    - rl_controller (agent_status, parameter_adjustment)
     - feedback_router (feedback_event)
     - indicator_registry (indicator_data)
     - portfolio_manager (portfolio_status)
@@ -41,13 +45,15 @@ Anslutningar (från flowchart.yaml - visualization):
     - decision_simulator (simulation_result)
     Till: dashboard_render
 
-Visualisering (från feedback_loop.yaml):
+Visualisering (från feedback_loop_v2.yaml):
     Displays:
     - feedback flow: Visuell representation av feedback mellan moduler
     - agent adaptation: Hur agenter anpassar sig över tid
     - reward trends: Utveckling av reward över episodes
+    - parameter history: Meta-parametrar över tid (Sprint 4.2)
+    - parameter impact: Korrelation mellan parametrar och performance (Sprint 4.2)
 
-Används i Sprint: 3, 7
+Används i Sprint: 3, 4.2, 7
 """
 
 from typing import Dict, Any, List
@@ -68,11 +74,17 @@ class IntrospectionPanel:
         self.feedback_events: List[Dict[str, Any]] = []
         self.indicator_snapshots: List[Dict[str, Any]] = []
         
+        # Sprint 4.2: Parameter adjustment history
+        self.parameter_adjustments: List[Dict[str, Any]] = []
+        
         # Prenumerera på relevanta topics
         self.message_bus.subscribe('agent_status', self._on_agent_status)
         self.message_bus.subscribe('feedback_event', self._on_feedback)
         self.message_bus.subscribe('indicator_data', self._on_indicators)
         self.message_bus.subscribe('portfolio_status', self._on_portfolio)
+        
+        # Sprint 4.2: Prenumerera på parameter_adjustment
+        self.message_bus.subscribe('parameter_adjustment', self._on_parameter_adjustment)
     
     def _on_agent_status(self, status: Dict[str, Any]) -> None:
         """Callback för agent status från rl_controller."""
@@ -99,6 +111,18 @@ class IntrospectionPanel:
         """Callback för portföljstatus."""
         # Stub: Lagras för visualisering
         pass
+    
+    def _on_parameter_adjustment(self, adjustment: Dict[str, Any]) -> None:
+        """
+        Callback för parameter adjustments från RL-controller (Sprint 4.2).
+        
+        Args:
+            adjustment: Parameterjusteringar
+        """
+        self.parameter_adjustments.append(adjustment)
+        # Behåll senaste 100
+        if len(self.parameter_adjustments) > 100:
+            self.parameter_adjustments = self.parameter_adjustments[-100:]
     
     def render_dashboard(self) -> Dict[str, Any]:
         """
@@ -330,4 +354,73 @@ class IntrospectionPanel:
                 targets.append('meta_agent_evolution_engine')
         
         return targets
+    
+    def get_parameter_visualization_data(self) -> Dict[str, Any]:
+        """
+        Genererar data för visualisering av parameterhistorik (Sprint 4.2).
+        
+        Returns:
+            Dict med parameter visualization data
+        """
+        if not self.parameter_adjustments:
+            return {
+                'parameter_trends': {},
+                'parameter_correlation': {},
+                'recent_adjustments': []
+            }
+        
+        # Extrahera trends för varje parameter
+        parameter_trends = {
+            'evolution_threshold': [],
+            'min_samples': [],
+            'update_frequency': [],
+            'agent_entropy_threshold': []
+        }
+        
+        for adjustment in self.parameter_adjustments:
+            adjusted = adjustment.get('adjusted_parameters', {})
+            timestamp = adjustment.get('timestamp', 0)
+            
+            for param_name in parameter_trends.keys():
+                if param_name in adjusted:
+                    parameter_trends[param_name].append({
+                        'timestamp': timestamp,
+                        'value': adjusted[param_name],
+                        'reward_signals': adjustment.get('reward_signals', {})
+                    })
+        
+        # Beräkna parameter correlation med performance
+        parameter_correlation = {}
+        for param_name, trend_data in parameter_trends.items():
+            if len(trend_data) >= 3:
+                values = [d['value'] for d in trend_data]
+                parameter_correlation[param_name] = {
+                    'min': min(values),
+                    'max': max(values),
+                    'current': values[-1],
+                    'trend': 'increasing' if values[-1] > values[0] else 'decreasing' if values[-1] < values[0] else 'stable',
+                    'volatility': max(values) - min(values)
+                }
+        
+        return {
+            'parameter_trends': parameter_trends,
+            'parameter_correlation': parameter_correlation,
+            'recent_adjustments': self.parameter_adjustments[-10:],
+            'total_adjustments': len(self.parameter_adjustments)
+        }
+    
+    def get_comprehensive_dashboard_data(self) -> Dict[str, Any]:
+        """
+        Genererar omfattande dashboard data inklusive parametrar (Sprint 4.2).
+        
+        Returns:
+            Dict med all dashboard data
+        """
+        base_data = self.get_dashboard_data()
+        parameter_data = self.get_parameter_visualization_data()
+        
+        return {
+            **base_data,
+            'parameter_visualization': parameter_data
+        }
 
