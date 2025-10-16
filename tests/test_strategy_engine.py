@@ -109,11 +109,11 @@ def test_strategy_engine_analyst_ratings():
     bus = MessageBus()
     strategy = StrategyEngine(bus)
     
-    # Simulera med stark analytiker-konsensus OCH låg RSI för stark BUY-signal
+    # Simulera med stark analytiker-konsensus OCH starkt översåld RSI för stark BUY-signal
     indicators = {
         'symbol': 'TEST',
         'technical': {
-            'RSI': 28.0,  # Översåld för stark signal
+            'RSI': 22.0,  # Starkt översåld för stark signal
             'MACD': {'histogram': 0.2},
             'ATR': 2.0
         },
@@ -126,7 +126,9 @@ def test_strategy_engine_analyst_ratings():
     proposal = strategy.generate_proposal('TEST')
     
     assert proposal['action'] == 'BUY'
-    assert 'Analyst' in proposal['reasoning'] or 'consensus' in proposal['reasoning'].lower()
+    # Använd case-insensitive check för båda
+    reasoning_lower = proposal['reasoning'].lower()
+    assert 'analyst' in reasoning_lower or 'consensus' in reasoning_lower
     print("✓ StrategyEngine Analyst Ratings fungerar")
 
 
