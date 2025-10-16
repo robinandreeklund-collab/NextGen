@@ -100,6 +100,8 @@ class IndicatorRegistry:
         # Använder hash + tidsstämpel för deterministisk men varierande data
         
         # Skapa seed baserad på symbol och tid (varierar per minut)
+        # NOTE: MD5 is used here for deterministic simulation purposes only.
+        # Do NOT use this approach for cryptographic or security-sensitive applications.
         seed_value = int(hashlib.md5(f"{symbol}{int(time.time()/60)}".encode()).hexdigest()[:8], 16)
         random.seed(seed_value)
         
