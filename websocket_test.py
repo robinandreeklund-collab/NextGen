@@ -292,13 +292,11 @@ class WebSocketTester:
                 })
                 
                 # Räkna faktiska executions (inte decisions)
-                # Detta fixar problemet där BUY count inte matchar insufficient funds count
-                if executed_action not in ['BUY', 'SELL']:
-                    # Om action blev HOLD i execution, minska räknaren som ökades tidigare
-                    if action == 'BUY':
-                        self.stats['buy_count'] -= 1
-                    elif action == 'SELL':
-                        self.stats['sell_count'] -= 1
+                # Inkrementera endast vid faktisk execution
+                if executed_action == 'BUY':
+                    self.stats['buy_count'] += 1
+                elif executed_action == 'SELL':
+                    self.stats['sell_count'] += 1
             
             # Debug: Visa execution detaljer
             if self.debug_mode and self.stats['decisions_made'] < 10:
