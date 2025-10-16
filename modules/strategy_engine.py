@@ -217,7 +217,9 @@ class StrategyEngine:
             reasons.append(f'Analystconsensus: {analyst_consensus}')
         
         # Sprint 4.3: Använd adaptiv signal_threshold för beslut
-        required_signal_strength = self.signal_threshold * 4.0  # Skala till signal range
+        # Beräkna maximal möjlig signalstyrka (2*RSI + 1*MACD + 1*Analyst)
+        max_signal_strength = 2.0 * rsi_weight + 1.0 * macd_weight + 1.0 * analyst_weight
+        required_signal_strength = self.signal_threshold * max_signal_strength  # Skala till signal range
         
         # Fatta beslut baserat på signaler och adaptiv tröskel
         if buy_signals > sell_signals and buy_signals >= required_signal_strength:
