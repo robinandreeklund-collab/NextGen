@@ -51,6 +51,8 @@ Dashboard visar:
 - Timeline av events
 - Recent events table
 
+**Obs:** Dashboard startar med demo-data när det körs standalone. För att se live data från systemet, integrera dashboarden med en körande instans av NextGen AI Trader.
+
 **Obs:** Tryck `Ctrl+C` för att stoppa dashboard-servern.
 
 ## Köra Tester

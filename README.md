@@ -342,7 +342,13 @@ python dashboards/feedback_flow.py
 # Öppna http://localhost:8050 i webbläsare
 ```
 
-**Obs:** Dashboard kräver att följande paket är installerade: `dash`, `plotly`, `numpy`. Installera alla beroenden med `pip install -r requirements.txt`.
+**Obs:** Dashboard startar med demo-data för att visa funktionalitet. Den visar:
+- 15 agent status updates
+- 20 feedback events med olika prioriteter
+- 5 indicator snapshots
+- Modulkommunikation och kopplingar
+
+För att se live data från systemet, integrera dashboarden med en körande instans av NextGen AI Trader.
 
 ### Demo och Testning
 

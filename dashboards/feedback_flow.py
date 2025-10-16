@@ -289,6 +289,7 @@ if __name__ == '__main__':
     # Demo mode - kör med mock data
     import sys
     import os
+    import time
     
     # Lägg till projektroot till path
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -296,7 +297,58 @@ if __name__ == '__main__':
     from modules.introspection_panel import IntrospectionPanel
     from modules.message_bus import message_bus
     
+    # Skapa panel
     panel = IntrospectionPanel(message_bus)
+    
+    # Populera med demo-data för att visa funktionalitet
+    print("Genererar demo-data för dashboard...")
+    
+    # Simulera agent status updates
+    for i in range(15):
+        status = {
+            'module': ['strategy_engine', 'risk_manager', 'decision_engine'][i % 3],
+            'performance': 0.5 + (i * 0.03),
+            'reward': 5.0 + i * 2.0,
+            'timestamp': time.time() + i
+        }
+        message_bus.publish('agent_status', status)
+    
+    # Simulera feedback events
+    sources = ['execution_engine', 'portfolio_manager', 'execution_engine', 'strategic_memory_engine']
+    priorities = ['high', 'medium', 'critical', 'medium', 'high']
+    for i in range(20):
+        feedback = {
+            'source': sources[i % len(sources)],
+            'triggers': [['trade_result'], ['capital_change'], ['slippage'], ['decision_outcome']][i % 4],
+            'priority': priorities[i % len(priorities)],
+            'timestamp': time.time() + i * 10,
+            'data': {
+                'success': i % 3 != 0,
+                'slippage': 0.002 + (i % 5) * 0.001,
+                'performance': 0.7 - (i * 0.01) if i < 10 else 0.6
+            }
+        }
+        message_bus.publish('feedback_event', feedback)
+    
+    # Simulera indicator data
+    for i in range(5):
+        indicators = {
+            'symbol': ['AAPL', 'TSLA', 'MSFT'][i % 3],
+            'technical': {
+                'RSI': 50 + i * 5,
+                'MACD': {'histogram': 0.3 - i * 0.1}
+            }
+        }
+        message_bus.publish('indicator_data', indicators)
+    
+    print(f"✓ Genererade {len(panel.agent_status_history)} agent status updates")
+    print(f"✓ Genererade {len(panel.feedback_events)} feedback events")
+    print(f"✓ Genererade {len(panel.indicator_snapshots)} indicator snapshots")
+    print()
+    print("Dashboard startar på http://localhost:8050")
+    print("Tryck Ctrl+C för att stoppa")
+    print()
+    
     app = create_feedback_flow_dashboard(panel)
     app.run(debug=True, port=8050)
 
