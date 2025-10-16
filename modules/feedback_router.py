@@ -77,13 +77,16 @@ class FeedbackRouter:
         # route_feedback används för extern routing
         pass
     
-    def route_feedback(self, feedback: Dict[str, Any]) -> None:
+    def route_feedback(self, feedback: Dict[str, Any]) -> Dict[str, Any]:
         """
         Routar feedback till rätt mottagare baserat på källa och triggers.
         Denna metod används för manuell routing, inte för automatisk callback.
         
         Args:
             feedback: Feedback event att distribuera
+        
+        Returns:
+            Dict[str, Any]: Enriched och routad feedback-event med metadata.
         """
         source = feedback.get('source', 'unknown')
         triggers = feedback.get('triggers', [])
