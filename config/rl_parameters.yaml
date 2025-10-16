@@ -36,7 +36,7 @@ training:
   batch_size: 32
   epochs_per_update: 4
   buffer_size: 2048
-  update_frequency: 10  # Uppdatera agenter var 10:e reward
+  update_frequency: 10  # Uppdatera agenter för varje 10:e reward
   
 # Reward shaping
 reward_shaping:
