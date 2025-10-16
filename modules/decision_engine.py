@@ -21,6 +21,7 @@ Outputs:
     - final_decision: Dict - Slutgiltigt handelsbeslut med confidence score
 
 Publicerar till message_bus:
+    - final_decision: Slutgiltigt handelsbeslut för exekvering/loggning
     - decision_vote: Beslut för vote_engine (används i Sprint 5)
 
 Prenumererar på (från functions.yaml):
