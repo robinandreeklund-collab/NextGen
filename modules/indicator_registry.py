@@ -79,11 +79,18 @@ class IndicatorRegistry:
             Dict med tekniska indikatorer (OHLC, Volume, SMA, RSI, etc.)
         """
         # Stub: Skulle hämta från Finnhub API
+        # För demo, variera RSI baserat på symbol för att visa olika scenarier
+        rsi_values = {
+            'AAPL': 65.0,  # Neutral
+            'TSLA': 25.0,  # Översåld - köpsignal
+            'MSFT': 75.0   # Överköpt - säljsignal
+        }
+        
         return {
             'OHLC': {'open': 150.0, 'high': 152.0, 'low': 149.0, 'close': 151.0},
             'Volume': 1000000,
             'SMA': {'SMA_20': 150.5, 'SMA_50': 148.0},
-            'RSI': 65.0
+            'RSI': rsi_values.get(symbol, 50.0)
         }
     
     def fetch_fundamental_indicators(self, symbol: str) -> Dict[str, Any]:
