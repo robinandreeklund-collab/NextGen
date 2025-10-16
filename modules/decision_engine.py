@@ -70,6 +70,7 @@ class DecisionEngine:
         self.trade_proposals: Dict[str, Any] = {}
         self.risk_profiles: Dict[str, Any] = {}
         self.memory_insights: Optional[Dict[str, Any]] = None
+        self.portfolio_status: Optional[Dict[str, Any]] = None
         self.rl_agent = None  # Uppdateras från rl_controller
         self.rl_enabled = False
         self.agent_performance = 0.0
@@ -78,6 +79,7 @@ class DecisionEngine:
         self.message_bus.subscribe('decision_proposal', self._on_trade_proposal)
         self.message_bus.subscribe('risk_profile', self._on_risk_profile)
         self.message_bus.subscribe('memory_insights', self._on_memory_insights)
+        self.message_bus.subscribe('portfolio_status', self._on_portfolio_status)
         self.message_bus.subscribe('agent_update', self._on_agent_update)
     
     def _on_trade_proposal(self, proposal: Dict[str, Any]) -> None:
@@ -109,6 +111,15 @@ class DecisionEngine:
         """
         self.memory_insights = insights
     
+    def _on_portfolio_status(self, status: Dict[str, Any]) -> None:
+        """
+        Callback för portfolio status från portfolio_manager.
+        
+        Args:
+            status: Aktuell portföljstatus
+        """
+        self.portfolio_status = status
+    
     def _on_agent_update(self, update: Dict[str, Any]) -> None:
         """
         Callback för agent updates från rl_controller.
@@ -121,12 +132,13 @@ class DecisionEngine:
             metrics = update.get('metrics', {})
             self.agent_performance = metrics.get('average_reward', 0.0)
     
-    def make_decision(self, symbol: str) -> Dict[str, Any]:
+    def make_decision(self, symbol: str, current_price: float = None) -> Dict[str, Any]:
         """
         Fattar slutgiltigt beslut för en symbol baserat på alla inputs.
         
         Args:
             symbol: Aktiesymbol att fatta beslut för
+            current_price: Aktuellt pris för insufficient funds-check
             
         Returns:
             Dict med final_decision (action, symbol, quantity, confidence, reasoning)
@@ -149,10 +161,11 @@ class DecisionEngine:
         risk_confidence = risk_profile.get('confidence', 0.5)
         
         if risk_level == 'HIGH':
-            # Minska quantity vid hög risk
+            # Minska quantity vid hög risk (men minimum 1)
             original_qty = decision['quantity']
-            decision['quantity'] = int(decision['quantity'] * 0.5)
-            decision['reasoning'] += f', reducerad position från {original_qty} till {decision["quantity"]} pga hög risk'
+            decision['quantity'] = max(1, int(decision['quantity'] * 0.5))
+            if decision['quantity'] != original_qty:
+                decision['reasoning'] += f', reducerad position från {original_qty} till {decision["quantity"]} pga hög risk'
             decision['confidence'] *= 0.7
             
             # Vid mycket hög risk, överväg att avbryta
@@ -170,6 +183,38 @@ class DecisionEngine:
         elif risk_level == 'MEDIUM':
             # Balansera confidence
             decision['confidence'] = (proposal.get('confidence', 0.5) + risk_confidence) / 2
+        
+        # Kontrollera insufficient funds för BUY-beslut
+        if decision['action'] == 'BUY' and current_price and self.portfolio_status:
+            available_cash = self.portfolio_status.get('cash', 0)
+            estimated_cost = current_price * decision['quantity'] * 1.0025  # Inkludera 0.25% fee
+            
+            if estimated_cost > available_cash:
+                # Justera quantity så det passar i budget
+                max_affordable_qty = int(available_cash / (current_price * 1.0025))
+                if max_affordable_qty >= 1:
+                    decision['quantity'] = max_affordable_qty
+                    decision['reasoning'] += f', justerad till {max_affordable_qty} aktier pga tillgängligt kapital'
+                else:
+                    # Kan inte köpa ens 1 aktie
+                    decision['action'] = 'HOLD'
+                    decision['quantity'] = 0
+                    decision['reasoning'] = 'Avbrutet: Otillräckligt kapital'
+                    decision['confidence'] = 0.0
+        
+        # Kontrollera insufficient holdings för SELL-beslut
+        if decision['action'] == 'SELL' and self.portfolio_status:
+            positions = self.portfolio_status.get('positions', {})
+            if symbol not in positions or positions[symbol]['quantity'] < decision['quantity']:
+                available_qty = positions.get(symbol, {}).get('quantity', 0)
+                if available_qty > 0:
+                    decision['quantity'] = available_qty
+                    decision['reasoning'] += f', justerad till {available_qty} aktier (allt vi äger)'
+                else:
+                    decision['action'] = 'HOLD'
+                    decision['quantity'] = 0
+                    decision['reasoning'] = 'Avbrutet: Inga aktier att sälja'
+                    decision['confidence'] = 0.0
         
         # RL-justering (om aktiverad)
         if self.rl_enabled and self.agent_performance > 0:

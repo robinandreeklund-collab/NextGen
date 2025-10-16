@@ -85,6 +85,9 @@ class WebSocketTester:
             'messages_received': 0,
             'trades_processed': 0,
             'decisions_made': 0,
+            'buy_count': 0,
+            'sell_count': 0,
+            'hold_count': 0,
             'evolution_events': 0,
             'start_time': time.time(),
             'symbol_counts': {symbol: 0 for symbol in self.symbols}
@@ -240,9 +243,9 @@ class WebSocketTester:
         # Publicera riskprofil till message_bus
         self.risk_manager.publish_risk_profile(risk_profile)
         
-        # Decision engine fattar beslut (tar symbol)
+        # Decision engine fattar beslut (tar symbol och price för insufficient funds check)
         # Nu har den både proposal och risk_profile via message_bus
-        decision = self.decision_engine.make_decision(symbol)
+        decision = self.decision_engine.make_decision(symbol, current_price=price)
         
         if self.debug_mode and self.stats['decisions_made'] < 5:
             print(f"   ⚖️  Final decision: {decision.get('action')} "
@@ -251,6 +254,13 @@ class WebSocketTester:
         if decision and decision.get('action') != 'HOLD':
             # Sätt aktuellt pris för execution
             decision['current_price'] = price
+            
+            # Räkna beslut
+            action = decision.get('action')
+            if action == 'BUY':
+                self.stats['buy_count'] += 1
+            elif action == 'SELL':
+                self.stats['sell_count'] += 1
             
             # Execution engine exekverar
             execution_result = self.execution_engine.execute_trade(decision)
@@ -268,15 +278,19 @@ class WebSocketTester:
             self.portfolio_manager.update_portfolio(execution_result)
             
             if self.debug_mode and self.stats['decisions_made'] < 10:
-                portfolio = self.portfolio_manager.get_status()
+                portfolio = self.portfolio_manager.get_status(self.current_prices)
                 print(f"   💰 Portfolio: ${portfolio.get('cash', 0):.2f} cash, "
                       f"${portfolio.get('total_value', 0):.2f} total")
                 
-                # Visa positioner
+                # Visa alla positioner
                 if portfolio.get('positions'):
-                    print(f"   📊 Positioner:")
-                    for sym, pos in list(portfolio['positions'].items())[:3]:
-                        print(f"      {sym}: {pos['quantity']} @ avg ${pos['avg_price']:.2f}")
+                    print(f"   📊 Innehav ({len(portfolio['positions'])} positioner):")
+                    for sym, pos in portfolio['positions'].items():
+                        current_price = self.current_prices.get(sym, pos['avg_price'])
+                        current_value = pos['quantity'] * current_price
+                        pnl = current_value - (pos['quantity'] * pos['avg_price'])
+                        print(f"      {sym}: {pos['quantity']} @ avg ${pos['avg_price']:.2f} "
+                              f"(nuv: ${current_price:.2f}, P&L: ${pnl:.2f})")
             
             self.stats['decisions_made'] += 1
             
@@ -292,8 +306,11 @@ class WebSocketTester:
             if len(self.meta_evolution.evolution_history) > self.stats['evolution_events']:
                 self.stats['evolution_events'] = len(self.meta_evolution.evolution_history)
                 print(f"\n🧬 Evolution event detekterad!")
-        elif self.debug_mode and self.stats['decisions_made'] < 5:
-            print(f"   ⏸️  Decision: HOLD - ingen trade")
+        else:
+            # HOLD decision
+            self.stats['hold_count'] += 1
+            if self.debug_mode and self.stats['decisions_made'] < 5:
+                print(f"   ⏸️  Decision: HOLD - ingen trade")
     
     def print_progress(self) -> None:
         """Skriver ut progress-information."""
@@ -308,22 +325,28 @@ class WebSocketTester:
         print(f"🎯 Beslut fattade: {self.stats['decisions_made']}")
         print(f"🧬 Evolution events: {self.stats['evolution_events']}")
         
-        # Visa status om beslut
+        # Visa status om beslut med BUY/SELL/HOLD percentages
         if self.stats['trades_processed'] > 50:
             total_decision_points = self.stats['trades_processed'] // 10
-            if self.stats['decisions_made'] == 0:
-                print(f"\n💡 Status: {total_decision_points} beslutstillfällen, alla = HOLD")
-                print(f"   (Systemet väntar på starka signaler: RSI<30 eller RSI>70)")
-            else:
-                hold_rate = ((total_decision_points - self.stats['decisions_made']) / total_decision_points * 100)
-                print(f"\n💡 {self.stats['decisions_made']} trades / {total_decision_points} beslut ({hold_rate:.0f}% HOLD-rate)")
+            buy_pct = (self.stats['buy_count'] / total_decision_points * 100) if total_decision_points > 0 else 0
+            sell_pct = (self.stats['sell_count'] / total_decision_points * 100) if total_decision_points > 0 else 0
+            hold_pct = (self.stats['hold_count'] / total_decision_points * 100) if total_decision_points > 0 else 0
+            
+            print(f"\n📊 Beslutsdistribution ({total_decision_points} totalt):")
+            print(f"   🟢 BUY:  {self.stats['buy_count']} ({buy_pct:.1f}%)")
+            print(f"   🔴 SELL: {self.stats['sell_count']} ({sell_pct:.1f}%)")
+            print(f"   ⚪ HOLD: {self.stats['hold_count']} ({hold_pct:.1f}%)")
         
-        # Portfolio status
-        portfolio_status = self.portfolio_manager.get_status()
+        # Portfolio status med current prices
+        portfolio_status = self.portfolio_manager.get_status(self.current_prices if hasattr(self, 'current_prices') else None)
         print(f"\n💰 Portfolio:")
         print(f"   Kapital: ${portfolio_status.get('cash', 0):.2f}")
         print(f"   Värde: ${portfolio_status.get('total_value', 0):.2f}")
-        print(f"   P&L: ${portfolio_status.get('total_value', 0) - 1000:.2f}")
+        print(f"   P&L: ${portfolio_status.get('pnl', 0):.2f} ({portfolio_status.get('pnl_pct', 0):.1f}%)")
+        
+        # Visa innehav
+        if portfolio_status.get('positions'):
+            print(f"   Positioner: {len(portfolio_status['positions'])}")
         
         # Top 3 mest aktiva symboler
         top_symbols = sorted(
@@ -367,8 +390,19 @@ class WebSocketTester:
         print(f"🎯 Totalt beslut: {self.stats['decisions_made']}")
         print(f"🧬 Evolution events: {self.stats['evolution_events']}")
         
-        # Portfolio resultat
-        portfolio_status = self.portfolio_manager.get_status()
+        # Beslutsdistribution
+        total_decision_points = self.stats['trades_processed'] // 10 if self.stats['trades_processed'] > 0 else 1
+        buy_pct = (self.stats['buy_count'] / total_decision_points * 100)
+        sell_pct = (self.stats['sell_count'] / total_decision_points * 100)
+        hold_pct = (self.stats['hold_count'] / total_decision_points * 100)
+        
+        print(f"\n📊 BESLUTSDISTRIBUTION:")
+        print(f"   🟢 BUY:  {self.stats['buy_count']} ({buy_pct:.1f}%)")
+        print(f"   🔴 SELL: {self.stats['sell_count']} ({sell_pct:.1f}%)")
+        print(f"   ⚪ HOLD: {self.stats['hold_count']} ({hold_pct:.1f}%)")
+        
+        # Portfolio resultat med current prices
+        portfolio_status = self.portfolio_manager.get_status(self.current_prices if hasattr(self, 'current_prices') else None)
         final_value = portfolio_status.get('total_value', 1000)
         profit = final_value - 1000
         roi = (profit / 1000) * 100
@@ -378,6 +412,16 @@ class WebSocketTester:
         print(f"   Slutligt värde: ${final_value:.2f}")
         print(f"   Profit/Loss: ${profit:.2f}")
         print(f"   ROI: {roi:.2f}%")
+        
+        # Visa innehav
+        if portfolio_status.get('positions'):
+            print(f"\n   📊 SLUTLIGA INNEHAV ({len(portfolio_status['positions'])} positioner):")
+            for symbol, pos in portfolio_status['positions'].items():
+                current_price = self.current_prices.get(symbol, pos['avg_price']) if hasattr(self, 'current_prices') else pos['avg_price']
+                current_value = pos['quantity'] * current_price
+                pnl = current_value - (pos['quantity'] * pos['avg_price'])
+                print(f"      {symbol}: {pos['quantity']} @ ${pos['avg_price']:.2f} "
+                      f"→ ${current_price:.2f} (P&L: ${pnl:.2f})")
         
         # Strategic Memory sammanfattning
         insights = self.strategic_memory.generate_insights()

@@ -178,13 +178,14 @@ class StrategyEngine:
         
         # Fatta beslut baserat på signaler
         if buy_signals > sell_signals and buy_signals >= 2:
-            # Justera quantity baserat på ATR (volatilitet)
-            base_quantity = 10
+            # Små volymer: 1-3 aktier baserat på volatilitet
             if atr > 5.0:  # Hög volatilitet
-                quantity = max(5, int(base_quantity * 0.7))
-                reasons.append(f'Reducerad position pga hög volatilitet (ATR: {atr:.1f})')
+                quantity = 1
+                reasons.append(f'Minimerad position pga hög volatilitet (ATR: {atr:.1f})')
+            elif atr > 3.0:  # Medium volatilitet
+                quantity = 2
             else:
-                quantity = base_quantity
+                quantity = 3
             
             proposal['action'] = 'BUY'
             proposal['quantity'] = quantity
@@ -193,7 +194,8 @@ class StrategyEngine:
             
         elif sell_signals > buy_signals and sell_signals >= 2:
             proposal['action'] = 'SELL'
-            proposal['quantity'] = 10
+            # Sälj upp till 3 aktier åt gången
+            proposal['quantity'] = 3
             proposal['reasoning'] = ', '.join(reasons)
             proposal['confidence'] = min(0.9, 0.5 + (sell_signals * 0.1))
         
