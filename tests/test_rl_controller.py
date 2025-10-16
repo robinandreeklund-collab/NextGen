@@ -11,7 +11,11 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from modules.message_bus import MessageBus
-from modules.rl_controller import RLController, PPOAgent, MetaParameterAgent
+from modules.rl_controller import (
+    RLController,
+    PPOAgent,
+    MetaParameterAgent,
+)
 import numpy as np
 
 
