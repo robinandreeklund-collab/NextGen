@@ -111,6 +111,15 @@ class FeedbackAnalyzer:
             triggers = fb.get('triggers', [])
             triggers_by_source[source].extend(triggers)
         
+        # Beräkna topptriggers per källa
+        from collections import Counter
+        top_triggers_by_source = {}
+        for source, triggers in triggers_by_source.items():
+            trigger_counts = Counter(triggers)
+            top_triggers = [trigger for trigger, _ in trigger_counts.most_common(3)]
+            top_triggers_by_source[source] = top_triggers
+        insight['top_triggers_by_source'] = top_triggers_by_source
+        
         # Sprint 3: Identifiera performance patterns
         performance_patterns = self.detect_performance_patterns()
         insight['patterns'].extend(performance_patterns)
