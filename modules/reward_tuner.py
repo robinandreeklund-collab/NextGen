@@ -87,6 +87,9 @@ class RewardTunerAgent:
         self.message_bus.subscribe('agent_status', self._on_agent_status)
         self.message_bus.subscribe('parameter_adjustment', self._on_parameter_adjustment)
         
+        # Debug: Confirm initialization
+        print(f"[RewardTuner] Initialized and subscribed to 'base_reward' topic")
+        
         # Cache for current portfolio and agent state
         self.current_portfolio_status: Dict[str, Any] = {}
         self.current_agent_status: Dict[str, Any] = {}
@@ -99,6 +102,10 @@ class RewardTunerAgent:
             reward_data: Dict med base_reward och kontext
         """
         base_reward = reward_data.get('reward', 0.0)
+        
+        # Debug: Print first 3 rewards to verify reception
+        if len(self.base_reward_history) < 3:
+            print(f"[RewardTuner] Received base_reward #{len(self.base_reward_history)+1}: {base_reward:.4f}")
         
         # Store in history
         self.base_reward_history.append(base_reward)

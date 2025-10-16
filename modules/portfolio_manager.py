@@ -249,6 +249,10 @@ class PortfolioManager:
         self.previous_portfolio_value = current_value
         
         # Sprint 4.4: Publicera base_reward till reward_tuner (istället för direkt till rl_controller)
+        # Debug: Print first 3 rewards to verify this code path is executed
+        if len(self.trade_history) <= 3:
+            print(f"[PortfolioManager] Publishing base_reward #{len(self.trade_history)}: {reward:.4f}")
+        
         self.message_bus.publish('base_reward', {
             'reward': reward,
             'source': 'portfolio_manager',
