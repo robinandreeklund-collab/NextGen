@@ -273,6 +273,7 @@ class StrategicMemoryEngine:
         insights = {
             'total_decisions': len(self.decision_history),
             'total_executions': len(self.execution_history),
+            'completed_trades': 0,
             'success_rate': 0.0,
             'average_profit': 0.0,
             'patterns': [],
@@ -282,8 +283,16 @@ class StrategicMemoryEngine:
             'worst_indicators': []
         }
         
-        # Beräkna success rate och average profit
-        if self.execution_history:
+        # Beräkna success rate från completed round-trip trades (BUY → SELL)
+        completed_trades = self._count_completed_trades()
+        insights['completed_trades'] = len(completed_trades)
+        
+        if completed_trades:
+            successful = sum(1 for t in completed_trades if t.get('profit', 0) > 0)
+            insights['success_rate'] = successful / len(completed_trades)
+            insights['average_profit'] = sum(t.get('profit', 0) for t in completed_trades) / len(completed_trades)
+        elif self.execution_history:
+            # Fallback: använd execution success som proxy om inga completed trades
             successful = sum(1 for e in self.execution_history if e.get('success', False))
             insights['success_rate'] = successful / len(self.execution_history)
             
@@ -347,8 +356,25 @@ class StrategicMemoryEngine:
                 "Övervaka strategier - success rate under 50%"
             )
         
-        # Identifiera patterns från historik
-        if len(self.execution_history) >= 10:
+        # Identifiera patterns från historik - använd completed trades om finns
+        if len(completed_trades) >= 10:
+            recent_trades = completed_trades[-10:]
+            recent_success = sum(1 for t in recent_trades if t.get('profit', 0) > 0)
+            recent_success_rate = recent_success / len(recent_trades)
+            
+            if recent_success_rate < insights['success_rate'] - 0.15:
+                insights['patterns'].append({
+                    'type': 'performance_degradation',
+                    'severity': 'high',
+                    'description': 'Senaste performance sämre än genomsnitt'
+                })
+            elif recent_success_rate > insights['success_rate'] + 0.15:
+                insights['patterns'].append({
+                    'type': 'performance_improvement',
+                    'severity': 'low',
+                    'description': 'Senaste performance bättre än genomsnitt'
+                })
+        elif len(self.execution_history) >= 10:
             recent_executions = self.execution_history[-10:]
             recent_success = sum(1 for e in recent_executions if e.get('success', False))
             recent_success_rate = recent_success / len(recent_executions)
@@ -453,9 +479,16 @@ class StrategicMemoryEngine:
         Returns:
             Dict med performance-metriker
         """
+        # Räkna faktiska round-trip trades (BUY + SELL pairs)
+        completed_trades = self._count_completed_trades()
+        successful_trades = sum(1 for t in completed_trades if t.get('profit', 0) > 0)
+        
         summary = {
             'total_decisions': len(self.decision_history),
             'total_executions': len(self.execution_history),
+            'completed_trades': len(completed_trades),
+            'successful_trades': successful_trades,
+            'success_rate': (successful_trades / len(completed_trades)) if completed_trades else 0.0,
             'feedback_events': len(self.feedback_storage),
             'insights_received': len(self.insight_storage),
             'agent_responses': len(self.agent_responses),
@@ -464,6 +497,66 @@ class StrategicMemoryEngine:
         }
         
         return summary
+    
+    def _count_completed_trades(self) -> List[Dict[str, Any]]:
+        """
+        Räknar completed round-trip trades (BUY följd av SELL).
+        
+        Returns:
+            Lista med completed trades och deras profit/loss
+        """
+        completed = []
+        positions = {}  # Håller reda på öppna positioner per symbol
+        
+        for execution in self.execution_history:
+            if not execution.get('success'):
+                continue
+            
+            symbol = execution.get('symbol')
+            action = execution.get('action')
+            quantity = execution.get('quantity', 0)
+            price = execution.get('executed_price', 0)
+            
+            if action == 'BUY':
+                # Lägg till position
+                if symbol not in positions:
+                    positions[symbol] = []
+                positions[symbol].append({
+                    'quantity': quantity,
+                    'buy_price': price,
+                    'timestamp': execution.get('timestamp')
+                })
+            
+            elif action == 'SELL' and symbol in positions and positions[symbol]:
+                # Matcha mot äldsta BUY (FIFO)
+                remaining_qty = quantity
+                trade_profit = 0.0
+                
+                while remaining_qty > 0 and positions[symbol]:
+                    buy_position = positions[symbol][0]
+                    matched_qty = min(remaining_qty, buy_position['quantity'])
+                    
+                    # Beräkna profit för denna match
+                    profit = matched_qty * (price - buy_position['buy_price'])
+                    trade_profit += profit
+                    
+                    # Uppdatera remaining quantities
+                    remaining_qty -= matched_qty
+                    buy_position['quantity'] -= matched_qty
+                    
+                    # Ta bort tom position
+                    if buy_position['quantity'] == 0:
+                        positions[symbol].pop(0)
+                
+                # Lägg till completed trade
+                completed.append({
+                    'symbol': symbol,
+                    'profit': trade_profit,
+                    'sell_price': price,
+                    'timestamp': execution.get('timestamp')
+                })
+        
+        return completed
     
     def log_decision(self, decision_data: Dict[str, Any]) -> None:
         """

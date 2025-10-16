@@ -89,8 +89,11 @@ class WebSocketTester:
             'sell_count': 0,
             'hold_count': 0,
             'evolution_events': 0,
+            'insufficient_funds_count': 0,  # Nya räknare
+            'insufficient_holdings_count': 0,
             'start_time': time.time(),
-            'symbol_counts': {symbol: 0 for symbol in self.symbols}
+            'symbol_counts': {symbol: 0 for symbol in self.symbols},
+            'execution_log': []  # Logga alla BUY/SELL executions
         }
         
         # Signal handler för graceful shutdown
@@ -262,8 +265,30 @@ class WebSocketTester:
             elif action == 'SELL':
                 self.stats['sell_count'] += 1
             
+            # Kontrollera om det är insufficient funds/holdings INNAN execution
+            portfolio = self.portfolio_manager.get_status(self.current_prices)
+            original_action = action
+            original_qty = decision.get('quantity', 0)
+            
             # Execution engine exekverar
             execution_result = self.execution_engine.execute_trade(decision)
+            
+            # Kontrollera om trade blev HOLD p.g.a. insufficient funds/holdings
+            if execution_result.get('action') == 'HOLD':
+                if original_action == 'BUY':
+                    self.stats['insufficient_funds_count'] += 1
+                elif original_action == 'SELL':
+                    self.stats['insufficient_holdings_count'] += 1
+            elif execution_result.get('success'):
+                # Logga successful execution
+                self.stats['execution_log'].append({
+                    'symbol': symbol,
+                    'action': execution_result.get('action'),
+                    'quantity': execution_result.get('quantity'),
+                    'price': execution_result.get('executed_price'),
+                    'cost': execution_result.get('total_cost'),
+                    'timestamp': time.time()
+                })
             
             # Debug: Visa execution detaljer
             if self.debug_mode and self.stats['decisions_made'] < 10:
@@ -273,6 +298,13 @@ class WebSocketTester:
                       f"(market: ${execution_result.get('market_price', 0):.2f})")
                 print(f"      Cost: ${execution_result.get('total_cost', 0):.2f}")
                 print(f"      Slippage: {execution_result.get('slippage', 0)*100:.3f}%")
+                
+                # Visa varning om insufficient funds/holdings
+                if execution_result.get('action') == 'HOLD' and original_action != 'HOLD':
+                    if original_action == 'BUY':
+                        print(f"      ⚠️  INSUFFICIENT FUNDS - kunde ej köpa")
+                    elif original_action == 'SELL':
+                        print(f"      ⚠️  INSUFFICIENT HOLDINGS - inga aktier att sälja")
             
             # Portfolio manager uppdaterar
             self.portfolio_manager.update_portfolio(execution_result)
@@ -425,10 +457,20 @@ class WebSocketTester:
         
         # Strategic Memory sammanfattning
         insights = self.strategic_memory.generate_insights()
+        memory_summary = self.strategic_memory.get_performance_summary()
+        
         print(f"\n🧠 STRATEGIC MEMORY:")
         print(f"   Totalt beslut: {insights['total_decisions']}")
-        print(f"   Success rate: {insights['success_rate']*100:.1f}%")
-        print(f"   Genomsnittlig profit: ${insights['average_profit']:.2f}")
+        print(f"   Totalt executions: {insights['total_executions']}")
+        
+        if memory_summary.get('completed_trades', 0) > 0:
+            print(f"   Completed round-trips (BUY→SELL): {memory_summary['completed_trades']}")
+            print(f"   Success rate (profitable trades): {memory_summary['success_rate']*100:.1f}%")
+            print(f"   Genomsnittlig profit per round-trip: ${insights['average_profit']:.2f}")
+        else:
+            print(f"   Inga completed round-trips än")
+            print(f"   Execution success rate: {insights['success_rate']*100:.1f}%")
+            print(f"   Genomsnittlig profit: ${insights['average_profit']:.2f}")
         
         if insights['best_indicators']:
             print(f"\n   📈 Bästa indikatorer:")
@@ -498,9 +540,25 @@ class WebSocketTester:
         portfolio = self.portfolio_manager.get_status()
         print(f"\n📊 EXECUTION & PORTFOLIO:")
         print(f"   Totalt beslut (BUY/SELL): {self.stats['decisions_made']}")
+        print(f"   Totalt genomförda trades: {len(self.stats['execution_log'])}")
+        print(f"   Insufficient funds (BUY blocked): {self.stats['insufficient_funds_count']}")
+        print(f"   Insufficient holdings (SELL blocked): {self.stats['insufficient_holdings_count']}")
         print(f"   Portfolio cash: ${portfolio.get('cash', 0):.2f}")
         print(f"   Portfolio värde: ${portfolio.get('total_value', 0):.2f}")
         print(f"   Antal positioner: {len(portfolio.get('positions', {}))}")
+        
+        # Visa execution log för genomförda trades
+        if self.stats['execution_log']:
+            print(f"\n   📝 GENOMFÖRDA TRADES (senaste 10):")
+            for i, trade in enumerate(list(self.stats['execution_log'])[-10:], 1):
+                action_emoji = "🟢" if trade['action'] == 'BUY' else "🔴"
+                print(f"      {action_emoji} {trade['action']} {trade['quantity']} {trade['symbol']} "
+                      f"@ ${trade['price']:.2f} (cost: ${trade['cost']:.2f})")
+        
+        # Strategic Memory completed trades info
+        if memory_summary.get('completed_trades', 0) > 0:
+            print(f"\n   🔄 Round-trip trades (BUY→SELL): {memory_summary['completed_trades']}")
+            print(f"   ✅ Profitable trades: {memory_summary.get('successful_trades', 0)}")
         
         if self.stats['decisions_made'] == 0 and self.stats['trades_processed'] > 0:
             print(f"\n⚠️  DIAGNOS: Inga TRADES exekverade (alla beslut = HOLD)!")

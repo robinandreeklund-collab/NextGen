@@ -128,6 +128,7 @@ class RiskManager:
         risk_profile = {
             'symbol': symbol,
             'risk_level': 'MEDIUM',
+            'risk_score': 0.0,  # Läggs till för debug output
             'volatility': 0.5,
             'recommendations': [],
             'confidence': 0.5,
@@ -187,6 +188,8 @@ class RiskManager:
                 risk_profile['recommendations'].append(f'Hög portföljexponering ({exposure*100:.1f}%)')
         
         # Bestäm risknivå baserat på score
+        risk_profile['risk_score'] = float(risk_score)  # Spara numerical score
+        
         if risk_score >= 3:
             risk_profile['risk_level'] = 'HIGH'
             risk_profile['confidence'] = 0.8
