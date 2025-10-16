@@ -1,0 +1,36 @@
+adaptive_parameters:
+  evolution_threshold:
+    type: adaptive
+    controlled_by: rl_controller
+    agent: MetaParameterAgent
+    reward_signal: agent_performance_gain
+    bounds: [0.05, 0.5]
+    update_frequency: every_10_decisions
+    default: 0.25
+
+  min_samples:
+    type: adaptive
+    controlled_by: rl_controller
+    agent: MetaParameterAgent
+    reward_signal: feedback_consistency
+    bounds: [5, 50]
+    update_frequency: every_epoch
+    default: 20
+
+  update_frequency:
+    type: adaptive
+    controlled_by: rl_controller
+    agent: MetaParameterAgent
+    reward_signal: reward_volatility
+    bounds: [1, 100]
+    update_frequency: every_epoch
+    default: 10
+
+  agent_entropy_threshold:
+    type: adaptive
+    controlled_by: rl_controller
+    agent: MetaParameterAgent
+    reward_signal: decision_diversity
+    bounds: [0.1, 0.9]
+    update_frequency: every_5_decisions
+    default: 0.3
