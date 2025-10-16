@@ -1,0 +1,114 @@
+project: NextGen AI Trader
+start_capital: 1000 USD
+transaction_fee: 0.25%
+
+sprints:
+  - sprint: 1
+    name: Kärnsystem och demoportfölj
+    goal: Bygg ett fungerande end-to-end-flöde med verkliga data, strategi, beslut, exekvering och portfölj.
+    modules:
+      - data_ingestion
+      - strategy_engine
+      - decision_engine
+      - execution_engine
+      - portfolio_manager
+      - indicator_registry
+    indicators:
+      - OHLC
+      - Volume
+      - SMA
+      - RSI
+    testable:
+      - Simulerad handel
+      - Portföljstatus
+      - Indikatorflöde från Finnhub
+
+  - sprint: 2
+    name: RL och belöningsflöde
+    goal: Inför PPO-agenter i strategi, risk och beslut. Belöning via portfölj.
+    modules:
+      - rl_controller
+      - strategy_engine
+      - risk_manager
+      - decision_engine
+      - portfolio_manager
+    indicators:
+      - RSI
+      - MACD
+      - ATR
+      - Analyst Ratings
+    testable:
+      - RL-belöning
+      - Agentträning
+      - Reward-trender
+
+  - sprint: 3
+    name: Feedbackloopar och introspektion
+    goal: Inför feedback mellan moduler och visualisera kommunikation.
+    modules:
+      - message_bus
+      - feedback_router
+      - feedback_analyzer
+      - introspection_panel
+    indicators:
+      - News Sentiment
+      - Insider Sentiment
+    testable:
+      - Modulkommunikation
+      - Feedbackflöde
+      - Dash-paneler
+
+  - sprint: 4
+    name: Strategiskt minne och agentutveckling
+    goal: Logga beslut, analysera agentperformance, och utveckla logik.
+    modules:
+      - strategic_memory_engine
+      - meta_agent_evolution_engine
+      - agent_manager
+    indicators:
+      - ROE
+      - ROA
+      - ESG
+      - Earnings Calendar
+    testable:
+      - Beslutshistorik
+      - Agentversioner
+      - Evolutionsträd
+
+  - sprint: 5
+    name: Simulering och konsensus
+    goal: Testa alternativa beslut och hantera röstflöden.
+    modules:
+      - decision_simulator
+      - vote_engine
+      - consensus_engine
+    indicators:
+      - Bollinger Bands
+      - ADX
+      - Stochastic Oscillator
+    testable:
+      - Röstmatris
+      - Konsensusmodell
+      - Simuleringsutfall
+
+  - sprint: 6
+    name: Tidsanalys och action chains
+    goal: Synkronisera beslut över tid och skapa återanvändbara flöden.
+    modules:
+      - timespan_tracker
+      - action_chain_engine
+    testable:
+      - Timeline-analys
+      - Beslutssynkronisering
+      - Åtgärdskedjor
+
+  - sprint: 7
+    name: Indikatorvisualisering och systemöversikt
+    goal: Visa indikatortrender, agentrespons och systemstatus.
+    modules:
+      - indicator_registry
+      - system_monitor
+    testable:
+      - Indikatorpanel
+      - Agentrespons
+      - Systemstatusöversikt

@@ -1,0 +1,145 @@
+project: NextGen AI Trader
+architecture: modular, RL-driven, feedback-integrated
+communication: centralized via message_bus
+reward_source: portfolio_manager, strategic_memory_engine, feedback_router
+
+modules:
+  - data_ingestion:
+      description: Hämtar trending symboler och öppnar WebSocket mot Finnhub
+      communicates_via: message_bus
+      receives_feedback: false
+      uses_rl: false
+      introspection_panel: true
+
+  - strategy_engine:
+      description: Genererar tradeförslag baserat på indikatorer och RL
+      communicates_via: message_bus
+      receives_feedback: true
+      uses_rl: true
+      introspection_panel: true
+
+  - risk_manager:
+      description: Bedömer risk och justerar strategi med RL-agent
+      communicates_via: message_bus
+      receives_feedback: true
+      uses_rl: true
+      introspection_panel: true
+
+  - decision_engine:
+      description: Samlar insikter och fattar beslut med RL-agent
+      communicates_via: message_bus
+      receives_feedback: true
+      uses_rl: true
+      introspection_panel: true
+
+  - vote_engine:
+      description: Genomför röstning mellan agenter
+      communicates_via: message_bus
+      receives_feedback: true
+      uses_rl: false
+      introspection_panel: true
+
+  - consensus_engine:
+      description: Väljer konsensusmodell och löser konflikter
+      communicates_via: message_bus
+      receives_feedback: true
+      uses_rl: true
+      introspection_panel: true
+
+  - execution_engine:
+      description: Simulerar eller exekverar trades
+      communicates_via: message_bus
+      receives_feedback: true
+      uses_rl: true
+      introspection_panel: true
+
+  - portfolio_manager:
+      description: Hanterar demoportfölj med startkapital och avgifter
+      communicates_via: message_bus
+      receives_feedback: true
+      uses_rl: false
+      introspection_panel: true
+
+  - indicator_registry:
+      description: Hämtar och distribuerar indikatorer från Finnhub
+      communicates_via: message_bus
+      receives_feedback: false
+      uses_rl: false
+      introspection_panel: true
+
+  - rl_controller:
+      description: Tränar PPO-agenter och samlar belöning
+      communicates_via: message_bus
+      receives_feedback: false
+      uses_rl: true
+      introspection_panel: true
+
+  - feedback_router:
+      description: Skickar feedback mellan moduler
+      communicates_via: message_bus
+      receives_feedback: false
+      uses_rl: false
+      introspection_panel: true
+
+  - feedback_analyzer:
+      description: Identifierar mönster i feedbackflöden
+      communicates_via: message_bus
+      receives_feedback: true
+      uses_rl: false
+      introspection_panel: true
+
+  - strategic_memory_engine:
+      description: Loggar beslut, röster och utfall
+      communicates_via: message_bus
+      receives_feedback: true
+      uses_rl: false
+      introspection_panel: true
+
+  - meta_agent_evolution_engine:
+      description: Utvärderar och utvecklar agentlogik
+      communicates_via: message_bus
+      receives_feedback: true
+      uses_rl: true
+      introspection_panel: true
+
+  - agent_manager:
+      description: Hanterar agentprofiler och versioner
+      communicates_via: message_bus
+      receives_feedback: false
+      uses_rl: false
+      introspection_panel: true
+
+  - decision_simulator:
+      description: Testar alternativa beslut i sandbox
+      communicates_via: message_bus
+      receives_feedback: false
+      uses_rl: false
+      introspection_panel: true
+
+  - timespan_tracker:
+      description: Synkroniserar beslut över tid
+      communicates_via: message_bus
+      receives_feedback: false
+      uses_rl: false
+      introspection_panel: true
+
+  - action_chain_engine:
+      description: Definierar återanvändbara beslutskedjor
+      communicates_via: message_bus
+      receives_feedback: false
+      uses_rl: false
+      introspection_panel: true
+
+  - introspection_panel:
+      description: Visualiserar modulstatus och RL-performance
+      communicates_via: message_bus
+      receives_feedback: false
+      uses_rl: false
+      introspection_panel: false
+
+  - system_monitor:
+      description: Visar systemöversikt, indikatortrender och agentrespons
+      communicates_via: message_bus
+      receives_feedback: false
+      uses_rl: false
+      introspection_panel: false

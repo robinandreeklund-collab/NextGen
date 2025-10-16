@@ -4,6 +4,38 @@ Ett självreflekterande, modulärt och RL-drivet handelssystem byggt för transp
 
 ---
 
+## 📍 Sprintstatus
+
+**Sprint 1 pågår** – Bygger kärnsystem och demoportfölj
+
+### Sprintplan - Sprint 1: Kärnsystem och demoportfölj
+
+**Mål:** Bygg ett fungerande end-to-end-flöde med verkliga data, strategi, beslut, exekvering och portfölj.
+
+**Moduler i fokus:**
+- `data_ingestion` - Hämtar trending symboler och öppnar WebSocket
+- `strategy_engine` - Genererar tradeförslag baserat på indikatorer
+- `decision_engine` - Samlar insikter och fattar beslut
+- `execution_engine` - Simulerar eller exekverar trades
+- `portfolio_manager` - Hanterar demoportfölj med startkapital (1000 USD) och avgifter (0.25%)
+- `indicator_registry` - Hämtar och distribuerar indikatorer från Finnhub
+
+**Indikatorer som används:**
+- OHLC (Open, High, Low, Close)
+- Volume (Volym)
+- SMA (Simple Moving Average)
+- RSI (Relative Strength Index)
+
+**Testbara mål:**
+- ✅ Simulerad handel fungerar
+- ✅ Portföljstatus uppdateras korrekt
+- ✅ Indikatorflöde från Finnhub fungerar
+
+**Startkapital:** 1000 USD  
+**Transaktionsavgift:** 0.25%
+
+---
+
 ## 🧠 Arkitekturöversikt
 
 Systemet består av fristående moduler som kommunicerar via en central `message_bus`. Varje modul kan:
