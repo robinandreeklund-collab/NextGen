@@ -109,7 +109,7 @@ def test_strategy_engine_analyst_ratings():
     bus = MessageBus()
     strategy = StrategyEngine(bus)
     
-    # Simulera med stark analytiker-konsensus OCH starkt översåld RSI för stark BUY-signal
+    # Simulera med stark analytisk konsensus OCH starkt översåld RSI för stark BUY-signal
     indicators = {
         'symbol': 'TEST',
         'technical': {
