@@ -93,8 +93,8 @@ class PortfolioManager:
         """
         self.update_portfolio(result)
         self.publish_status()
-        self.calculate_and_publish_reward()
         self.generate_feedback(result)
+        self.calculate_and_publish_reward()
     
     def update_portfolio(self, execution_result: Dict[str, Any]) -> None:
         """
