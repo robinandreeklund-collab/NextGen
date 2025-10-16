@@ -63,6 +63,7 @@ Används i Sprint: 1, 2, 3, 4, 7
 """
 
 from typing import Dict, Any
+from datetime import datetime, timedelta
 
 
 class IndicatorRegistry:
@@ -143,22 +144,35 @@ class IndicatorRegistry:
         
         # Sprint 4: ROE, ROA, Earnings Calendar
         roe_values = {
-            'AAPL': 0.196,   # 19.6% - Stark kapitaleffektivitet
-            'TSLA': 0.142,   # 14.2% - God kapitaleffektivitet
-            'MSFT': 0.478    # 47.8% - Mycket stark kapitaleffektivitet
+            'AAPL': 0.245,   # 24.5% - Stark kapitaleffektivitet
+            'TSLA': 0.158,   # 15.8% - God kapitaleffektivitet
+            'MSFT': 0.298    # 29.8% - Mycket stark kapitaleffektivitet
         }
         
         roa_values = {
-            'AAPL': 0.287,   # 28.7% - Stark tillgångsproduktivitet
-            'TSLA': 0.083,   # 8.3% - Medel tillgångsproduktivitet
-            'MSFT': 0.245    # 24.5% - Stark tillgångsproduktivitet
+            'AAPL': 0.075,   # 7.5% - Stark tillgångsproduktivitet
+            'TSLA': 0.042,   # 4.2% - Medel tillgångsproduktivitet
+            'MSFT': 0.068    # 6.8% - Stark tillgångsproduktivitet
         }
         
         # Earnings calendar (dagar till nästa earnings release)
+        # Använd relativt datum för att hålla data aktuell
         earnings_calendar = {
-            'AAPL': {'days_until': 15, 'date': '2025-11-01', 'estimated_eps': 1.45},
-            'TSLA': {'days_until': 45, 'date': '2025-12-01', 'estimated_eps': 0.85},
-            'MSFT': {'days_until': 8, 'date': '2025-10-24', 'estimated_eps': 2.65}
+            'AAPL': {
+                'days_until': 15, 
+                'date': (datetime.now() + timedelta(days=15)).strftime('%Y-%m-%d'), 
+                'estimated_eps': 1.45
+            },
+            'TSLA': {
+                'days_until': 45, 
+                'date': (datetime.now() + timedelta(days=45)).strftime('%Y-%m-%d'), 
+                'estimated_eps': 0.85
+            },
+            'MSFT': {
+                'days_until': 8, 
+                'date': (datetime.now() + timedelta(days=8)).strftime('%Y-%m-%d'), 
+                'estimated_eps': 2.65
+            }
         }
         
         return {
@@ -170,7 +184,9 @@ class IndicatorRegistry:
                 'buy': 10, 'hold': 10, 'sell': 5, 'consensus': 'HOLD', 'target_price': 150.0
             }),
             'EarningsCalendar': earnings_calendar.get(symbol, {  # Sprint 4
-                'days_until': 30, 'date': '2025-11-15', 'estimated_eps': 1.20
+                'days_until': 30, 
+                'date': (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d'), 
+                'estimated_eps': 1.20
             })
         }
     
@@ -200,17 +216,18 @@ class IndicatorRegistry:
         }
         
         # Sprint 4: ESG Score (Environmental, Social, Governance)
+        # Total = Simple average of E, S, G scores
         esg_scores = {
-            'AAPL': {'total': 82, 'environmental': 85, 'social': 80, 'governance': 81},
-            'TSLA': {'total': 68, 'environmental': 90, 'social': 55, 'governance': 60},
-            'MSFT': {'total': 88, 'environmental': 90, 'social': 87, 'governance': 87}
+            'AAPL': {'environmental': 85, 'social': 80, 'governance': 81, 'total': 82},
+            'TSLA': {'environmental': 90, 'social': 55, 'governance': 60, 'total': 68},
+            'MSFT': {'environmental': 90, 'social': 87, 'governance': 87, 'total': 88}
         }
         
         return {
             'NewsSentiment': news_sentiment.get(symbol, 0.50),           # Sprint 3
             'InsiderSentiment': insider_sentiment.get(symbol, 0.50),     # Sprint 3
             'ESG': esg_scores.get(symbol, {                              # Sprint 4
-                'total': 70, 'environmental': 70, 'social': 70, 'governance': 70
+                'environmental': 70, 'social': 70, 'governance': 70, 'total': 70
             })
         }
     
