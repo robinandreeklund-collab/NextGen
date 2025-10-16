@@ -28,18 +28,393 @@ Tar emot feedback: Nej
 Används i Sprint: 4
 """
 
-from typing import Dict, Any
+from typing import Dict, Any, List
+import time
 
 
 class AgentManager:
     """Hanterar agentprofiler och versioner."""
     
     def __init__(self, message_bus):
+        """
+        Initialiserar agent manager.
+        
+        Args:
+            message_bus: Referens till central message_bus
+        """
         self.message_bus = message_bus
-        self.agent_profiles: Dict[str, Any] = {}
+        self.agent_profiles: Dict[str, Dict[str, Any]] = {}
+        self.agent_versions: Dict[str, List[Dict[str, Any]]] = {}
+        self.active_agents: Dict[str, str] = {}  # agent_id -> current_version
+        
+        # Prenumerera på agent updates
         self.message_bus.subscribe('agent_update', self._on_agent_update)
+        
+        # Initiera default agent profiles
+        self._initialize_default_profiles()
+    
+    def _initialize_default_profiles(self) -> None:
+        """Initialiserar default agentprofiler för systemet."""
+        default_agents = {
+            'strategy_agent': {
+                'name': 'Strategy Agent',
+                'module': 'strategy_engine',
+                'role': 'Generate trade proposals based on indicators',
+                'state_dim': 10,
+                'action_dim': 3,
+                'uses_rl': True,
+                'version': '1.0.0',
+                'created_at': time.strftime('%Y-%m-%d %H:%M:%S')
+            },
+            'risk_agent': {
+                'name': 'Risk Management Agent',
+                'module': 'risk_manager',
+                'role': 'Assess risk levels and adjust positions',
+                'state_dim': 8,
+                'action_dim': 3,
+                'uses_rl': True,
+                'version': '1.0.0',
+                'created_at': time.strftime('%Y-%m-%d %H:%M:%S')
+            },
+            'decision_agent': {
+                'name': 'Decision Agent',
+                'module': 'decision_engine',
+                'role': 'Make final trading decisions',
+                'state_dim': 12,
+                'action_dim': 3,
+                'uses_rl': True,
+                'version': '1.0.0',
+                'created_at': time.strftime('%Y-%m-%d %H:%M:%S')
+            },
+            'execution_agent': {
+                'name': 'Execution Agent',
+                'module': 'execution_engine',
+                'role': 'Execute trades with optimal timing',
+                'state_dim': 6,
+                'action_dim': 2,
+                'uses_rl': True,
+                'version': '1.0.0',
+                'created_at': time.strftime('%Y-%m-%d %H:%M:%S')
+            }
+        }
+        
+        for agent_id, profile in default_agents.items():
+            self.agent_profiles[agent_id] = profile
+            self.active_agents[agent_id] = profile['version']
+            
+            # Initiera versionshistorik
+            if agent_id not in self.agent_versions:
+                self.agent_versions[agent_id] = []
+            self.agent_versions[agent_id].append({
+                'version': profile['version'],
+                'timestamp': time.time(),
+                'changes': 'Initial version',
+                'status': 'active'
+            })
     
     def _on_agent_update(self, update: Dict[str, Any]) -> None:
-        """Callback för agent updates."""
-        pass
+        """
+        Callback för agent updates från meta_agent_evolution_engine.
+        
+        Args:
+            update: Agent update event
+        """
+        update_type = update.get('update_type')
+        
+        if update_type == 'evolution_suggestion':
+            self._handle_evolution_suggestion(update)
+        elif update_type == 'system_wide_evolution':
+            self._handle_system_wide_evolution(update)
+        elif update_type == 'version_update':
+            self._handle_version_update(update)
+        else:
+            # Log unknown update type
+            pass
+    
+    def _handle_evolution_suggestion(self, update: Dict[str, Any]) -> None:
+        """
+        Hanterar evolutionsförslag för en specifik agent.
+        
+        Args:
+            update: Evolution suggestion
+        """
+        agent_id = update.get('agent_id')
+        evolution_suggestion = update.get('evolution_suggestion', {})
+        
+        if agent_id not in self.agent_profiles:
+            return
+        
+        # Skapa ny version baserat på suggestion
+        current_version = self.agent_profiles[agent_id].get('version', '1.0.0')
+        new_version = self._increment_version(current_version)
+        
+        # Uppdatera agent profile
+        self.agent_profiles[agent_id]['version'] = new_version
+        self.agent_profiles[agent_id]['last_evolution'] = {
+            'timestamp': time.time(),
+            'reason': evolution_suggestion.get('analysis', {}).get('reason'),
+            'suggestions': evolution_suggestion.get('suggestions', [])
+        }
+        
+        # Lägg till version i historik
+        version_entry = {
+            'version': new_version,
+            'timestamp': time.time(),
+            'changes': f"Evolution triggered: {evolution_suggestion.get('analysis', {}).get('reason')}",
+            'suggestions': evolution_suggestion.get('suggestions', []),
+            'status': 'active'
+        }
+        
+        if agent_id not in self.agent_versions:
+            self.agent_versions[agent_id] = []
+        
+        # Markera tidigare version som inaktiv
+        if self.agent_versions[agent_id]:
+            self.agent_versions[agent_id][-1]['status'] = 'inactive'
+        
+        self.agent_versions[agent_id].append(version_entry)
+        self.active_agents[agent_id] = new_version
+        
+        # Publicera uppdaterad profile
+        self._publish_agent_profile(agent_id)
+        
+        # Skicka feedback till meta_agent_evolution_engine
+        feedback = {
+            'agent_id': agent_id,
+            'action': 'evolution_applied',
+            'new_version': new_version,
+            'timestamp': time.time()
+        }
+        self.message_bus.publish('agent_update', {
+            'update_type': 'evolution_feedback',
+            'feedback': feedback
+        })
+    
+    def _handle_system_wide_evolution(self, update: Dict[str, Any]) -> None:
+        """
+        Hanterar systemövergripande evolution.
+        
+        Args:
+            update: System-wide evolution update
+        """
+        evolution_suggestion = update.get('evolution_suggestion', {})
+        
+        # Applicera evolution på alla RL-agenter
+        for agent_id, profile in self.agent_profiles.items():
+            if profile.get('uses_rl', False):
+                # Skapa minor version update för alla agenter
+                current_version = profile.get('version', '1.0.0')
+                new_version = self._increment_version(current_version, minor=True)
+                
+                profile['version'] = new_version
+                profile['last_system_evolution'] = {
+                    'timestamp': time.time(),
+                    'reason': evolution_suggestion.get('analysis', {}).get('reason')
+                }
+                
+                # Lägg till i versionshistorik
+                version_entry = {
+                    'version': new_version,
+                    'timestamp': time.time(),
+                    'changes': 'System-wide evolution applied',
+                    'status': 'active'
+                }
+                
+                if agent_id in self.agent_versions and self.agent_versions[agent_id]:
+                    self.agent_versions[agent_id][-1]['status'] = 'inactive'
+                
+                if agent_id not in self.agent_versions:
+                    self.agent_versions[agent_id] = []
+                self.agent_versions[agent_id].append(version_entry)
+                self.active_agents[agent_id] = new_version
+                
+                # Publicera uppdaterad profile
+                self._publish_agent_profile(agent_id)
+    
+    def _handle_version_update(self, update: Dict[str, Any]) -> None:
+        """
+        Hanterar manuell versionsuppdatering.
+        
+        Args:
+            update: Version update
+        """
+        agent_id = update.get('agent_id')
+        new_config = update.get('config', {})
+        
+        if agent_id not in self.agent_profiles:
+            return
+        
+        # Uppdatera konfiguration
+        self.agent_profiles[agent_id].update(new_config)
+        
+        # Skapa ny version
+        current_version = self.agent_profiles[agent_id].get('version', '1.0.0')
+        new_version = self._increment_version(current_version)
+        
+        self.agent_profiles[agent_id]['version'] = new_version
+        
+        # Lägg till i historik
+        version_entry = {
+            'version': new_version,
+            'timestamp': time.time(),
+            'changes': 'Manual configuration update',
+            'config_changes': list(new_config.keys()),
+            'status': 'active'
+        }
+        
+        if agent_id in self.agent_versions and self.agent_versions[agent_id]:
+            self.agent_versions[agent_id][-1]['status'] = 'inactive'
+        
+        if agent_id not in self.agent_versions:
+            self.agent_versions[agent_id] = []
+        self.agent_versions[agent_id].append(version_entry)
+        self.active_agents[agent_id] = new_version
+        
+        self._publish_agent_profile(agent_id)
+    
+    def _increment_version(self, version: str, minor: bool = False) -> str:
+        """
+        Inkrementerar versionsnummer.
+        
+        Args:
+            version: Nuvarande version (ex: "1.0.0")
+            minor: Om True, inkrementera minor version, annars patch
+            
+        Returns:
+            Ny version
+        """
+        try:
+            parts = version.split('.')
+            major, minor_v, patch = int(parts[0]), int(parts[1]), int(parts[2])
+            
+            if minor:
+                minor_v += 1
+                patch = 0
+            else:
+                patch += 1
+            
+            return f"{major}.{minor_v}.{patch}"
+        except (ValueError, IndexError):
+            return "1.0.1"
+    
+    def _publish_agent_profile(self, agent_id: str) -> None:
+        """
+        Publicerar agent profile till message_bus.
+        
+        Args:
+            agent_id: Agent att publicera
+        """
+        if agent_id not in self.agent_profiles:
+            return
+        
+        profile = {
+            'agent_id': agent_id,
+            'profile': self.agent_profiles[agent_id],
+            'version_history': self.agent_versions.get(agent_id, []),
+            'active_version': self.active_agents.get(agent_id),
+            'timestamp': time.time()
+        }
+        
+        self.message_bus.publish('agent_profile', profile)
+    
+    def get_agent_profile(self, agent_id: str) -> Dict[str, Any]:
+        """
+        Hämtar agent profile.
+        
+        Args:
+            agent_id: Agent ID
+            
+        Returns:
+            Agent profile eller tom dict
+        """
+        return self.agent_profiles.get(agent_id, {})
+    
+    def get_all_profiles(self) -> Dict[str, Dict[str, Any]]:
+        """
+        Hämtar alla agent profiles.
+        
+        Returns:
+            Dict med alla profiles
+        """
+        return self.agent_profiles.copy()
+    
+    def get_version_history(self, agent_id: str) -> List[Dict[str, Any]]:
+        """
+        Hämtar versionshistorik för en agent.
+        
+        Args:
+            agent_id: Agent ID
+            
+        Returns:
+            Lista med versioner
+        """
+        return self.agent_versions.get(agent_id, [])
+    
+    def rollback_version(self, agent_id: str, version: str) -> bool:
+        """
+        Rullar tillbaka till en tidigare version.
+        
+        Args:
+            agent_id: Agent ID
+            version: Version att återställa till
+            
+        Returns:
+            True om lyckad, False annars
+        """
+        if agent_id not in self.agent_versions:
+            return False
+        
+        # Leta efter versionen i historik
+        target_version = None
+        for v in self.agent_versions[agent_id]:
+            if v['version'] == version:
+                target_version = v
+                break
+        
+        if not target_version:
+            return False
+        
+        # Markera nuvarande som inaktiv
+        if self.agent_versions[agent_id]:
+            self.agent_versions[agent_id][-1]['status'] = 'inactive'
+        
+        # Skapa ny entry för rollback
+        rollback_entry = {
+            'version': version,
+            'timestamp': time.time(),
+            'changes': f'Rolled back to version {version}',
+            'status': 'active',
+            'is_rollback': True
+        }
+        
+        self.agent_versions[agent_id].append(rollback_entry)
+        self.active_agents[agent_id] = version
+        self.agent_profiles[agent_id]['version'] = version
+        
+        self._publish_agent_profile(agent_id)
+        
+        return True
+    
+    def get_evolution_tree(self) -> Dict[str, Any]:
+        """
+        Genererar ett evolutionsträd för alla agenter.
+        
+        Returns:
+            Evolution tree struktur
+        """
+        tree = {
+            'total_agents': len(self.agent_profiles),
+            'agents': {}
+        }
+        
+        for agent_id, profile in self.agent_profiles.items():
+            tree['agents'][agent_id] = {
+                'name': profile.get('name'),
+                'current_version': profile.get('version'),
+                'total_versions': len(self.agent_versions.get(agent_id, [])),
+                'version_history': self.agent_versions.get(agent_id, []),
+                'uses_rl': profile.get('uses_rl', False)
+            }
+        
+        return tree
 
