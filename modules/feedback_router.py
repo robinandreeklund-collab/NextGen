@@ -86,6 +86,13 @@ class FeedbackRouter:
             feedback: Feedback event att distribuera
         
         Returns:
+            Dict[str, Any]: Enriched feedback payload containing the original feedback plus metadata fields:
+                - priority: str, calculated priority of the feedback
+                - routed_by: str, identifier of the router
+                - route_timestamp: str, timestamp when routing occurred
+                ...and all original feedback fields
+        
+        Returns:
             Dict[str, Any]: Enriched och routad feedback-event med metadata.
         """
         source = feedback.get('source', 'unknown')
