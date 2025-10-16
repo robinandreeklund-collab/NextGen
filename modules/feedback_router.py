@@ -107,7 +107,7 @@ class FeedbackRouter:
         # Logga enriched feedback
         self.feedback_log.append(enriched_feedback)
         
-        # Специфик routing baserat på trigger-typ till specifika topics
+        # Specifik routing baserat på trigger-typ till specifika topics
         # INTE tillbaka till 'feedback_event' för att undvika loop
         if 'slippage' in triggers and priority == 'high':
             # Hög slippage → direkt till rl_controller för omedelbar justering
