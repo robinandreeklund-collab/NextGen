@@ -1,0 +1,111 @@
+module_functions:
+  rl_controller:
+    description: >
+      Utökar PPO-agentens action space för att styra meta-parametrar som evolution_threshold och min_samples.
+      Belöningen baseras på agentförbättring, feedbackkvalitet och överträningssignal.
+    inputs:
+      - reward
+      - feedback_event
+    outputs:
+      - agent_update
+      - agent_status
+      - parameter_adjustment
+    publishes:
+      - agent_update
+      - agent_status
+      - parameter_adjustment
+    subscribes:
+      - reward
+      - feedback_event
+    uses_rl: true
+    receives_feedback: false
+
+  meta_agent_evolution_engine:
+    description: >
+      Tar emot parameter_adjustment från RL-agenten och justerar evolutionströskel och minsta sample-mängd.
+      Utvärderar effekten av justeringen och rapporterar tillbaka till RL-controller.
+    inputs:
+      - agent_status
+      - feedback_insight
+      - parameter_adjustment
+    outputs:
+      - agent_update
+      - evolution_suggestion
+    publishes:
+      - agent_update
+    subscribes:
+      - agent_status
+      - feedback_insight
+      - parameter_adjustment
+    uses_rl: true
+    receives_feedback: true
+
+  feedback_analyzer:
+    description: >
+      Identifierar mönster i feedbackflöden som påverkar meta-parametrar, t.ex. överträning, stagnation eller instabilitet.
+      Ger insikter till RL-controller och meta-agent-evolution.
+    inputs:
+      - feedback_event
+    outputs:
+      - feedback_insight
+    publishes:
+      - feedback_insight
+    subscribes:
+      - feedback_event
+    uses_rl: false
+    receives_feedback: true
+
+  strategic_memory_engine:
+    description: >
+      Loggar parameterhistorik, agentrespons och beslutseffekter för att möjliggöra retrospektiv analys av meta-parameterjusteringar.
+    inputs:
+      - final_decision
+      - indicator_data
+      - execution_result
+      - parameter_adjustment
+    outputs:
+      - memory_insights
+    publishes:
+      - memory_insights
+    subscribes:
+      - final_decision
+      - indicator_data
+      - execution_result
+      - parameter_adjustment
+    uses_rl: false
+    receives_feedback: true
+
+  agent_manager:
+    description: >
+      Tar emot agent_update och parameter_adjustment för att uppdatera agentprofiler och logga meta-parameterversioner.
+    inputs:
+      - agent_update
+      - parameter_adjustment
+    outputs:
+      - agent_profile
+    publishes:
+      - agent_profile
+    subscribes:
+      - agent_update
+      - parameter_adjustment
+    uses_rl: false
+    receives_feedback: false
+
+  introspection_panel:
+    description: >
+      Visualiserar aktuella meta-parametrar, RL-policyförändringar och belöningskurvor över tid.
+    inputs:
+      - agent_status
+      - feedback_event
+      - indicator_data
+      - parameter_adjustment
+    outputs:
+      - dashboard_render
+    publishes: []
+    subscribes:
+      - agent_status
+      - feedback_event
+      - indicator_data
+      - parameter_adjustment
+    uses_rl: false
+    receives_feedback: false
