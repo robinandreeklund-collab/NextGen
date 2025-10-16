@@ -35,7 +35,6 @@ from modules.agent_manager import AgentManager
 from modules.feedback_router import FeedbackRouter
 from modules.feedback_analyzer import FeedbackAnalyzer
 from modules.introspection_panel import IntrospectionPanel
-from modules.indicator_registry import IndicatorRegistry
 from modules.strategy_engine import StrategyEngine
 from modules.risk_manager import RiskManager
 from modules.decision_engine import DecisionEngine
