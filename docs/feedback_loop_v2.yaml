@@ -1,0 +1,59 @@
+feedback_loop:
+  name: RL-styrd meta-parameterfeedback
+  description: >
+    Utökad feedbackloop där RL-agenten justerar systemparametrar som evolution_threshold och min_samples
+    baserat på belöningssignal, agentperformance och feedbackmönster.
+
+  flow:
+    - source: execution_engine
+      emits: execution_result
+      targets: feedback_router
+
+    - source: portfolio_manager
+      emits: reward
+      targets: rl_controller
+
+    - source: feedback_router
+      emits: feedback_event
+      targets:
+        - rl_controller
+        - feedback_analyzer
+        - strategic_memory_engine
+        - meta_agent_evolution_engine
+
+    - source: feedback_analyzer
+      emits: feedback_insight
+      targets:
+        - rl_controller
+        - meta_agent_evolution_engine
+
+    - source: rl_controller
+      emits:
+        - agent_update
+        - agent_status
+        - parameter_adjustment
+      targets:
+        - strategy_engine
+        - risk_manager
+        - decision_engine
+        - meta_agent_evolution_engine
+        - strategic_memory_engine
+        - agent_manager
+
+    - source: meta_agent_evolution_engine
+      emits: agent_update
+      targets: agent_manager
+
+    - source: strategic_memory_engine
+      emits: memory_insights
+      targets: decision_engine
+
+    - source: agent_manager
+      emits: agent_profile
+      targets: introspection_panel
+
+    - source: introspection_panel
+      renders:
+        - agent_status
+        - parameter_adjustment
+        - feedback_insight
