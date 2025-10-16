@@ -20,6 +20,7 @@ Outputs:
 
 Publicerar till message_bus:
     - trade_log: Loggdata för varje exekverad trade
+    - execution_result: Resultat av exekverad trade (executed_price, quantity, cost, slippage)
 
 Prenumererar på (från functions.yaml):
     - final_decision (från decision_engine eller consensus_engine)
