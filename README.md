@@ -8,9 +8,10 @@ Ett självreflekterande, modulärt och RL-drivet handelssystem byggt för transp
 
 **Sprint 1 färdig ✅** – Kärnsystem och demoportfölj komplett
 **Sprint 2 färdig ✅** – RL och belöningsflöde komplett
-**Sprint 3 pågår 🔄** – Feedbackloopar och introspektion under utveckling
+**Sprint 3 färdig ✅** – Feedbackloopar och introspektion komplett
+**Sprint 4 pågår 🔄** – Strategiskt minne och agentutveckling under utveckling
 
-### Sprint 3: Feedbackloopar och introspektion (PÅGÅR)
+### Sprint 3: Feedbackloopar och introspektion ✅
 
 **Mål:** Inför feedback mellan moduler och visualisera kommunikation.
 
@@ -40,6 +41,28 @@ Ett självreflekterande, modulärt och RL-drivet handelssystem byggt för transp
 - ✅ Mönsteranalys identifierar 3+ pattern-typer
 - ✅ Dashboard genererar rik visualiseringsdata
 - ✅ Agent adaptation tracking visar trends
+
+### Sprint 4: Strategiskt minne och agentutveckling (PÅGÅR)
+
+**Mål:** Logga beslut, analysera agentperformance och utveckla logik.
+
+**Moduler i fokus:**
+- `strategic_memory_engine` - Beslutshistorik och korrelationsanalys
+- `meta_agent_evolution_engine` - Agentperformance-analys och evolutionslogik
+- `agent_manager` - Versionshantering och agentprofiler
+
+**Nya indikatorer i Sprint 4:**
+- ROE (Return on Equity) - Kapitaleffektivitet
+- ROA (Return on Assets) - Tillgångsproduktivitet
+- ESG Score - Etisk risk och långsiktig hållbarhet
+- Earnings Calendar - Eventbaserad risk och timing
+
+**Testbara mål:**
+- Beslutshistorik loggas och analyseras
+- Agentversioner spåras och hanteras
+- Evolutionsträd visualiseras
+- Korrelationsanalys mellan indikatorer och utfall
+- Agentperformance-metriker genereras
 
 ### Sprint 2: RL och belöningsflöde ✅
 
@@ -601,8 +624,8 @@ Projektet är uppdelat i 7 sprintar. Se `sprint_plan.yaml` för detaljer.
 |--------|--------------------------------------|---------|
 | 1      | Kärnsystem och demoportfölj          | ✅ Färdig|
 | 2      | RL och belöningsflöde                | ✅ Färdig|
-| 3      | Feedbackloopar och introspektion     | 🔄 Pågår|
-| 4      | Strategiskt minne och agentutveckling| ⏳ Planerad|
+| 3      | Feedbackloopar och introspektion     | ✅ Färdig|
+| 4      | Strategiskt minne och agentutveckling| 🔄 Pågår|
 | 5      | Simulering och konsensus             | ⏳ Planerad|
 | 6      | Tidsanalys och action chains         | ⏳ Planerad|
 | 7      | Indikatorvisualisering och översikt  | ⏳ Planerad|
