@@ -371,7 +371,7 @@ class RLController:
             'learning_rate': 0.0003,
             'gamma': 0.99,
             'update_frequency': 10,
-            'parameter_update_frequency': 10,  # Sprint 4.2
+            'parameter_update_frequency': 5,  # Sprint 4.2 - lowered from 10 to 5 for more frequent updates
             'agents': {
                 'strategy_engine': {'state_dim': 10, 'action_dim': 3},
                 'risk_manager': {'state_dim': 8, 'action_dim': 3},

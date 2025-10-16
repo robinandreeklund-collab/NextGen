@@ -471,9 +471,14 @@ class WebSocketTester:
         
         # Sprint 4.2: Visa nuvarande meta-parametrar
         current_params = self.rl_controller.get_current_meta_parameters()
-        if current_params and len(self.parameter_history) > 0:
+        if current_params:
             print(f"\n🔧 Adaptiva Meta-Parametrar (Sprint 4.2):")
             print(f"   Totalt adjustments: {len(self.parameter_history)}")
+            
+            if len(self.parameter_history) == 0:
+                print(f"   Status: Väntar på första justering (kräver {self.rl_controller.config.get('parameter_update_frequency', 10)} reward events)")
+                print(f"   Reward events hittills: {self.rl_controller.parameter_update_counter}")
+            
             print(f"   Nuvarande värden:")
             if 'evolution_threshold' in current_params:
                 print(f"      evolution_threshold: {current_params['evolution_threshold']:.4f}")
@@ -592,8 +597,10 @@ class WebSocketTester:
                   f"({len(versions)} versioner)")
         
         # Sprint 4.2: Adaptiva Meta-Parametrar sammanfattning
+        print(f"\n🔧 ADAPTIVA META-PARAMETRAR (Sprint 4.2):")
+        current_params = self.rl_controller.get_current_meta_parameters()
+        
         if len(self.parameter_history) > 0:
-            print(f"\n🔧 ADAPTIVA META-PARAMETRAR (Sprint 4.2):")
             print(f"   Total adjustments: {len(self.parameter_history)}")
             
             # Visa initial vs final values
@@ -640,6 +647,22 @@ class WebSocketTester:
                         print(f"         {param_name}: {value:.4f}")
                     else:
                         print(f"         {param_name}: {int(value)}")
+        else:
+            # Inga adjustments gjorda
+            print(f"   Status: ⚠️  Inga parameter adjustments gjorda under sessionen")
+            print(f"   Reward events mottagna: {len(self.rl_controller.reward_history)}")
+            print(f"   Reward events krävs för justering: {self.rl_controller.config.get('parameter_update_frequency', 10)}")
+            print(f"\n   ℹ️  För att se parameter adjustments:")
+            print(f"      - Kör längre tid (mer än {self.rl_controller.config.get('parameter_update_frequency', 10)} reward events)")
+            print(f"      - Öka trading aktivitet (fler BUY/SELL beslut genererar rewards)")
+            
+            print(f"\n   📊 Nuvarande Parameter-värden (defaults):")
+            if current_params:
+                for param_name, value in current_params.items():
+                    if isinstance(value, float):
+                        print(f"      {param_name}: {value:.4f}")
+                    else:
+                        print(f"      {param_name}: {int(value)}")
         
         # Trades per symbol
         print(f"\n📊 TRADES PER SYMBOL:")
