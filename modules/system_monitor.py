@@ -8,13 +8,13 @@ Roll:
     - Prenumererar på dashboard_data från olika moduler
     - Aggregerar systemstatus
     - Visar översikt av hela systemet
-    - Publicerar system_view
+    - Returnerar system_view via metod, publicerar inte till topic
 
 Inputs:
     - dashboard_data: Dict - Data från alla moduler
 
 Outputs:
-    - system_view: Dict - Komplett systemöversikt
+    - system_view: Dict - Komplett systemöversikt (returneras från metod)
 
 Publicerar till message_bus:
     - Ingen (konsumerar endast)
