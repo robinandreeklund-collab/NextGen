@@ -36,6 +36,178 @@ Ett självreflekterande, modulärt och RL-drivet handelssystem byggt för transp
 
 ---
 
+## 🔄 Sprint 1: Systemflöde och Arkitektur
+
+### Dataflöde och Modulanslutningar
+
+Sprint 1 implementerar ett komplett end-to-end handelssystem med följande flöde:
+
+```
+┌─────────────────┐
+│    Finnhub      │
+│   (Data källa)  │
+└────────┬────────┘
+         │
+         ├──────────────────┐
+         │                  │
+         ▼                  ▼
+┌──────────────────┐  ┌──────────────────┐
+│ data_ingestion   │  │indicator_registry│
+│  (Market data)   │  │  (Indikatorer)   │
+└────────┬─────────┘  └────────┬─────────┘
+         │                     │
+         │                     └──────┐
+         │                            ▼
+         │                   ┌──────────────────┐
+         │                   │ strategy_engine  │
+         │                   │ (Tradeförslag)   │
+         │                   └────────┬─────────┘
+         │                            │
+         │                            ▼
+         │                   ┌──────────────────┐
+         │                   │ decision_engine  │
+         │                   │ (Slutgiltigt     │
+         │                   │  beslut)         │
+         │                   └────────┬─────────┘
+         │                            │
+         │                            ▼
+         │                   ┌──────────────────┐
+         │                   │ execution_engine │
+         │                   │ (Exekvering)     │
+         │                   └────────┬─────────┘
+         │                            │
+         │                            ▼
+         │                   ┌──────────────────┐
+         └──────────────────▶│portfolio_manager │
+                             │ (Portföljstatus) │
+                             └──────────────────┘
+                                      │
+                                      ▼
+                             ┌──────────────────┐
+                             │  message_bus     │
+                             │  (Pub/Sub)       │
+                             └──────────────────┘
+```
+
+### Modulbeskrivningar och Kopplingar
+
+#### 1. **data_ingestion** (Entry Point)
+- **Roll:** Hämtar marknadsdata från Finnhub via WebSocket
+- **Publicerar:** `market_data` till message_bus
+- **Används av:** Alla moduler som behöver realtidsdata
+
+#### 2. **indicator_registry** (Entry Point)
+- **Roll:** Hämtar och distribuerar tekniska indikatorer från Finnhub
+- **Publicerar:** `indicator_data` till message_bus
+- **Uppdateringsintervall:** 5 minuter
+- **Indikatorer:** OHLC, Volume, SMA, RSI (Sprint 1)
+- **Prenumeranter:** strategy_engine, decision_engine
+
+#### 3. **strategy_engine**
+- **Roll:** Genererar tradeförslag baserat på tekniska indikatorer
+- **Prenumererar på:** `indicator_data`, `portfolio_status`
+- **Publicerar:** `decision_proposal` till decision_engine
+- **Indikatoranvändning:**
+  - OHLC: Entry/exit signals
+  - Volume: Liquidity assessment
+  - SMA: Trend detection
+  - RSI: Overbought/oversold (< 30 = köp, > 70 = sälj)
+
+#### 4. **decision_engine**
+- **Roll:** Fattar slutgiltiga handelsbeslut
+- **Prenumererar på:** `decision_proposal`, `risk_profile`, `memory_insights`
+- **Publicerar:** `final_decision` till execution_engine
+- **Logik:** Kombinerar strategi med risk (Sprint 1: enkel logik, Sprint 2: RL)
+
+#### 5. **execution_engine**
+- **Roll:** Simulerar trade-exekvering med slippage
+- **Prenumererar på:** `final_decision`
+- **Publicerar:** `execution_result`, `trade_log`, `feedback_event`
+- **Simulering:**
+  - Slippage: 0-0.5%
+  - Latency tracking
+  - Execution quality feedback
+
+#### 6. **portfolio_manager**
+- **Roll:** Hanterar portfölj och beräknar reward
+- **Prenumererar på:** `execution_result`
+- **Publicerar:** `portfolio_status`, `reward`, `feedback_event`
+- **Parametrar:**
+  - Startkapital: 1000 USD
+  - Transaktionsavgift: 0.25%
+  - Tracking: P&L, positioner, trade history
+
+### Feedbackloop-koncept (Sprint 1 grund, fullt i Sprint 3)
+
+Sprint 1 lägger grunden för feedback-systemet som används i kommande sprintar:
+
+#### Feedback-källor (enligt feedback_loop.yaml):
+
+**1. execution_engine feedback:**
+- **Triggers:**
+  - `trade_result`: Lyckad/misslyckad trade
+  - `slippage`: Skillnad mellan förväntat och verkligt pris (>0.2% loggas)
+  - `latency`: Exekveringstid
+- **Emitterar:** `feedback_event` till message_bus
+
+**2. portfolio_manager feedback:**
+- **Triggers:**
+  - `capital_change`: Ändring i totalt portföljvärde
+  - `transaction_cost`: Kostnad för varje trade
+- **Emitterar:** `feedback_event` och `reward` till message_bus
+
+**3. Feedback Routing (Sprint 3):**
+```
+feedback_event → feedback_router → 
+  ├─ rl_controller (för agentträning)
+  ├─ feedback_analyzer (mönsteridentifiering)
+  └─ strategic_memory_engine (loggning)
+```
+
+**4. RL Response (Sprint 2):**
+- `rl_controller` tar emot reward från portfolio_manager
+- Uppdaterar RL-agenter i strategy_engine, decision_engine, execution_engine
+- Belöning baserad på:
+  - Portfolio value change
+  - Trade profitability
+  - Execution quality
+
+### Indikatoranvändning (från indicator_map.yaml)
+
+| Indikator | Typ       | Används av        | Syfte                           |
+|-----------|-----------|-------------------|---------------------------------|
+| OHLC      | Technical | strategy, execution | Price analysis, entry/exit    |
+| Volume    | Technical | strategy          | Liquidity assessment            |
+| SMA       | Technical | strategy          | Trend detection, smoothing      |
+| RSI       | Technical | strategy, decision | Overbought/oversold detection  |
+
+**Kommande indikatorer (Sprint 2-7):**
+- Sprint 2: MACD, ATR, Analyst Ratings
+- Sprint 3: News Sentiment, Insider Sentiment
+- Sprint 4: ROE, ROA, ESG, Earnings Calendar
+- Sprint 5: Bollinger Bands, ADX, Stochastic Oscillator
+
+### Message Bus - Central Kommunikation
+
+Alla moduler kommunicerar via `message_bus.py` med pub/sub-mönster:
+
+**Topics i Sprint 1:**
+- `market_data`: Från data_ingestion
+- `indicator_data`: Från indicator_registry
+- `decision_proposal`: Från strategy_engine
+- `final_decision`: Från decision_engine
+- `execution_result`: Från execution_engine
+- `portfolio_status`: Från portfolio_manager
+- `reward`: Från portfolio_manager
+- `feedback_event`: Från execution_engine och portfolio_manager
+
+**Fördelar:**
+- Lös koppling mellan moduler
+- Enkel att lägga till nya prenumeranter
+- Meddelandelogg för debugging och introspektion
+
+---
+
 ## 🧠 Arkitekturöversikt
 
 Systemet består av fristående moduler som kommunicerar via en central `message_bus`. Varje modul kan:
