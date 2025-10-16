@@ -56,6 +56,12 @@ Används i Sprint: 3, 4, 4.2
 
 from typing import Dict, Any, List
 from collections import defaultdict
+import time
+
+# Sprint 4.2: Constants for parameter analysis
+PARAMETER_OSCILLATION_THRESHOLD = 3  # Minimum oscillations to detect instability
+PARAMETER_IMPACT_QUALITY_THRESHOLD = 0.2  # Minimum quality change to detect impact
+FEEDBACK_QUALITY_NORMALIZATION = 5.0  # Normalization factor for feedback quality
 
 
 class FeedbackAnalyzer:
@@ -102,8 +108,6 @@ class FeedbackAnalyzer:
         Args:
             adjustment: Parameterjusteringar
         """
-        import time
-        
         param_entry = {
             **adjustment,
             'timestamp': time.time(),
@@ -122,8 +126,6 @@ class FeedbackAnalyzer:
         Returns:
             Dict med feedback_insight
         """
-        import time
-        
         insight = {
             'timestamp': time.time(),
             'samples_analyzed': len(self.feedback_buffer),
@@ -415,7 +417,7 @@ class FeedbackAnalyzer:
                            (values[i] < values[i-1] and values[i+1] > values[i]):
                             direction_changes += 1
                     
-                    if direction_changes >= 3:
+                    if direction_changes >= PARAMETER_OSCILLATION_THRESHOLD:
                         patterns.append({
                             'type': 'parameter_oscillation',
                             'parameter': param_name,
@@ -464,12 +466,12 @@ class FeedbackAnalyzer:
             
             if before_feedback and after_feedback:
                 # Jämför feedback quality/density
-                before_quality = len(before_feedback) / 5.0  # Normalized
-                after_quality = len(after_feedback) / 5.0
+                before_quality = len(before_feedback) / FEEDBACK_QUALITY_NORMALIZATION
+                after_quality = len(after_feedback) / FEEDBACK_QUALITY_NORMALIZATION
                 
                 quality_change = after_quality - before_quality
                 
-                if abs(quality_change) > 0.2:
+                if abs(quality_change) > PARAMETER_IMPACT_QUALITY_THRESHOLD:
                     impact = 'positiv' if quality_change > 0 else 'negativ'
                     patterns.append({
                         'type': 'parameter_impact',

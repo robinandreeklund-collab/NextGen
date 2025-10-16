@@ -10,9 +10,9 @@ Ett självreflekterande, modulärt och RL-drivet handelssystem byggt för transp
 **Sprint 2 färdig ✅** – RL och belöningsflöde komplett
 **Sprint 3 färdig ✅** – Feedbackloopar och introspektion komplett
 **Sprint 4 färdig ✅** – Strategiskt minne och agentutveckling komplett
-**Sprint 4.2 pågår 🔄** – Adaptiv parameterstyrning via RL/PPO implementeras
+**Sprint 4.2 färdig ✅** – Adaptiv parameterstyrning via RL/PPO komplett
 
-### Sprint 4.2: Adaptiv parameterstyrning via RL/PPO 🔄
+### Sprint 4.2: Adaptiv parameterstyrning via RL/PPO ✅
 
 **Mål:** Gör meta-parametrar som evolution_threshold och min_samples adaptiva med PPO-agent.
 
