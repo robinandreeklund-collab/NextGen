@@ -1,0 +1,83 @@
+# Adaptive Parameters - Sprint 4.4 Tillägg
+# Uppdaterad med RewardTunerAgent parametrar
+
+reward_tuner_parameters:
+  reward_scaling_factor:
+    range: [0.5, 2.0]
+    default: 1.0
+    description: Multiplikativ skalning av base reward
+    type: float
+    adaptive: true
+    reward_signal: training_stability
+    update_frequency: every 20 rewards
+    module: reward_tuner
+    impact: |
+      Justerar magnitud av reward för att stabilisera RL-träning.
+      Lägre värde (0.5-0.8) = mer konservativ träning
+      Högre värde (1.2-2.0) = mer aggressiv träning
+    bounds_enforcement: clip
+  
+  volatility_penalty_weight:
+    range: [0.0, 1.0]
+    default: 0.3
+    description: Viktning av volatility penalty vid hög reward volatilitet
+    type: float
+    adaptive: true
+    reward_signal: reward_consistency
+    update_frequency: every epoch
+    module: reward_tuner
+    impact: |
+      Styr hur mycket volatility penalty appliceras på reward.
+      0.0 = ingen penalty för volatilitet
+      1.0 = maximal penalty för volatilitet
+    bounds_enforcement: clip
+  
+  overfitting_detector_threshold:
+    range: [0.05, 0.5]
+    default: 0.2
+    description: Tröskelvärde för overfitting detection
+    type: float
+    adaptive: true
+    reward_signal: generalization_score
+    update_frequency: every 50 rewards
+    module: reward_tuner
+    impact: |
+      Bestämmer känslighetsnivå för overfitting detection.
+      Lägre värde (0.05-0.15) = mer känslig, fångar mindre avvikelser
+      Högre värde (0.25-0.5) = mindre känslig, tolererar mer variation
+    bounds_enforcement: clip
+
+# Integration med existerande parametrar från Sprint 4.2 och 4.3
+# RewardTunerAgent parametrar läggs till i adaptive_parameters.yaml
+# och hanteras av MetaParameterAgent i rl_controller
+
+total_adaptive_parameters: 16
+sprint_4_2_parameters: 4
+sprint_4_3_parameters: 9
+sprint_4_4_parameters: 3
+
+parameter_distribution:
+  meta_agent_evolution_engine:
+    - evolution_threshold
+    - min_samples
+  rl_controller:
+    - update_frequency
+    - agent_entropy_threshold
+  strategy_engine:
+    - signal_threshold
+    - indicator_weighting
+  risk_manager:
+    - risk_tolerance
+    - max_drawdown
+  decision_engine:
+    - consensus_threshold
+    - memory_weighting
+  vote_engine:
+    - agent_vote_weight
+  execution_engine:
+    - execution_delay
+    - slippage_tolerance
+  reward_tuner:
+    - reward_scaling_factor
+    - volatility_penalty_weight
+    - overfitting_detector_threshold

@@ -1,0 +1,31 @@
+  - sprint: 4.4
+    name: Meta-belöningsjustering via RewardTunerAgent
+    goal: Introducera RewardTunerAgent som meta-agent mellan portfolio_manager och rl_controller för att justera och optimera belöningssignaler baserat på marknadsförhållanden och performance.
+    modules:
+      - reward_tuner (NY)
+      - rl_controller
+      - portfolio_manager
+      - strategic_memory_engine
+      - introspection_panel
+    adaptive_parameters:
+      reward_tuner:
+        - reward_scaling_factor (0.5-2.0, default: 1.0)
+        - volatility_penalty_weight (0.0-1.0, default: 0.3)
+        - overfitting_detector_threshold (0.05-0.5, default: 0.2)
+    reward_signals:
+      - base_reward: Raw reward från portfolio_manager
+      - tuned_reward: Justerad reward efter RewardTunerAgent
+      - reward_stability: Stabilitet i belöningssignaler
+      - overfitting_risk: Risk för överanpassning
+    feedback_flow:
+      - portfolio_manager → reward_tuner (base_reward)
+      - reward_tuner → rl_controller (tuned_reward)
+      - rl_controller → reward_tuner (agent_performance feedback)
+      - strategic_memory_engine ← reward_tuner (reward_log)
+    testable:
+      - RewardTunerAgent justerar belöning baserat på volatilitet
+      - Overfitting detection fungerar korrekt
+      - Reward scaling påverkar RL-agentträning
+      - Reward flow loggas i strategic_memory_engine
+      - Visualisering i introspection_panel
+    status: 🔄 pågående

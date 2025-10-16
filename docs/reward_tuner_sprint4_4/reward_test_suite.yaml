@@ -1,0 +1,243 @@
+# Reward Test Suite - Sprint 4.4
+# Test cases RT-001 to RT-006 för RewardTunerAgent
+
+test_suite:
+  name: RewardTunerAgent Test Suite
+  version: 1.0
+  sprint: 4.4
+  total_tests: 6
+
+tests:
+  RT-001:
+    name: Reward Volatility Calculation
+    description: Testar att reward volatilitet beräknas korrekt från reward history
+    type: unit
+    module: reward_tuner
+    setup: |
+      - Skapa RewardTunerAgent
+      - Fyll reward history med kända värden
+    test_cases:
+      - case: Low volatility rewards
+        input: [1.0, 1.1, 0.9, 1.0, 1.05]
+        expected: volatility < 0.1
+        assert: volatility_ratio < 1.2
+      
+      - case: High volatility rewards
+        input: [1.0, 5.0, -3.0, 2.0, -1.0]
+        expected: volatility > 2.0
+        assert: volatility_ratio > 2.0
+      
+      - case: Empty history
+        input: []
+        expected: volatility = 0.0
+        assert: volatility_ratio = 1.0
+    
+    validation:
+      - Volatility = standard deviation av rewards
+      - Volatility ratio = current_std / historical_mean_std
+      - Edge cases hanteras korrekt
+
+  RT-002:
+    name: Overfitting Detection
+    description: Testar att overfitting detekteras baserat på agent performance patterns
+    type: unit
+    module: reward_tuner
+    setup: |
+      - Skapa RewardTunerAgent med threshold=0.2
+      - Mock agent_status med performance data
+    test_cases:
+      - case: No overfitting - stable performance
+        agent_performance:
+          recent_avg: 0.75
+          long_term_avg: 0.73
+        expected: overfitting_detected = False
+        assert: overfitting_score < 0.2
+      
+      - case: Clear overfitting - performance drop
+        agent_performance:
+          recent_avg: 0.50
+          long_term_avg: 0.80
+        expected: overfitting_detected = True
+        assert: overfitting_score > 0.2
+      
+      - case: Borderline overfitting
+        agent_performance:
+          recent_avg: 0.65
+          long_term_avg: 0.80
+        expected: overfitting_score ≈ 0.19
+        assert: overfitting_detected depends on threshold
+    
+    validation:
+      - Overfitting score beräknas korrekt
+      - Threshold respekteras
+      - Event loggas när detected
+
+  RT-003:
+    name: Reward Transformation with Volatility Penalty
+    description: Testar reward transformation med volatility penalty
+    type: unit
+    module: reward_tuner
+    setup: |
+      - Skapa RewardTunerAgent
+      - Set volatility_penalty_weight = 0.3
+      - Set reward_scaling_factor = 1.0
+    test_cases:
+      - case: No penalty - low volatility
+        base_reward: 1.0
+        volatility_ratio: 1.0
+        overfitting: False
+        expected: tuned_reward = 1.0
+        assert: transformation_ratio = 1.0
+      
+      - case: Volatility penalty applied
+        base_reward: 1.0
+        volatility_ratio: 2.0
+        overfitting: False
+        volatility_penalty: 0.3 * (2.0 - 1.0) = 0.3
+        expected: tuned_reward = 1.0 * (1 - 0.3) = 0.7
+        assert: 0.65 < tuned_reward < 0.75
+      
+      - case: Both penalties applied
+        base_reward: 1.0
+        volatility_ratio: 2.5
+        overfitting: True
+        volatility_penalty: 0.3 * (2.5 - 1.0) = 0.45
+        overfitting_penalty: 0.5
+        expected: tuned_reward = 1.0 * (1 - 0.45) * 0.5 = 0.275
+        assert: 0.25 < tuned_reward < 0.3
+    
+    validation:
+      - Penalties beräknas och appliceras korrekt
+      - Tuned reward är alltid <= base reward
+      - Transformation loggas
+
+  RT-004:
+    name: Reward Scaling Factor Application
+    description: Testar att reward_scaling_factor appliceras korrekt
+    type: unit
+    module: reward_tuner
+    setup: |
+      - Skapa RewardTunerAgent
+      - Inget volatility eller overfitting
+    test_cases:
+      - case: Scaling factor = 1.0 (neutral)
+        base_reward: 1.0
+        scaling_factor: 1.0
+        expected: tuned_reward = 1.0
+      
+      - case: Scaling factor = 0.5 (conservative)
+        base_reward: 1.0
+        scaling_factor: 0.5
+        expected: tuned_reward = 0.5
+      
+      - case: Scaling factor = 2.0 (aggressive)
+        base_reward: 1.0
+        scaling_factor: 2.0
+        expected: tuned_reward = 2.0
+      
+      - case: Negative reward scaled
+        base_reward: -1.0
+        scaling_factor: 1.5
+        expected: tuned_reward = -1.5
+    
+    validation:
+      - Scaling appliceras multiplicativt
+      - Fungerar för både positiva och negativa rewards
+      - Bounded inom rimliga gränser
+
+  RT-005:
+    name: Integration - Portfolio to RL Controller
+    description: Testar full reward flow från portfolio_manager till rl_controller
+    type: integration
+    modules: [portfolio_manager, reward_tuner, rl_controller]
+    setup: |
+      - Skapa message_bus
+      - Skapa och koppla alla moduler
+      - Mock execution_result
+    test_cases:
+      - case: Full reward flow
+        steps:
+          1: portfolio_manager får execution_result
+          2: portfolio_manager publicerar base_reward
+          3: reward_tuner tar emot base_reward
+          4: reward_tuner beräknar tuned_reward
+          5: reward_tuner publicerar tuned_reward
+          6: rl_controller tar emot tuned_reward
+          7: rl_controller använder i PPO training
+        expected:
+          - base_reward publiceras
+          - tuned_reward publiceras
+          - rl_controller får korrekt reward
+          - reward_metrics publiceras
+        assert:
+          - len(rl_controller.reward_history) > 0
+          - rl_controller.reward_history[-1] == tuned_reward
+          - reward_metrics innehåller transformation_ratio
+    
+    validation:
+      - Message_bus routing fungerar
+      - Reward transformeras korrekt
+      - RL controller får rätt reward
+
+  RT-006:
+    name: Reward Logging and Visualization
+    description: Testar att reward flow loggas i strategic_memory_engine och visas i introspection_panel
+    type: integration
+    modules: [reward_tuner, strategic_memory_engine, introspection_panel]
+    setup: |
+      - Skapa message_bus
+      - Skapa och koppla alla moduler
+    test_cases:
+      - case: Reward logging in memory
+        steps:
+          1: Publicera base_reward på message_bus
+          2: reward_tuner transformerar
+          3: reward_tuner publicerar reward_log
+          4: strategic_memory_engine loggar
+        expected:
+          - reward_history innehåller både base och tuned
+          - transformation_ratio sparas
+          - volatility metrics sparas
+        assert:
+          - len(strategic_memory.reward_history) > 0
+          - reward_history[-1] innehåller 'base_reward'
+          - reward_history[-1] innehåller 'tuned_reward'
+      
+      - case: Reward visualization in panel
+        steps:
+          1: reward_tuner publicerar reward_metrics
+          2: introspection_panel tar emot metrics
+          3: dashboard_render uppdateras
+        expected:
+          - panel.reward_metrics innehåller data
+          - base_vs_tuned chart data finns
+          - volatility chart data finns
+        assert:
+          - len(panel.reward_metrics) > 0
+          - panel.get_dashboard_data() innehåller 'reward_flow'
+    
+    validation:
+      - Logging fungerar korrekt
+      - Visualization data genereras
+      - Historik sparas och är åtkomlig
+
+test_execution:
+  order:
+    - RT-001: Kör först (unit test, ingen dependency)
+    - RT-002: Kör först (unit test, ingen dependency)
+    - RT-003: Kör först (unit test, ingen dependency)
+    - RT-004: Kör först (unit test, ingen dependency)
+    - RT-005: Kör efter unit tests (integration)
+    - RT-006: Kör efter unit tests (integration)
+  
+  success_criteria:
+    - Alla 6 tester måste passera
+    - Code coverage > 90% för reward_tuner.py
+    - Integration tests validerar hela flödet
+    - Logging och visualization fungerar
+
+  pytest_commands:
+    unit_tests: pytest tests/test_reward_tuner.py::test_RT001 -v
+    integration_tests: pytest tests/test_reward_tuner.py::test_RT005 -v
+    all_tests: pytest tests/test_reward_tuner.py -v
+    with_coverage: pytest tests/test_reward_tuner.py --cov=modules.reward_tuner --cov-report=term-missing

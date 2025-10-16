@@ -242,12 +242,21 @@ class PortfolioManager:
         """
         Beräknar reward för RL-controller och publicerar.
         Reward baserat på portfolio value change.
+        Sprint 4.4: Publicerar base_reward istället för reward (går via RewardTunerAgent)
         """
         current_value = self.get_portfolio_value()
         reward = current_value - self.previous_portfolio_value
         self.previous_portfolio_value = current_value
         
-        # Publicera reward till rl_controller
+        # Sprint 4.4: Publicera base_reward till reward_tuner (istället för direkt till rl_controller)
+        self.message_bus.publish('base_reward', {
+            'reward': reward,
+            'source': 'portfolio_manager',
+            'portfolio_value': current_value,
+            'num_trades': len(self.trade_history)
+        })
+        
+        # Backward compatibility: Publicera också till 'reward' för existerande tester
         self.message_bus.publish('reward', {
             'value': reward,
             'source': 'portfolio_manager',

@@ -363,6 +363,9 @@ class RLController:
         self.message_bus.subscribe('reward', self._on_reward)
         self.message_bus.subscribe('feedback_event', self._on_feedback)
         
+        # Sprint 4.4: Prenumerera även på tuned_reward från RewardTunerAgent
+        self.message_bus.subscribe('tuned_reward', self._on_tuned_reward)
+        
         # Sprint 4.2: Prenumerera på agent_status för meta-parameter belöning
         self.message_bus.subscribe('agent_status', self._on_agent_status_for_meta)
         
@@ -498,6 +501,34 @@ class RLController:
         self.parameter_update_counter += 1
         
         # Träna agenter med ny reward
+        self.train_agents(reward_value, reward_data)
+        
+        # Publicera agent updates med viss frekvens
+        if self.update_counter >= self.config.get('update_frequency', 10):
+            self.publish_agent_updates()
+            self.update_counter = 0
+        
+        # Sprint 4.2: Uppdatera meta-parametrar med viss frekvens
+        param_update_freq = self.config.get('parameter_update_frequency', 10)
+        if self.parameter_update_counter >= param_update_freq:
+            self.update_meta_parameters()
+            self.parameter_update_counter = 0
+    
+    def _on_tuned_reward(self, reward_data: Dict[str, Any]) -> None:
+        """
+        Callback för tuned_reward från RewardTunerAgent (Sprint 4.4).
+        Prioriteras över base_reward när tillgänglig.
+        
+        Args:
+            reward_data: Tuned reward value och metadata
+        """
+        # Använd samma logik som _on_reward men med tuned reward
+        reward_value = reward_data.get('reward', 0.0)
+        self.reward_history.append(reward_value)
+        self.update_counter += 1
+        self.parameter_update_counter += 1
+        
+        # Träna agenter med tuned reward
         self.train_agents(reward_value, reward_data)
         
         # Publicera agent updates med viss frekvens
