@@ -1,0 +1,88 @@
+project_structure:
+  root:
+    - main.py
+    - requirements.txt
+
+  modules:
+    - data_ingestion.py
+    - strategy_engine.py
+    - risk_manager.py
+    - decision_engine.py
+    - vote_engine.py
+    - consensus_engine.py
+    - execution_engine.py
+    - portfolio_manager.py
+    - indicator_registry.py
+    - rl_controller.py
+    - feedback_router.py
+    - feedback_analyzer.py
+    - strategic_memory_engine.py
+    - meta_agent_evolution_engine.py
+    - agent_manager.py
+    - decision_simulator.py
+    - timespan_tracker.py
+    - action_chain_engine.py
+    - introspection_panel.py
+    - system_monitor.py
+
+  tests:
+    - test_data_ingestion.py
+    - test_strategy_engine.py
+    - test_risk_manager.py
+    - test_decision_engine.py
+    - test_vote_engine.py
+    - test_consensus_engine.py
+    - test_execution_engine.py
+    - test_portfolio_manager.py
+    - test_indicator_registry.py
+    - test_rl_controller.py
+    - test_feedback_router.py
+    - test_feedback_analyzer.py
+    - test_strategic_memory_engine.py
+    - test_meta_agent_evolution_engine.py
+    - test_agent_manager.py
+    - test_decision_simulator.py
+    - test_timespan_tracker.py
+    - test_action_chain_engine.py
+    - test_introspection_panel.py
+    - test_system_monitor.py
+
+  dashboards:
+    - portfolio_overview.py
+    - rl_metrics.py
+    - feedback_flow.py
+    - indicator_trends.py
+    - consensus_visualizer.py
+    - agent_evolution.py
+    - system_status.py
+
+  docs:
+    - README.md
+    - README_sprints.md
+    - onboarding_guide.md
+    - sprint_plan.yaml
+    - structure.yaml
+    - functions.yaml
+    - indicator_map.yaml
+    - agent_profiles.yaml
+    - consensus_models.yaml
+    - action_chains.yaml
+    - test_map.yaml
+    - introspection_config.yaml
+
+  config:
+    - finnhub_keys.yaml
+    - agent_roles.yaml
+    - chain_templates.yaml
+    - rl_parameters.yaml
+
+  logs:
+    - feedback_log.json
+    - decision_history.json
+    - agent_performance.json
+    - trade_log.json
+
+  data:
+    - cached_indicators/
+    - simulation_results/
+    - snapshots/
