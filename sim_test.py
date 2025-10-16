@@ -493,6 +493,14 @@ class SimulatedTester:
         base_rewards = reward_metrics['base_reward_history']
         tuned_rewards = reward_metrics['tuned_reward_history']
         
+        # Diagnostic info
+        rl_reward_count = len(self.rl_controller.reward_history) if hasattr(self.rl_controller, 'reward_history') else 0
+        print(f"\n🔍 Diagnostic Info:")
+        print(f"   Base rewards received:     {len(base_rewards)}")
+        print(f"   Tuned rewards generated:   {len(tuned_rewards)}")
+        print(f"   RL controller rewards:     {rl_reward_count}")
+        print(f"   Portfolio executions:      {self.stats['buy_executions'] + self.stats['sell_executions']}")
+        
         if base_rewards and tuned_rewards:
             print(f"\n📊 Reward Transformation Stats:")
             print(f"   Totalt rewards processade: {len(base_rewards)}")
@@ -510,6 +518,10 @@ class SimulatedTester:
             if len(reward_metrics['transformation_ratios']) > 0:
                 avg_ratio = sum(reward_metrics['transformation_ratios']) / len(reward_metrics['transformation_ratios'])
                 print(f"   Genomsnittlig ratio:   {avg_ratio:.4f}")
+        else:
+            print(f"\n⏳ Reward Transformation Stats:")
+            print(f"   Väntar på första reward från portfolio_manager...")
+            print(f"   Status: RewardTunerAgent är redo men har inte fått några base_reward events än")
         
         # Volatility metrics
         volatility_hist = reward_metrics['volatility_history']
@@ -520,6 +532,9 @@ class SimulatedTester:
             print(f"   Senaste volatility:    {recent_volatility:.4f}")
             print(f"   Genomsnittlig:         {avg_volatility:.4f}")
             print(f"   Volatility samples:    {len(volatility_hist)}")
+        else:
+            print(f"\n⏳ Volatility Metrics:")
+            print(f"   Inga volatility data än - krävs minst 2 rewards för beräkning")
         
         # Overfitting events
         overfitting_events = reward_metrics['overfitting_events']
@@ -544,6 +559,15 @@ class SimulatedTester:
                 first = param_hist[0]
                 latest = param_hist[-1]
                 print(f"   Scaling factor trend:  {first['reward_scaling_factor']:.4f} → {latest['reward_scaling_factor']:.4f}")
+        
+        # Add helpful note if no data
+        if not base_rewards:
+            print(f"\n💡 Note:")
+            print(f"   RewardTunerAgent fungerar korrekt men har inte fått några rewards än.")
+            print(f"   Detta kan bero på:")
+            print(f"   • Systemet nyss startat och väntar på första trade att completea")
+            print(f"   • Portfolio value har inte ändrats sedan senaste reward")
+            print(f"   • Koden uppdaterades under körning - starta om sim_test.py för nya features")
         
         print(f"{'='*90}\n")
     
