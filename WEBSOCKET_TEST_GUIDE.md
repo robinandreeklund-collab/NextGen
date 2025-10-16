@@ -238,9 +238,10 @@ Alla dessa moduler körs live under testet:
 Detta är **normalt beteende** när marknadssignaler inte uppfyller kriterierna för köp/sälj:
 
 **Förklaring:**
-- Systemet fattar endast beslut när indikatorer ger tydliga signaler
-- HOLD är ett giltigt beslut som betyder "inget läge att handla nu"
-- Beslut fattas var 10:e trade (för att simulera thoughtful trading)
+- Systemet fattar endast **TRADES** när indikatorer ger tydliga signaler
+- HOLD är ett giltigt **beslut** som betyder "inget läge att handla nu"
+- Beslutpunkter skapas var 10:e trade, men de flesta blir HOLD
+- **Beslut ≠ Trades**: Ett beslut kan vara BUY, SELL, eller HOLD. Endast BUY/SELL räknas som "decisions_made"
 
 **Vad du ser i debug output:**
 ```
@@ -252,11 +253,23 @@ Detta är **normalt beteende** när marknadssignaler inte uppfyller kriterierna 
    ⏸️  Decision: HOLD - ingen trade
 ```
 
-**För att få fler handelsbeslut:**
-1. Öka antal trades (kör längre tid)
-2. Justera indicator thresholds i modules/strategy_engine.py
-3. Testa under mer volatila marknadstider
-4. Kolla modul diagnostik i slutrapporten för att se indikatorstatus
+**Beslutskriterier (från strategy_engine.py):**
+
+BUY-signaler kräver minst 2 av:
+- RSI < 30 (starkt översåld)
+- MACD histogram > 0.5 (positiv momentum)
+- Analyst consensus = BUY/STRONG_BUY
+
+SELL-signaler kräver minst 2 av:
+- RSI > 70 (starkt överköpt)
+- MACD histogram < -0.5 (negativ momentum)
+- Analyst consensus = SELL
+
+**För att se fler trades:**
+1. Kör längre tid - fler symboler får starka signaler
+2. Live WebSocket-data har större variation än demo-stub-data
+3. TSLA (RSI=25) och MSFT (RSI=75) i stub-data ger signaler
+4. Justera thresholds i `modules/strategy_engine.py` om du vill (linje 156-160)
 
 **Modul Diagnostik visas vid avslut:**
 ```

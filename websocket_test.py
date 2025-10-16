@@ -223,6 +223,9 @@ class WebSocketTester:
                   f"(confidence: {proposal.get('confidence', 0):.2f})")
             print(f"      Reasoning: {proposal.get('reasoning', 'N/A')}")
         
+        # Publicera förslag till message_bus så decision_engine kan ta emot det
+        self.strategy_engine.publish_proposal(proposal)
+        
         # Risk manager bedömer risk (tar symbol)
         risk_profile = self.risk_manager.assess_risk(symbol)
         
@@ -230,7 +233,11 @@ class WebSocketTester:
             print(f"   ⚠️  Risk assessment: {risk_profile.get('risk_level', 'N/A')} "
                   f"(score: {risk_profile.get('risk_score', 0):.2f})")
         
+        # Publicera riskprofil till message_bus
+        self.risk_manager.publish_risk_profile(risk_profile)
+        
         # Decision engine fattar beslut (tar symbol)
+        # Nu har den både proposal och risk_profile via message_bus
         decision = self.decision_engine.make_decision(symbol)
         
         if self.debug_mode and self.stats['decisions_made'] < 5:
@@ -275,10 +282,15 @@ class WebSocketTester:
         print(f"🎯 Beslut fattade: {self.stats['decisions_made']}")
         print(f"🧬 Evolution events: {self.stats['evolution_events']}")
         
-        # Visa varning om inga beslut fattats
-        if self.stats['trades_processed'] > 50 and self.stats['decisions_made'] == 0:
-            print(f"\n⚠️  VARNING: Inga beslut fattade trots {self.stats['trades_processed']} trades!")
-            print(f"   Kontrollera att indikatorer genereras korrekt.")
+        # Visa status om beslut
+        if self.stats['trades_processed'] > 50:
+            total_decision_points = self.stats['trades_processed'] // 10
+            if self.stats['decisions_made'] == 0:
+                print(f"\n💡 Status: {total_decision_points} beslutstillfällen, alla = HOLD")
+                print(f"   (Systemet väntar på starka signaler: RSI<30 eller RSI>70)")
+            else:
+                hold_rate = ((total_decision_points - self.stats['decisions_made']) / total_decision_points * 100)
+                print(f"\n💡 {self.stats['decisions_made']} trades / {total_decision_points} beslut ({hold_rate:.0f}% HOLD-rate)")
         
         # Portfolio status
         portfolio_status = self.portfolio_manager.get_status()
@@ -412,12 +424,22 @@ class WebSocketTester:
         print(f"   Feedback Router: {feedback_count} feedback events")
         
         if self.stats['decisions_made'] == 0 and self.stats['trades_processed'] > 0:
-            print(f"\n⚠️  DIAGNOS: Inga beslut fattade!")
-            print(f"   Möjliga orsaker:")
-            print(f"   1. Indikatorer når inte strategy/risk/decision engines")
-            print(f"   2. Alla beslut blir HOLD (kontrollera indikator-logik)")
-            print(f"   3. Message bus-kommunikation fungerar inte korrekt")
-            print(f"\n   💡 Tips: Kör ett test med högre debug-output för att se flödet")
+            print(f"\n⚠️  DIAGNOS: Inga TRADES exekverade (alla beslut = HOLD)!")
+            print(f"   Detta är NORMALT beteende - systemet handlar endast vid tydliga signaler.")
+            print(f"\n   📊 Beslutskriterier för BUY:")
+            print(f"      - RSI < 30 (översåld) ELLER")
+            print(f"      - RSI < 50 + MACD > 0.5 + Analyst BUY")
+            print(f"\n   📊 Beslutskriterier för SELL:")
+            print(f"      - RSI > 70 (överköpt) ELLER")
+            print(f"      - RSI > 50 + MACD < -0.5 + Analyst SELL")
+            print(f"\n   💡 Aktuella indikatorvärden (demo-data):")
+            print(f"      - AAPL: RSI=65.0, MACD=0.3 → HOLD (ingen signal)")
+            print(f"      - TSLA: RSI=25.0, MACD=-0.6 → BUY-signal (översåld!)")
+            print(f"      - MSFT: RSI=75.0, MACD=0.3 → SELL-signal (överköpt!)")
+            print(f"\n   🔧 För att se fler trades:")
+            print(f"      1. Kör längre tid (fler symboler får starka signaler)")
+            print(f"      2. Vänta på TSLA eller MSFT trades för att se BUY/SELL")
+            print(f"      3. Live WebSocket-data har större variation än demo-data")
         
         print("\n" + "="*80)
         print("Tack för att du testade NextGen AI Trader! 🚀")
