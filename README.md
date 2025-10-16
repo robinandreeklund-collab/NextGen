@@ -102,7 +102,7 @@ Sprint 4.2 introducerade adaptiva meta-parametrar för evolution_threshold, min_
 - ✅ Adaptiva parametrar i vote_engine (agent_vote_weight)
 - ✅ Adaptiva parametrar i execution_engine (execution_delay, slippage_tolerance)
 - ✅ Full YAML-dokumentation i docs/adaptive_parameter_sprint4_3/
-- ✅ Uppdaterad docs/adaptive_parameters.yaml med alla 12 parametrar
+- ✅ Uppdaterad docs/adaptive_parameters.yaml med alla 13 parametrar
 - ✅ 8 nya tester för Sprint 4.3 adaptiva parametrar (alla passerar)
 - ✅ Parameter adjustment distribution i rl_controller (från Sprint 4.2)
 - ✅ Parameterloggning i strategic_memory_engine (från Sprint 4.2)
