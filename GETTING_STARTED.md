@@ -73,7 +73,7 @@ pytest tests/test_feedback_analyzer.py::TestFeedbackAnalyzer -v
 pytest tests/test_feedback_analyzer.py::TestFeedbackRouter -v
 
 # Endast IntrospectionPanel tester
-pytest tests/test_feedback_analyzer.py::TestFeedbackPanel -v
+pytest tests/test_feedback_analyzer.py::TestIntrospectionPanel -v
 ```
 
 ## Felsökning
