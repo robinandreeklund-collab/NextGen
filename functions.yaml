@@ -1,0 +1,180 @@
+functions:
+  data_ingestion:
+    description: Hämtar trending symboler och öppnar WebSocket-strömmar från Finnhub
+    inputs: [api_key, symbol_filters]
+    outputs: [streamed_data]
+    publishes: [market_data]
+    subscribes: []
+    uses_rl: false
+    receives_feedback: false
+
+  indicator_registry:
+    description: Hämtar och distribuerar tekniska, fundamentala och alternativa indikatorer från Finnhub
+    inputs: [symbol, timeframe]
+    outputs: [indicators]
+    publishes: [indicator_data]
+    subscribes: []
+    uses_rl: false
+    receives_feedback: false
+
+  strategy_engine:
+    description: Genererar tradeförslag baserat på indikatorer, portföljstatus och RL-belöning
+    inputs: [indicator_data, portfolio_status]
+    outputs: [trade_proposal]
+    publishes: [decision_proposal]
+    subscribes: [indicator_data, portfolio_status]
+    uses_rl: true
+    receives_feedback: true
+
+  risk_manager:
+    description: Bedömer risknivå baserat på volatilitet, ESG, och fundamentala indikatorer
+    inputs: [indicator_data, portfolio_status]
+    outputs: [risk_profile]
+    publishes: [risk_profile]
+    subscribes: [indicator_data, portfolio_status]
+    uses_rl: true
+    receives_feedback: true
+
+  decision_engine:
+    description: Samlar insikter från strategi, risk och minne för att fatta beslut
+    inputs: [trade_proposal, risk_profile, memory_insights]
+    outputs: [final_decision]
+    publishes: [decision_vote]
+    subscribes: [trade_proposal, risk_profile, memory_insights]
+    uses_rl: true
+    receives_feedback: true
+
+  vote_engine:
+    description: Genomför röstning mellan agenter och returnerar röstmatris
+    inputs: [decision_vote]
+    outputs: [vote_matrix]
+    publishes: [vote_matrix]
+    subscribes: [decision_vote]
+    uses_rl: false
+    receives_feedback: true
+
+  consensus_engine:
+    description: Väljer konsensusmodell och avgör beslutets robusthet
+    inputs: [vote_matrix]
+    outputs: [consensus_decision]
+    publishes: [final_decision]
+    subscribes: [vote_matrix]
+    uses_rl: true
+    receives_feedback: true
+
+  execution_engine:
+    description: Exekverar eller simulerar trade och loggar resultat
+    inputs: [final_decision]
+    outputs: [execution_result]
+    publishes: [trade_log]
+    subscribes: [final_decision]
+    uses_rl: true
+    receives_feedback: true
+
+  portfolio_manager:
+    description: Uppdaterar portfölj, beräknar reward och returnerar kapitalstatus
+    inputs: [execution_result]
+    outputs: [portfolio_status, reward]
+    publishes: [portfolio_status, reward]
+    subscribes: [execution_result]
+    uses_rl: false
+    receives_feedback: true
+
+  rl_controller:
+    description: Tränar PPO-agenter och distribuerar belöning
+    inputs: [reward, feedback]
+    outputs: [agent_update]
+    publishes: [agent_status]
+    subscribes: [reward, feedback]
+    uses_rl: true
+    receives_feedback: false
+
+  feedback_router:
+    description: Distribuerar feedback mellan moduler
+    inputs: [feedback]
+    outputs: [feedback_event]
+    publishes: [feedback_event]
+    subscribes: []
+    uses_rl: false
+    receives_feedback: false
+
+  feedback_analyzer:
+    description: Identifierar mönster i feedbackflöden och föreslår förbättringar
+    inputs: [feedback_event]
+    outputs: [feedback_insight]
+    publishes: [feedback_insight]
+    subscribes: [feedback_event]
+    uses_rl: false
+    receives_feedback: true
+
+  strategic_memory_engine:
+    description: Loggar beslut, indikatorer, utfall och reward
+    inputs: [final_decision, indicator_data, execution_result]
+    outputs: [memory_insights]
+    publishes: [memory_insights]
+    subscribes: [final_decision, indicator_data, execution_result]
+    uses_rl: false
+    receives_feedback: true
+
+  meta_agent_evolution_engine:
+    description: Utvärderar agentperformance och föreslår logikjusteringar
+    inputs: [agent_status, feedback_insight]
+    outputs: [evolution_suggestion]
+    publishes: [agent_update]
+    subscribes: [agent_status, feedback_insight]
+    uses_rl: true
+    receives_feedback: true
+
+  agent_manager:
+    description: Hanterar agentprofiler, versioner och rolljusteringar
+    inputs: [agent_update]
+    outputs: [agent_profile]
+    publishes: [agent_profile]
+    subscribes: [agent_update]
+    uses_rl: false
+    receives_feedback: false
+
+  decision_simulator:
+    description: Testar alternativa beslut i sandbox och jämför utfall
+    inputs: [trade_proposal]
+    outputs: [simulation_result]
+    publishes: [simulation_result]
+    subscribes: [trade_proposal]
+    uses_rl: false
+    receives_feedback: false
+
+  timespan_tracker:
+    description: Synkroniserar beslut och indikatorer över tid
+    inputs: [decision_event, indicator_data]
+    outputs: [timeline_insight]
+    publishes: [timeline_insight]
+    subscribes: [decision_event, indicator_data]
+    uses_rl: false
+    receives_feedback: false
+
+  action_chain_engine:
+    description: Definierar återanvändbara beslutskedjor
+    inputs: [chain_definition]
+    outputs: [chain_execution]
+    publishes: [chain_execution]
+    subscribes: []
+    uses_rl: false
+    receives_feedback: false
+
+  introspection_panel:
+    description: Visualiserar modulstatus, RL-performance och kommunikation
+    inputs: [agent_status, feedback_event, indicator_data]
+    outputs: [dashboard_render]
+    publishes: []
+    subscribes: [agent_status, feedback_event, indicator_data]
+    uses_rl: false
+    receives_feedback: false
+
+  system_monitor:
+    description: Visar systemöversikt, indikatortrender och agentrespons
+    inputs: [dashboard_data]
+    outputs: [system_view]
+    publishes: []
+    subscribes: [dashboard_data]
+    uses_rl: false
+    receives_feedback: false
