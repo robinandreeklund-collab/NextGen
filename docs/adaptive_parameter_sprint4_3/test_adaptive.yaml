@@ -1,0 +1,75 @@
+test_adaptive:
+  description: >
+    Testfall för adaptiva parametrar i moduler som styrs av PPO-agenter. Varje test kontrollerar att
+    parameterjustering sker korrekt, att belöningssignal påverkar RL-agentens beteende, och att
+    justeringar loggas och visualiseras.
+
+  controller: rl_controller
+  agent_type: PPO
+  logging_module: strategic_memory_engine
+  visualization_module: introspection_panel
+
+  tests:
+    - module: strategy_engine
+      parameter: signal_threshold
+      test_case: >
+        Justera tröskelvärde från 0.5 till 0.3 vid låg träffsäkerhet. Verifiera att trade_proposal minskar.
+      reward_signal: trade_success_rate
+      expected_behavior: adaptiv nedjustering
+      introspection_check: parameter_adjustment visible
+
+    - module: strategy_engine
+      parameter: indicator_weighting
+      test_case: >
+        Öka vikt för RSI vid hög reward. Verifiera att RSI påverkar beslut mer än MACD.
+      reward_signal: cumulative_reward
+      expected_behavior: dynamisk viktförskjutning
+      introspection_check: indicator_weighting trend visible
+
+    - module: risk_manager
+      parameter: risk_tolerance
+      test_case: >
+        Minska risk_tolerance vid ökad drawdown. Verifiera att risk_profile blir mer konservativ.
+      reward_signal: drawdown_avoidance
+      expected_behavior: adaptiv riskreduktion
+      introspection_check: risk_tolerance drift visible
+
+    - module: decision_engine
+      parameter: consensus_threshold
+      test_case: >
+        Höj tröskel vid låg beslutsträff. Verifiera att färre beslut går vidare till vote_engine.
+      reward_signal: decision_accuracy
+      expected_behavior: striktare konsensus
+      introspection_check: consensus_threshold visible
+
+    - module: vote_engine
+      parameter: agent_vote_weight
+      test_case: >
+        Öka röststyrka för agent med hög träffsäkerhet. Verifiera att agentens beslut får större påverkan.
+      reward_signal: agent_hit_rate
+      expected_behavior: meritbaserad röstviktning
+      introspection_check: vote_weight trend visible
+
+    - module: execution_engine
+      parameter: slippage_tolerance
+      test_case: >
+        Minska tolerans vid hög slippage. Verifiera att exekvering sker mer selektivt.
+      reward_signal: slippage_reduction
+      expected_behavior: förbättrad exekveringsprecision
+      introspection_check: slippage_tolerance visible
+
+    - module: rl_controller
+      parameter: agent_entropy_threshold
+      test_case: >
+        Justera entropitröskel för att öka beslutsspridning. Verifiera att agentpolicy blir mer diversifierad.
+      reward_signal: decision_diversity
+      expected_behavior: bredare policyutforskning
+      introspection_check: entropy_threshold visible
+
+    - module: meta_agent_evolution_engine
+      parameter: evolution_threshold
+      test_case: >
+        Höj tröskel för agentförändring vid låg förbättring. Verifiera att färre agentversioner skapas.
+      reward_signal: agent_performance_gain
+      expected_behavior: stabilare agentutveckling
+      introspection_check: evolution_threshold visible

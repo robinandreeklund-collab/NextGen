@@ -1,0 +1,133 @@
+flowchart:
+  source: Finnhub
+  entry:
+    - data_ingestion
+    - indicator_registry
+
+  indicator_flow:
+    from: indicator_registry
+    to:
+      - strategy_engine
+      - risk_manager
+      - decision_engine
+      - strategic_memory_engine
+      - introspection_panel
+      - system_monitor
+
+  strategy_flow:
+    from: strategy_engine
+    to:
+      - decision_engine
+      - decision_simulator
+
+  risk_flow:
+    from: risk_manager
+    to:
+      - decision_engine
+      - strategic_memory_engine
+
+  decision_flow:
+    from: decision_engine
+    to:
+      - vote_engine
+      - strategic_memory_engine
+      - decision_simulator
+
+  voting_flow:
+    from: vote_engine
+    to: consensus_engine
+
+  consensus_flow:
+    from: consensus_engine
+    to:
+      - execution_engine
+      - decision_simulator
+
+  execution_flow:
+    from: execution_engine
+    to:
+      - portfolio_manager
+      - feedback_router
+      - strategic_memory_engine
+
+  portfolio_flow:
+    from: portfolio_manager
+    to:
+      - rl_controller
+      - introspection_panel
+      - system_monitor
+
+  feedback_flow:
+    from: feedback_router
+    to:
+      - rl_controller
+      - feedback_analyzer
+      - strategic_memory_engine
+      - meta_agent_evolution_engine
+
+  feedback_analysis:
+    from: feedback_analyzer
+    to:
+      - rl_controller
+      - meta_agent_evolution_engine
+
+  rl_training:
+    from: rl_controller
+    to:
+      - strategy_engine
+      - risk_manager
+      - decision_engine
+      - meta_agent_evolution_engine
+      - adaptive_parameters
+
+  parameter_adjustment_flow:
+    from: rl_controller
+    emits: parameter_adjustment
+    to:
+      - meta_agent_evolution_engine
+      - strategic_memory_engine
+      - agent_manager
+      - introspection_panel
+
+  agent_evolution:
+    from: meta_agent_evolution_engine
+    to:
+      - agent_manager
+      - adaptive_parameters
+
+  memory_flow:
+    from: strategic_memory_engine
+    to:
+      - decision_engine
+      - feedback_analyzer
+      - introspection_panel
+      - system_monitor
+
+  simulation_flow:
+    from: decision_simulator
+    to:
+      - consensus_engine
+      - introspection_panel
+
+  orchestration:
+    - timespan_tracker
+    - action_chain_engine
+
+  orchestration_flow:
+    from: timespan_tracker
+    to:
+      - decision_engine
+      - indicator_registry
+      - strategic_memory_engine
+
+    from: action_chain_engine
+    to:
+      - strategy_engine
+      - decision_engine
+      - execution_engine
+
+  visualization:
+    from:
+      - introspection_panel
+      - system_monitor
+    to: dashboard_render

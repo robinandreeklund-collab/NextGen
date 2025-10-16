@@ -1,0 +1,61 @@
+readme_section:
+  title: Adaptiv parameterstyrning via RL/PPO
+  description: >
+    Systemet använder nu RL-styrda parametrar för att dynamiskt justera tröskelvärden, viktningar och toleranser
+    i flera moduler. Detta möjliggör självoptimering baserat på belöningssignal, feedbackmönster och agentperformance.
+
+  motivation: >
+    Genom att ersätta statiska inställningar med adaptiva parametrar förbättras systemets flexibilitet, robusthet
+    och långsiktiga inlärningsförmåga. Parametrarna justeras av PPO-agenter som tränas på belöning och feedback.
+
+  architecture:
+    controller: rl_controller
+    agent_type: PPO
+    feedback_sources:
+      - reward
+      - feedback_event
+      - agent_status
+      - portfolio_performance
+    adjustment_target: adaptive_parameters
+    logging: strategic_memory_engine
+    visualization: introspection_panel
+
+  modules_with_adaptive_parameters:
+    strategy_engine:
+      - signal_threshold
+      - indicator_weighting
+    risk_manager:
+      - risk_tolerance
+      - max_drawdown
+    decision_engine:
+      - consensus_threshold
+      - memory_weighting
+    vote_engine:
+      - agent_vote_weight
+    execution_engine:
+      - execution_delay
+      - slippage_tolerance
+    rl_controller:
+      - update_frequency
+      - agent_entropy_threshold
+    meta_agent_evolution_engine:
+      - evolution_threshold
+      - min_samples
+
+  reward_signals:
+    - trade_success_rate
+    - drawdown_avoidance
+    - decision_accuracy
+    - agent_hit_rate
+    - slippage_reduction
+    - reward_volatility
+    - feedback_consistency
+    - decision_diversity
+    - historical_alignment
+    - cumulative_reward
+
+  benefits:
+    - Självjusterande system utan manuell parameterfinjustering
+    - Bättre anpassning till marknadsförändringar och agentutveckling
+    - Transparent parameterhistorik och belöningsflöde
+    - Fullt integrerat med feedbackloopar och introspektionspaneler

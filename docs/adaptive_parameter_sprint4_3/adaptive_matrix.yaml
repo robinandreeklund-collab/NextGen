@@ -1,0 +1,34 @@
+adaptive_matrix:
+  strategy_engine:
+    parameters:
+      - signal_threshold: trade_success_rate
+      - indicator_weighting: cumulative_reward
+
+  risk_manager:
+    parameters:
+      - risk_tolerance: drawdown_avoidance
+      - max_drawdown: portfolio_stability
+
+  decision_engine:
+    parameters:
+      - consensus_threshold: decision_accuracy
+      - memory_weighting: historical_alignment
+
+  vote_engine:
+    parameters:
+      - agent_vote_weight: agent_hit_rate
+
+  execution_engine:
+    parameters:
+      - execution_delay: slippage_reduction
+      - slippage_tolerance: execution_efficiency
+
+  rl_controller:
+    parameters:
+      - update_frequency: reward_volatility
+      - agent_entropy_threshold: decision_diversity
+
+  meta_agent_evolution_engine:
+    parameters:
+      - evolution_threshold: agent_performance_gain
+      - min_samples: feedback_consistency

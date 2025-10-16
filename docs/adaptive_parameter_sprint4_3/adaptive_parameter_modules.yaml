@@ -1,0 +1,79 @@
+adaptive_parameter_modules:
+  description: >
+    Följande moduler använder nu adaptiva parametrar som justeras av PPO-agenter baserat på belöningssignal,
+    feedbackmönster och systemstatus. Parametrarna optimeras kontinuerligt för att förbättra beslutskvalitet,
+    riskhantering, exekvering och agentutveckling.
+
+  controller: rl_controller
+  agent_type: PPO
+  feedback_sources:
+    - reward
+    - feedback_event
+    - agent_status
+    - portfolio_performance
+    - feedback_insight
+
+  modules:
+    strategy_engine:
+      parameters:
+        - signal_threshold
+        - indicator_weighting
+      reward_signals:
+        - trade_success_rate
+        - cumulative_reward
+
+    risk_manager:
+      parameters:
+        - risk_tolerance
+        - max_drawdown
+      reward_signals:
+        - drawdown_avoidance
+        - portfolio_stability
+
+    decision_engine:
+      parameters:
+        - consensus_threshold
+        - memory_weighting
+      reward_signals:
+        - decision_accuracy
+        - historical_alignment
+
+    vote_engine:
+      parameters:
+        - agent_vote_weight
+      reward_signals:
+        - agent_hit_rate
+
+    execution_engine:
+      parameters:
+        - execution_delay
+        - slippage_tolerance
+      reward_signals:
+        - slippage_reduction
+        - execution_efficiency
+
+    rl_controller:
+      parameters:
+        - update_frequency
+        - agent_entropy_threshold
+      reward_signals:
+        - reward_volatility
+        - decision_diversity
+
+    meta_agent_evolution_engine:
+      parameters:
+        - evolution_threshold
+        - min_samples
+      reward_signals:
+        - agent_performance_gain
+        - feedback_consistency
+
+  logging_module: strategic_memory_engine
+  visualization_module: introspection_panel
+  versioning_module: agent_manager
+
+  benefits:
+    - Dynamisk självoptimering av systemets kärnlogik
+    - Minskad behov av manuell parameterfinjustering
+    - Förbättrad träffsäkerhet, robusthet och agentutveckling
+    - Full spårbarhet via memory_engine och visualisering i Dash

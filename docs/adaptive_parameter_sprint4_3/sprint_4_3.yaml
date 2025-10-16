@@ -1,0 +1,38 @@
+  - sprint: 4.3
+    name: Utökning av adaptiva parametrar
+    goal: Inför RL-styrda parametrar i fler moduler där det förbättrar beslut, risk, exekvering och agentlogik.
+    modules:
+      - strategy_engine
+      - risk_manager
+      - decision_engine
+      - vote_engine
+      - execution_engine
+      - rl_controller
+      - meta_agent_evolution_engine
+    adaptive_parameters:
+      strategy_engine:
+        - signal_threshold
+        - indicator_weighting
+      risk_manager:
+        - risk_tolerance
+        - max_drawdown
+      decision_engine:
+        - consensus_threshold
+        - memory_weighting
+      vote_engine:
+        - agent_vote_weight
+      execution_engine:
+        - execution_delay
+        - slippage_tolerance
+      rl_controller:
+        - update_frequency
+        - agent_entropy_threshold
+      meta_agent_evolution_engine:
+        - evolution_threshold
+        - min_samples
+    testable:
+      - Parameterdrift per modul
+      - RL-belöningssignal per parameter
+      - Visualisering i introspection_panel
+      - Logging i strategic_memory_engine
+    status: ⏳ planerad

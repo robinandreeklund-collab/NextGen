@@ -1,0 +1,147 @@
+feedback_loop:
+  name: Komplett feedbackloop för Sprint 1–7
+  description: >
+    Systemet använder en flerstegs feedbackloop där exekvering, portfölj, indikatorer, agentstatus och belöning
+    samverkar för att förbättra beslut, strategi, riskhantering och meta-parametrar. RL-agenter tränas kontinuerligt
+    och justerar både modulbeteende och adaptiva parametrar.
+
+  flow:
+    - source: execution_engine
+      emits: execution_result
+      targets:
+        - portfolio_manager
+        - feedback_router
+        - strategic_memory_engine
+
+    - source: portfolio_manager
+      emits:
+        - reward
+        - portfolio_status
+      targets:
+        - rl_controller
+        - strategy_engine
+        - risk_manager
+        - introspection_panel
+
+    - source: feedback_router
+      emits: feedback_event
+      targets:
+        - rl_controller
+        - feedback_analyzer
+        - strategic_memory_engine
+        - meta_agent_evolution_engine
+
+    - source: feedback_analyzer
+      emits: feedback_insight
+      targets:
+        - rl_controller
+        - meta_agent_evolution_engine
+
+    - source: rl_controller
+      emits:
+        - agent_update
+        - agent_status
+        - parameter_adjustment
+      targets:
+        - strategy_engine
+        - risk_manager
+        - decision_engine
+        - meta_agent_evolution_engine
+        - strategic_memory_engine
+        - agent_manager
+        - introspection_panel
+
+    - source: meta_agent_evolution_engine
+      emits: agent_update
+      targets:
+        - agent_manager
+        - strategic_memory_engine
+
+    - source: strategic_memory_engine
+      emits: memory_insights
+      targets:
+        - decision_engine
+        - feedback_analyzer
+        - introspection_panel
+
+    - source: agent_manager
+      emits: agent_profile
+      targets:
+        - introspection_panel
+
+    - source: decision_engine
+      emits: decision_vote
+      targets:
+        - vote_engine
+        - strategic_memory_engine
+        - decision_simulator
+
+    - source: vote_engine
+      emits: vote_matrix
+      targets:
+        - consensus_engine
+
+    - source: consensus_engine
+      emits: final_decision
+      targets:
+        - execution_engine
+        - strategic_memory_engine
+
+    - source: decision_simulator
+      emits: simulation_result
+      targets:
+        - consensus_engine
+        - introspection_panel
+
+    - source: strategy_engine
+      emits: trade_proposal
+      targets:
+        - decision_engine
+        - decision_simulator
+
+    - source: risk_manager
+      emits: risk_profile
+      targets:
+        - decision_engine
+        - strategic_memory_engine
+
+    - source: indicator_registry
+      emits: indicator_data
+      targets:
+        - strategy_engine
+        - risk_manager
+        - decision_engine
+        - strategic_memory_engine
+        - introspection_panel
+        - system_monitor
+
+    - source: timespan_tracker
+      emits: timeline_insight
+      targets:
+        - decision_engine
+        - indicator_registry
+        - strategic_memory_engine
+
+    - source: action_chain_engine
+      emits: chain_execution
+      targets:
+        - strategy_engine
+        - decision_engine
+        - execution_engine
+
+    - source: introspection_panel
+      renders:
+        - agent_status
+        - parameter_adjustment
+        - feedback_event
+        - indicator_data
+        - simulation_result
+        - memory_insights
+        - portfolio_status
+
+    - source: system_monitor
+      renders:
+        - indicator_data
+        - portfolio_status
+        - agent_profile
+        - memory_insights
