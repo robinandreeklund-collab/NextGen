@@ -75,12 +75,17 @@ class DecisionEngine:
         self.rl_enabled = False
         self.agent_performance = 0.0
         
+        # Sprint 4.3: Adaptiva parametrar
+        self.consensus_threshold = 0.75  # Default från adaptive_parameters.yaml
+        self.memory_weighting = 0.4  # Default från adaptive_parameters.yaml
+        
         # Prenumerera på relevanta topics
         self.message_bus.subscribe('decision_proposal', self._on_trade_proposal)
         self.message_bus.subscribe('risk_profile', self._on_risk_profile)
         self.message_bus.subscribe('memory_insights', self._on_memory_insights)
         self.message_bus.subscribe('portfolio_status', self._on_portfolio_status)
         self.message_bus.subscribe('agent_update', self._on_agent_update)
+        self.message_bus.subscribe('parameter_adjustment', self._on_parameter_adjustment)
     
     def _on_trade_proposal(self, proposal: Dict[str, Any]) -> None:
         """
@@ -132,9 +137,27 @@ class DecisionEngine:
             metrics = update.get('metrics', {})
             self.agent_performance = metrics.get('average_reward', 0.0)
     
+    def _on_parameter_adjustment(self, adjustment: Dict[str, Any]) -> None:
+        """
+        Callback för parameter adjustments från rl_controller (Sprint 4.3).
+        
+        Args:
+            adjustment: Justerade parametrar med värden
+        """
+        params = adjustment.get('parameters', {})
+        
+        # Uppdatera consensus_threshold om justerad
+        if 'consensus_threshold' in params:
+            self.consensus_threshold = params['consensus_threshold']
+        
+        # Uppdatera memory_weighting om justerad
+        if 'memory_weighting' in params:
+            self.memory_weighting = params['memory_weighting']
+    
     def make_decision(self, symbol: str, current_price: float = None) -> Dict[str, Any]:
         """
         Fattar slutgiltigt beslut för en symbol baserat på alla inputs.
+        Sprint 4.3: Använder adaptiva parametrar (consensus_threshold, memory_weighting).
         
         Args:
             symbol: Aktiesymbol att fatta beslut för
@@ -153,8 +176,19 @@ class DecisionEngine:
             'quantity': proposal.get('quantity', 0),
             'confidence': proposal.get('confidence', 0.5),
             'reasoning': proposal.get('reasoning', 'Baserat på strategi'),
-            'rl_enabled': self.rl_enabled
+            'rl_enabled': self.rl_enabled,
+            'consensus_threshold': self.consensus_threshold,  # Sprint 4.3
+            'memory_weighting': self.memory_weighting  # Sprint 4.3
         }
+        
+        # Sprint 4.3: Använd adaptiv memory_weighting för historiska insikter
+        if self.memory_insights:
+            best_indicators = self.memory_insights.get('best_indicators', [])
+            if best_indicators and self.memory_weighting > 0:
+                # Justera confidence baserat på historisk performance
+                memory_adjustment = 1.0 + (self.memory_weighting * 0.2)  # 0-20% boost
+                decision['confidence'] = min(1.0, decision['confidence'] * memory_adjustment)
+                decision['reasoning'] += f' (memory-förstärkt: {self.memory_weighting:.2f})'
         
         # Justera baserat på risk
         risk_level = risk_profile.get('risk_level', 'MEDIUM')
@@ -168,12 +202,14 @@ class DecisionEngine:
                 decision['reasoning'] += f', reducerad position från {original_qty} till {decision["quantity"]} pga hög risk'
             decision['confidence'] *= 0.7
             
-            # Vid mycket hög risk, överväg att avbryta
-            if risk_confidence > 0.7 and decision['action'] in ['BUY', 'SELL']:
-                decision['action'] = 'HOLD'
-                decision['quantity'] = 0
-                decision['reasoning'] = f'Avbrutet: {decision["reasoning"]} (för hög risk)'
-                decision['confidence'] = 0.3
+            # Sprint 4.3: Använd adaptiv consensus_threshold för riskbedömning
+            # Vid mycket hög risk och låg consensus, överväg att avbryta
+            if risk_confidence > 0.7 and decision['confidence'] < self.consensus_threshold:
+                if decision['action'] in ['BUY', 'SELL']:
+                    decision['action'] = 'HOLD'
+                    decision['quantity'] = 0
+                    decision['reasoning'] = f'Avbrutet: {decision["reasoning"]} (för hög risk, låg consensus)'
+                    decision['confidence'] = 0.3
                 
         elif risk_level == 'LOW':
             # Öka confidence vid låg risk
@@ -183,6 +219,10 @@ class DecisionEngine:
         elif risk_level == 'MEDIUM':
             # Balansera confidence
             decision['confidence'] = (proposal.get('confidence', 0.5) + risk_confidence) / 2
+        
+        # Sprint 4.3: Kontrollera consensus_threshold innan beslut godkänns
+        if decision['action'] != 'HOLD' and decision['confidence'] < self.consensus_threshold:
+            decision['reasoning'] += f' (OBS: under consensus threshold {self.consensus_threshold:.2f})'
         
         # Kontrollera insufficient funds för BUY-beslut
         if decision['action'] == 'BUY' and current_price and self.portfolio_status:
