@@ -36,7 +36,7 @@ class DecisionSimulator:
     
     def __init__(self, message_bus):
         self.message_bus = message_bus
-        self.message_bus.subscribe('trade_proposal', self._on_proposal)
+        self.message_bus.subscribe('decision_proposal', self._on_proposal)
     
     def _on_proposal(self, proposal: Dict[str, Any]) -> None:
         """Callback för trade proposals."""
