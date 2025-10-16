@@ -358,13 +358,15 @@ class RLController:
         # Sprint 4.2: Meta-parameter agent
         self.meta_parameter_agent = self._initialize_meta_parameter_agent()
         self.parameter_update_counter = 0
+        self.last_reward_timestamp = 0  # Sprint 4.4: Prevent duplicate reward processing
         
         # Prenumerera på feedback
         self.message_bus.subscribe('feedback_event', self._on_feedback)
         
-        # Sprint 4.4: Prenumerera på tuned_reward från RewardTunerAgent
-        # NOTE: Only subscribed to 'tuned_reward' - all rewards now flow through RewardTunerAgent
-        # RewardTuner transforms base_reward → tuned_reward for optimal RL training
+        # Sprint 4.4: Subscribe to both 'reward' and 'tuned_reward'
+        # RewardTunerAgent publishes to both (tuned_reward + reward for backward compat)
+        # We prioritize tuned_reward but fallback to reward if tuned_reward not available
+        self.message_bus.subscribe('reward', self._on_reward)
         self.message_bus.subscribe('tuned_reward', self._on_tuned_reward)
         
         # Sprint 4.2: Prenumerera på agent_status för meta-parameter belöning
@@ -491,11 +493,17 @@ class RLController:
     
     def _on_reward(self, reward_data: Dict[str, Any]) -> None:
         """
-        Callback för reward från portfolio_manager.
+        Callback för reward från portfolio_manager (or reward_tuner for backward compat).
+        Sprint 4.4: Skip if tuned_reward was recently processed (< 100ms ago).
         
         Args:
             reward_data: Reward value och metadata
         """
+        import time
+        # Skip if tuned_reward was just processed (prevents duplicate processing)
+        if hasattr(self, 'last_reward_timestamp') and (time.time() - self.last_reward_timestamp) < 0.1:
+            return
+        
         reward_value = reward_data.get('value', 0.0)
         self.reward_history.append(reward_value)
         self.update_counter += 1
@@ -523,6 +531,10 @@ class RLController:
         Args:
             reward_data: Tuned reward value och metadata
         """
+        import time
+        # Set timestamp to prevent duplicate processing if 'reward' callback also fires
+        self.last_reward_timestamp = time.time()
+        
         # Använd samma logik som _on_reward men med tuned reward
         reward_value = reward_data.get('reward', 0.0)
         self.reward_history.append(reward_value)
