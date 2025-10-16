@@ -8,9 +8,10 @@ Ett självreflekterande, modulärt och RL-drivet handelssystem byggt för transp
 
 **Sprint 1 färdig ✅** – Kärnsystem och demoportfölj komplett
 **Sprint 2 färdig ✅** – RL och belöningsflöde komplett
-**Sprint 3 pågår 🔄** – Feedbackloopar och introspektion under utveckling
+**Sprint 3 färdig ✅** – Feedbackloopar och introspektion komplett
+**Sprint 4 pågår 🔄** – Strategiskt minne och agentutveckling under utveckling
 
-### Sprint 3: Feedbackloopar och introspektion (PÅGÅR)
+### Sprint 3: Feedbackloopar och introspektion ✅
 
 **Mål:** Inför feedback mellan moduler och visualisera kommunikation.
 
@@ -40,6 +41,28 @@ Ett självreflekterande, modulärt och RL-drivet handelssystem byggt för transp
 - ✅ Mönsteranalys identifierar 3+ pattern-typer
 - ✅ Dashboard genererar rik visualiseringsdata
 - ✅ Agent adaptation tracking visar trends
+
+### Sprint 4: Strategiskt minne och agentutveckling (PÅGÅR)
+
+**Mål:** Logga beslut, analysera agentperformance och utveckla logik.
+
+**Moduler i fokus:**
+- `strategic_memory_engine` - Beslutshistorik och korrelationsanalys
+- `meta_agent_evolution_engine` - Agentperformance-analys och evolutionslogik
+- `agent_manager` - Versionshantering och agentprofiler
+
+**Nya indikatorer i Sprint 4:**
+- ROE (Return on Equity) - Kapitaleffektivitet
+- ROA (Return on Assets) - Tillgångsproduktivitet
+- ESG Score - Etisk risk och långsiktig hållbarhet
+- Earnings Calendar - Eventbaserad risk och timing
+
+**Testbara mål:**
+- Beslutshistorik loggas och analyseras
+- Agentversioner spåras och hanteras
+- Evolutionsträd visualiseras
+- Korrelationsanalys mellan indikatorer och utfall
+- Agentperformance-metriker genereras
 
 ### Sprint 2: RL och belöningsflöde ✅
 
@@ -94,285 +117,117 @@ Ett självreflekterande, modulärt och RL-drivet handelssystem byggt för transp
 
 ---
 
-## 🔄 Sprint 2: RL och Belöningsflöde
+## 🔄 Sprint 4: Strategiskt minne och agentutveckling
 
-### RL-arkitektur och PPO-agenter
+### Memory och Evolution Arkitektur
 
-Sprint 2 introducerar reinforcement learning (RL) med PPO-agenter (Proximal Policy Optimization) för att optimera handelsbeslut baserat på portfolio performance.
-
-```
-┌─────────────────┐
-│ portfolio_mgr   │
-│ (Beräknar       │
-│  reward)        │
-└────────┬────────┘
-         │ reward
-         ▼
-┌─────────────────┐     agent_update      ┌──────────────────┐
-│ rl_controller   │────────────────────────▶│ strategy_engine  │
-│ (PPO-träning)   │                        │ (RL-förstärkt)   │
-└────────┬────────┘                        └──────────────────┘
-         │ agent_update
-         ├──────────────────────────────────▶┌──────────────────┐
-         │                                   │ risk_manager     │
-         │                                   │ (RL-förstärkt)   │
-         │                                   └──────────────────┘
-         │ agent_update
-         ├──────────────────────────────────▶┌──────────────────┐
-         │                                   │ decision_engine  │
-         │                                   │ (RL-optimerat)   │
-         │                                   └──────────────────┘
-         │ agent_update
-         └──────────────────────────────────▶┌──────────────────┐
-                                             │ execution_engine │
-                                             │ (RL-optimerat)   │
-                                             └──────────────────┘
-```
-
-### RL-agenter och deras roller
-
-**1. strategy_engine RL-agent:**
-- State: 10 dimensioner (OHLC, Volume, SMA, RSI, MACD, portfolio info)
-- Action: 3 möjligheter (BUY, SELL, HOLD)
-- Syfte: Optimera tradeförslag baserat på indikator-kombinationer
-- Förbättrar: Timing och kvantitet för trades
-
-**2. risk_manager RL-agent:**
-- State: 8 dimensioner (Volume, ATR, volatility, portfolio exposure)
-- Action: 3 nivåer (LOW, MEDIUM, HIGH risk)
-- Syfte: Justera riskbedömning baserat på historisk accuracy
-- Förbättrar: Risk-adjusted returns
-
-**3. decision_engine RL-agent:**
-- State: 12 dimensioner (Strategy proposal, risk profile, memory insights)
-- Action: 3 alternativ (ACCEPT, MODIFY, REJECT)
-- Syfte: Optimera slutgiltiga beslut med balans mellan risk och reward
-- Förbättrar: Confidence och beslutskvalitet
-
-**4. execution_engine RL-agent:**
-- State: 6 dimensioner (Price, volume, timing, slippage)
-- Action: 2 alternativ (EXECUTE_NOW, WAIT)
-- Syfte: Minimera slippage och förbättra execution quality
-- Förbättrar: Execution timing
-
-### Reward-beräkning och feedback
-
-**Reward-källor:**
-1. **Portfolio value change** (primär):
-   - Positiv reward när portfolio värde ökar
-   - Negativ reward när portfolio värde minskar
-   
-2. **Trade profitability**:
-   - Belönar lönsamma trades
-   - Straffar förlustbringande trades
-   
-3. **Risk-adjusted returns** (kommande):
-   - Högre reward för vinster med låg risk
-   - Lägre reward för vinster med hög risk
-
-**Feedback-flöde:**
-```
-execution_engine ──┐
-                   │
-portfolio_manager ─┼──▶ feedback_event ──▶ feedback_router ──┬──▶ rl_controller
-                   │                                           │
-strategic_memory ──┘                                           ├──▶ feedback_analyzer
-                                                               │
-                                                               └──▶ strategic_memory
-```
-
-### Sprint 2 indikatorer och användning
-
-| Indikator         | Modul            | Syfte                                    |
-|-------------------|------------------|------------------------------------------|
-| RSI               | strategy         | Overbought/oversold detection            |
-| MACD              | strategy         | Momentum och trend strength              |
-| ATR               | risk, strategy   | Volatility-based risk adjustment         |
-| Analyst Ratings   | risk, decision   | External confidence och sentiment        |
-| Volume            | strategy, risk   | Liquidity assessment                     |
-
-**MACD-användning:**
-- Histogram > 0.5: Köpsignal (bullish momentum)
-- Histogram < -0.5: Säljsignal (bearish momentum)
-- Kombineras med RSI för starkare signaler
-
-**ATR-användning:**
-- ATR > 5.0: Hög volatilitet → Reducera position size
-- ATR < 2.0: Låg volatilitet → Normal position size
-- Används för risk-adjusted quantity
-
-**Analyst Ratings-användning:**
-- BUY/STRONG_BUY: Ökar confidence, minskar risk
-- SELL: Minskar confidence, ökar risk
-- HOLD: Neutral påverkan
-
-### RL-träningsprocess
-
-1. **Trade execution** genererar portfolio change
-2. **Portfolio manager** beräknar reward baserat på change
-3. **RL controller** tar emot reward och tränar alla agenter
-4. **Agent updates** distribueras till moduler
-5. **Moduler** använder uppdaterade policies för nästa beslut
-6. **Feedback** från execution och portfolio förbättrar reward shaping
-
-**Träningsparametrar (config/rl_parameters.yaml):**
-- Learning rate: 0.0003
-- Gamma (discount factor): 0.99
-- Update frequency: Var 10:e trade
-- Batch size: 32
-
----
-
-## 🔄 Sprint 3: Feedbackloopar och Introspektion
-
-### Feedback-arkitektur
-
-Sprint 3 introducerar ett omfattande feedback-system för att övervaka och förbättra systemets performance i realtid.
+Sprint 4 introducerar strategiskt minne och evolutionär agentutveckling för långsiktig systemförbättring.
 
 ```
-┌─────────────────┐
-│ execution_engine│──┐
-│ portfolio_mgr   │  │
-│ strategic_mem   │  │ feedback_event
-└─────────────────┘  │
-                     ▼
-            ┌────────────────┐
-            │ feedback_router│
-            │ (Prioritering) │
-            └────────┬───────┘
-                     │
-        ┌────────────┼────────────┐
-        │            │            │
-        ▼            ▼            ▼
-┌──────────────┐ ┌────────────┐ ┌──────────────┐
-│ rl_controller│ │ feedback   │ │ strategic    │
-│              │ │ analyzer   │ │ memory       │
-└──────────────┘ └─────┬──────┘ └──────────────┘
+┌──────────────────┐
+│ decision_engine  │──┐
+│ execution_engine │  │
+│indicator_registry│  │ decisions, indicators, results
+└──────────────────┘  │
+                      ▼
+            ┌──────────────────────┐
+            │ strategic_memory     │
+            │ (Historik & Analys)  │
+            └──────────┬───────────┘
+                       │ memory_insights
                        │
-                       ▼ feedback_insight
-              ┌──────────────────┐
-              │ meta_agent       │
-              │ evolution_engine │
-              └──────────────────┘
+                       ├──▶ decision_engine
+                       │
+                       ├──▶ feedback_analyzer
+                       │
+                       └──▶ introspection_panel
+                       
+┌──────────────────┐     ┌──────────────────┐
+│ rl_controller    │────▶│ meta_agent       │
+│ (agent_status)   │     │ evolution_engine │
+└──────────────────┘     │ (Analyserar      │
+                         │  performance)     │
+┌──────────────────┐     └────────┬──────────┘
+│ feedback_analyzer│────▶         │ evolution_suggestion
+│ (insights)       │              │
+└──────────────────┘              ▼
+                         ┌──────────────────┐
+                         │ agent_manager    │
+                         │ (Versioner &     │
+                         │  Profiles)       │
+                         └────────┬─────────┘
+                                  │ agent_profile
+                                  │
+                                  └──▶ Alla RL-moduler
 ```
 
-### Feedback-routing med intelligent prioritering
+### Strategic Memory Engine
 
-**FeedbackRouter** klassificerar feedback i fyra prioritetsnivåer:
+**StrategicMemoryEngine** loggar och analyserar all historisk data:
 
-| Prioritet | Trigger Exempel | Användning |
-|-----------|-----------------|------------|
-| **Critical** | Stora kapitalförluster (>$100) | Omedelbar åtgärd krävs |
-| **High** | Hög slippage (>0.5%), misslyckade trades | Snabb respons önskvärd |
-| **Medium** | Standard trade results, feedback | Normal processing |
-| **Low** | Informativa events utan triggers | Loggning endast |
+**Datalagring:**
+- **Decision History**: Alla handelsbeslut med kontext
+- **Indicator History**: Indikatorer per symbol över tid
+- **Execution History**: Resultat från alla trades
+- **Feedback Storage**: Alla feedback events
+- **Agent Responses**: RL-agent status och updates
 
-### Mönsteranalys i FeedbackAnalyzer
+**Korrelationsanalys:**
+- Identifierar vilka indikatorer som korrelerar med framgång
+- Beräknar success rate per indikator
+- Spårar average profit per indikator
+- Genererar "best indicators" och "worst indicators" listor
 
-**FeedbackAnalyzer** identifierar tre huvudtyper av mönster:
+**Insight Generation:**
+- Success rate över tid
+- Average profit trends
+- Performance degradation detection
+- Recommendations baserat på historik
 
-#### 1. Performance Patterns
-- **High Slippage**: Genomsnittlig slippage > 0.3%
-- **Trade Success Rate**: Beräknar success rate över alla trades
-- **Low Success Rate**: Varning när success rate < 50%
-- **Capital Change Trends**: Genomsnittlig kapitalförändring över tid
+### Meta Agent Evolution Engine
 
-#### 2. Indicator Mismatch
-- Korrelerar indikator-signaler med trade outcomes
-- Identifierar när indikatorer ger dåliga prediktioner (< 40% success)
-- Föreslår strategi-justeringar baserat på korrelation
+**MetaAgentEvolutionEngine** analyserar och förbättrar RL-agenter:
 
-#### 3. Agent Drift
-- Jämför agent performance över tid (första vs andra halvan av historik)
-- Detekterar performance degradation > 15%
-- Triggar reträning eller parameteråterställning
+**Performance Tracking:**
+- Spårar varje agents performance över tid
+- Jämför första halvan vs andra halvan av historik
+- Detekterar degradation > 15% (konfigurerbar threshold)
 
-### Introspection Dashboard
+**Evolution Triggers:**
+1. **Performance Degradation**: Föreslår justering av learning rate, exploration
+2. **Agent Drift Detection**: Föreslår stabilisering av träning
+3. **System-Wide Issues**: Föreslår översyn av reward function
 
-**IntrospectionPanel** genererar rik data för visualisering:
+### Agent Manager
 
-**Dashboard Metrics:**
-- Total feedback events och events/minut rate
-- Events per källa (execution, portfolio, etc.)
-- Events per prioritet (critical, high, medium, low)
+**AgentManager** hanterar agentprofiler och versioner:
 
-**Agent Adaptation Tracking:**
-- Adaptation rate: Hur snabbt agenter förbättras
-- Performance trend: improving, stable, eller declining
-- Learning progress: Aktuell performance-nivå
-- Recent performances: Senaste 5 performance-värden
+**Default Agents:**
+- strategy_agent, risk_agent, decision_agent, execution_agent
 
-**Modul-kopplingar:**
-- Nätverksanalys av kommunikation mellan moduler
-- Connection strength baserat på antal events
-- Visualisering av feedback flow-paths
+**Versionshantering:**
+- Automatisk version increment vid evolution
+- Patch (1.0.0 → 1.0.1) för agent-specifika ändringar
+- Minor (1.0.0 → 1.1.0) för system-wide ändringar
+- Fullständig versionshistorik
 
-### Sprint 3 Indikatorer
+### Sprint 4 Indikatorer
 
-**News Sentiment (0.0 - 1.0)**
-- Aggregerat sentiment från nyhetsartiklar
-- 0.0 = Bearish, 0.5 = Neutral, 1.0 = Bullish
-- Används av: strategy_engine, feedback_analyzer
-- Syfte: Fånga marknadssentiment och reaktioner
+- **ROE (Return on Equity)**: Kapitaleffektivitet
+- **ROA (Return on Assets)**: Tillgångsproduktivitet
+- **ESG Score**: Etisk risk och hållbarhet
+- **Earnings Calendar**: Eventbaserad risk och timing
 
-**Insider Sentiment (0.0 - 1.0)**
-- Baserat på insiderhandel och SEC-filings
-- 0.0 = Insiders säljer, 0.5 = Neutral, 1.0 = Insiders köper
-- Används av: strategy_engine, meta_agent_evolution_engine
-- Syfte: Interna confidence-signaler från företagsledning
+### Testning
 
-### Dash Visualisering
-
-Sprint 3 inkluderar en komplett Dash-baserad dashboard (`dashboards/feedback_flow.py`):
-
-**Komponenter:**
-1. **Network Graph**: Visuell representation av modulkommunikation
-2. **Metrics Cards**: Real-time feedback statistics
-3. **Priority Distribution**: Pie chart över feedback-prioriteter
-4. **Timeline**: Feedback events över tid per källa
-5. **Recent Events Table**: Senaste feedback events med detaljer
-
-**Kör dashboard:**
-```bash
-# Installera beroenden först (om inte redan gjort)
-pip install -r requirements.txt
-
-# Kör dashboard
-python dashboards/feedback_flow.py
-# Öppna http://localhost:8050 i webbläsare
-```
-
-**Obs:** Dashboard startar med demo-data för att visa funktionalitet. Den visar:
-- 15 agent status updates
-- 20 feedback events med olika prioriteter
-- 5 indicator snapshots
-- Modulkommunikation och kopplingar
-
-För att se live data från systemet, integrera dashboarden med en körande instans av NextGen AI Trader.
-
-### Demo och Testning
-
-**Kör Sprint 3 Demo:**
-```bash
-python demo_sprint3.py
-```
-
-**Kör Sprint 3 Tester:**
-```bash
-pytest tests/test_feedback_analyzer.py -v
-```
-
-**Testresultat:** 23/23 tester passerar
-- FeedbackAnalyzer: 7 tester
-- FeedbackRouter: 6 tester
-- IntrospectionPanel: 8 tester
-- Integrerade system-tester: 2 tester
+**Testresultat:** 24/24 tester passerar
+- StrategicMemoryEngine: 11 tester
+- MetaAgentEvolutionEngine: 6 tester
+- AgentManager: 7 tester
 
 ---
 
-## 🔄 Sprint 2: RL och Belöningsflöde
-
-### Dataflöde och Modulanslutningar
+## 🧠 Arkitekturöversikt
 
 Sprint 1 implementerar ett komplett end-to-end handelssystem med följande flöde:
 
@@ -601,8 +456,8 @@ Projektet är uppdelat i 7 sprintar. Se `sprint_plan.yaml` för detaljer.
 |--------|--------------------------------------|---------|
 | 1      | Kärnsystem och demoportfölj          | ✅ Färdig|
 | 2      | RL och belöningsflöde                | ✅ Färdig|
-| 3      | Feedbackloopar och introspektion     | 🔄 Pågår|
-| 4      | Strategiskt minne och agentutveckling| ⏳ Planerad|
+| 3      | Feedbackloopar och introspektion     | ✅ Färdig|
+| 4      | Strategiskt minne och agentutveckling| 🔄 Pågår|
 | 5      | Simulering och konsensus             | ⏳ Planerad|
 | 6      | Tidsanalys och action chains         | ⏳ Planerad|
 | 7      | Indikatorvisualisering och översikt  | ⏳ Planerad|

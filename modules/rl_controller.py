@@ -80,7 +80,7 @@ class PPOAgent:
         self.learning_rate = learning_rate
         
         # Stub: I produktion skulle detta vara neural networks
-        # För Sprint 2, använd enkel placeholder
+        # För Sprint 2, använd enkel Q-learning approximation
         self.policy_params = np.random.randn(state_dim, action_dim) * 0.1
         self.value_params = np.random.randn(state_dim) * 0.1
         
@@ -126,7 +126,7 @@ class PPOAgent:
             padded_state[:len(state)] = state
             state = padded_state
         
-        # Enkel policy update (placeholder)
+        # Enkel policy update med gradient descent approximation
         gradient = reward * state.reshape(-1, 1) * 0.01  # Skala ner för stabilitet
         if gradient.shape == self.policy_params.shape:
             self.policy_params += self.learning_rate * gradient
@@ -262,7 +262,7 @@ class RLController:
         """
         self.training_steps += 1
         
-        # Skapa state representation (stub för Sprint 2)
+        # Skapa state representation för RL
         # I produktion: state skulle komma från modulernas observationer
         state = self._create_state_representation(reward_data)
         

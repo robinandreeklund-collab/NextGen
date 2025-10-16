@@ -92,7 +92,7 @@ class ExecutionEngine:
         Exekverar en trade (simulerad eller verklig).
         
         Args:
-            decision: Handelsbeslut med action, symbol, quantity
+            decision: Handelsbeslut med action, symbol, quantity, current_price
             
         Returns:
             Dict med execution_result (executed_price, quantity, cost, slippage, success)
@@ -101,11 +101,21 @@ class ExecutionEngine:
         action = decision['action']
         quantity = decision['quantity']
         
-        # Stub: Simulerad exekvering för Sprint 1
-        # I produktion skulle detta anropa broker API
-        
-        # Simulera market price (i verkligheten från market data)
-        market_price = 150.0
+        # Använd aktuellt pris från decision (krävs nu)
+        market_price = decision.get('current_price')
+        if market_price is None:
+            return {
+                'symbol': symbol,
+                'action': action,
+                'quantity': 0,
+                'market_price': 0,
+                'executed_price': 0,
+                'slippage': 0,
+                'total_cost': 0,
+                'success': False,
+                'error': 'No market price available',
+                'timestamp': self._get_timestamp()
+            }
         
         # Simulera slippage (0-0.5%)
         slippage_pct = random.uniform(0, 0.005)
@@ -126,13 +136,18 @@ class ExecutionEngine:
             'slippage': slippage_pct,
             'total_cost': total_cost,
             'success': True,
-            'timestamp': 'timestamp_placeholder'
+            'timestamp': self._get_timestamp()
         }
         
         # Generera feedback för feedback_loop
         self.generate_feedback(result)
         
         return result
+    
+    def _get_timestamp(self) -> str:
+        """Genererar aktuell tidsstämpel."""
+        from datetime import datetime
+        return datetime.now().isoformat()
     
     def publish_result(self, result: Dict[str, Any]) -> None:
         """

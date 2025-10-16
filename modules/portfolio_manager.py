@@ -103,6 +103,10 @@ class PortfolioManager:
         Args:
             execution_result: Trade execution result
         """
+        # Ignorera misslyckade trades
+        if not execution_result.get('success', False):
+            return
+            
         symbol = execution_result['symbol']
         action = execution_result['action']
         quantity = execution_result['quantity']
@@ -134,6 +138,9 @@ class PortfolioManager:
                         'quantity': quantity,
                         'avg_price': executed_price
                     }
+            else:
+                # Otillräckligt kapital - trade misslyckades
+                return
         
         elif action == 'SELL':
             # Sälj aktier
@@ -145,12 +152,20 @@ class PortfolioManager:
                 self.positions[symbol]['quantity'] -= quantity
                 if self.positions[symbol]['quantity'] == 0:
                     del self.positions[symbol]
+            else:
+                # Otillräckligt innehav - trade misslyckades
+                return
+        
+        # Spara current prices för portfolio value calculation
+        if not hasattr(self, 'current_prices'):
+            self.current_prices = {}
+        self.current_prices[symbol] = execution_result.get('market_price', executed_price)
         
         # Logga trade
         self.trade_history.append({
             **execution_result,
             'fee': fee,
-            'portfolio_value_after': self.get_portfolio_value()
+            'portfolio_value_after': self.get_portfolio_value(self.current_prices)
         })
     
     def get_portfolio_value(self, current_prices: Dict[str, float] = None) -> float:
@@ -165,32 +180,56 @@ class PortfolioManager:
         """
         total_value = self.cash
         
+        # Använd sparade current prices om inte andra anges
+        if current_prices is None and hasattr(self, 'current_prices'):
+            current_prices = self.current_prices
+        
         # Lägg till värdet av alla positioner
         for symbol, position in self.positions.items():
             if current_prices and symbol in current_prices:
                 price = current_prices[symbol]
             else:
-                # Använd average price som placeholder
+                # Använd average price om inget annat finns
                 price = position['avg_price']
             
             total_value += position['quantity'] * price
         
         return total_value
     
-    def get_status(self) -> Dict[str, Any]:
+    def set_current_prices(self, prices: Dict[str, float]) -> None:
+        """
+        Uppdaterar aktuella marknadspriser för positioner.
+        
+        Args:
+            prices: Dict med symbol -> pris
+        """
+        if not hasattr(self, 'current_prices'):
+            self.current_prices = {}
+        self.current_prices.update(prices)
+    
+    def get_status(self, current_prices: Dict[str, float] = None) -> Dict[str, Any]:
         """
         Hämtar aktuell portföljstatus.
         
+        Args:
+            current_prices: Dict med aktuella priser (optional)
+            
         Returns:
             Dict med portfolio_status
         """
+        # Använd current_prices om de finns
+        if current_prices is None and hasattr(self, 'current_prices'):
+            current_prices = self.current_prices
+            
+        total_value = self.get_portfolio_value(current_prices)
+        
         return {
             'cash': self.cash,
             'positions': self.positions,
-            'total_value': self.get_portfolio_value(),
+            'total_value': total_value,
             'start_capital': self.start_capital,
-            'pnl': self.get_portfolio_value() - self.start_capital,
-            'pnl_pct': ((self.get_portfolio_value() - self.start_capital) / self.start_capital) * 100,
+            'pnl': total_value - self.start_capital,
+            'pnl_pct': ((total_value - self.start_capital) / self.start_capital) * 100,
             'num_trades': len(self.trade_history)
         }
     

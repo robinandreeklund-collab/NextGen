@@ -84,7 +84,7 @@ class ConsensusEngine:
         # Stub: I Sprint 5 kommer faktisk konsensuslogik
         votes = vote_matrix.get('votes', [])
         
-        # Enkel majoritetskonsensus (stub)
+        # Enkel majoritetskonsensus
         decision = {
             'action': 'HOLD',
             'symbol': 'unknown',

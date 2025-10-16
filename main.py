@@ -2,14 +2,13 @@
 NextGen AI Trader - Huvudstartpunkt
 
 Detta är huvudapplikationen för NextGen AI Trader-systemet.
-Sprint 2 demonstrerar RL-träning och avancerade indikatorer.
+Sprint 4 inkluderar strategiskt minne och agentutveckling.
 
-Moduler i Sprint 2:
-- rl_controller: PPO-agentträning
-- strategy_engine: RL-förbättrade strategier
-- risk_manager: RL-baserad riskbedömning
-- decision_engine: RL-optimerade beslut
-- feedback_router: Feedback-hantering
+Moduler i Sprint 1-4:
+- Sprint 1: Grundläggande trading med RSI
+- Sprint 2: RL-träning och avancerade indikatorer
+- Sprint 3: Feedbackloopar och introspektion
+- Sprint 4: Strategiskt minne och agentutveckling
 
 Användning:
     python main.py
@@ -25,6 +24,10 @@ from modules.execution_engine import ExecutionEngine
 from modules.portfolio_manager import PortfolioManager
 from modules.rl_controller import RLController
 from modules.feedback_router import FeedbackRouter
+from modules.feedback_analyzer import FeedbackAnalyzer
+from modules.strategic_memory_engine import StrategicMemoryEngine  # Sprint 4
+from modules.meta_agent_evolution_engine import MetaAgentEvolutionEngine  # Sprint 4
+from modules.agent_manager import AgentManager  # Sprint 4
 import yaml
 
 
@@ -40,25 +43,28 @@ def load_rl_config():
 
 def main():
     """
-    Huvudfunktion som demonstrerar Sprint 2-flödet med RL.
+    Huvudfunktion som demonstrerar Sprint 1-4 flödet.
     
     Flöde:
-    1. Initiera alla moduler inklusive rl_controller
-    2. Hämta indikatorer (nu med MACD, ATR, Analyst Ratings)
+    1. Initiera alla moduler (Sprint 1-4)
+    2. Hämta indikatorer (tekniska, fundamentala, alternativa)
     3. Generera tradeförslag med RL-förstärkning
     4. Riskbedöm med ATR och Analyst Ratings
-    5. Fatta beslut med RL-optimering
+    5. Fatta beslut med RL-optimering och funds validation
     6. Exekvera och uppdatera portfölj
     7. Träna RL-agenter baserat på reward
+    8. Logga i strategic memory och analysera performance
+    9. Agent evolution baserat på degradation
+    10. Versionshantering av agenter
     """
-    print("=" * 60)
-    print("NextGen AI Trader - Sprint 2 Demo")
-    print("RL och Belöningsflöde")
-    print("=" * 60)
+    print("=" * 80)
+    print("NextGen AI Trader - Sprint 1-4 Full System")
+    print("Inkluderar: RL, Feedback, Strategiskt Minne och Agentutveckling")
+    print("=" * 80)
     print()
     
-    # Initiera alla Sprint 2-moduler
-    print("Initierar moduler...")
+    # Initiera alla Sprint 1-4 moduler
+    print("Initierar alla moduler (Sprint 1-4)...")
     
     # API-nyckel (placeholder för demo)
     api_key = "demo_api_key"
@@ -66,23 +72,35 @@ def main():
     # Ladda RL-config
     rl_config = load_rl_config()
     
-    # Initiera moduler
+    # Sprint 1-2 moduler
     data_ingest = DataIngestion(api_key, message_bus)
     indicator_reg = IndicatorRegistry(api_key, message_bus)
     strategy = StrategyEngine(message_bus)
-    risk_mgr = RiskManager(message_bus)  # Sprint 2: Ny modul
+    risk_mgr = RiskManager(message_bus)
     decision = DecisionEngine(message_bus)
     execution = ExecutionEngine(message_bus, simulation_mode=True)
     portfolio = PortfolioManager(
         message_bus, 
-        start_capital=1000.0,  # Från sprint_plan.yaml
-        transaction_fee=0.0025  # 0.25% från sprint_plan.yaml
+        start_capital=1000.0,
+        transaction_fee=0.0025
     )
-    rl_ctrl = RLController(message_bus, rl_config)  # Sprint 2: RL-kontroller
-    feedback_rtr = FeedbackRouter(message_bus)  # Sprint 2: Feedback-routing
+    rl_ctrl = RLController(message_bus, rl_config)
     
-    print("✓ Alla moduler initierade (inkl. RL-controller)")
+    # Sprint 3 moduler
+    feedback_rtr = FeedbackRouter(message_bus)
+    feedback_analyzer = FeedbackAnalyzer(message_bus)
+    
+    # Sprint 4 moduler
+    strategic_memory = StrategicMemoryEngine(message_bus)
+    agent_evolution = MetaAgentEvolutionEngine(message_bus)
+    agent_mgr = AgentManager(message_bus)
+    
+    print("✓ Sprint 1-2: Data, Indikatorer, RL, Portfolio")
+    print("✓ Sprint 3: Feedback loops och introspection")
+    print("✓ Sprint 4: Strategic memory, Agent evolution, Versionshantering")
     print(f"✓ RL-agenter: {list(rl_ctrl.agents.keys())}")
+    print(f"✓ Managed agents: {list(agent_mgr.agent_profiles.keys())}")
+    print(f"✓ Evolution threshold: {agent_evolution.performance_threshold*100:.0f}%")
     print()
     
     # Steg 1: Hämta trending symboler

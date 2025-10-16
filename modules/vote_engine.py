@@ -34,6 +34,7 @@ Används i Sprint: 5
 """
 
 from typing import Dict, Any, List
+from datetime import datetime
 
 
 class VoteEngine:
@@ -74,7 +75,7 @@ class VoteEngine:
         matrix = {
             'votes': self.votes,
             'num_voters': len(self.votes),
-            'timestamp': 'timestamp_placeholder'
+            'timestamp': datetime.now().isoformat(),
         }
         return matrix
     
