@@ -1,0 +1,54 @@
+readme_section:
+  title: Adaptiv parameterstyrning via RL/PPO
+  description: >
+    Systemet stödjer nu dynamisk justering av meta-parametrar som evolution_threshold, min_samples,
+    update_frequency och agent_entropy_threshold. Dessa styrs av en PPO-agent som optimerar värden
+    baserat på belöningssignal, agentförbättring och feedbackmönster.
+
+  motivation: >
+    Tidigare var dessa parametrar statiska och krävde manuell finjustering. Genom att göra dem adaptiva
+    förbättras systemets självoptimering, robusthet och långsiktiga agentutveckling.
+
+  controlled_by: rl_controller
+  agent: MetaParameterAgent
+  reward_signals:
+    - agent_performance_gain
+    - feedback_density
+    - reward_volatility
+    - overfitting_penalty
+    - decision_diversity
+
+  affected_modules:
+    - rl_controller
+    - meta_agent_evolution_engine
+    - feedback_analyzer
+    - strategic_memory_engine
+    - agent_manager
+    - introspection_panel
+
+  adaptive_parameters:
+    evolution_threshold:
+      bounds: [0.05, 0.5]
+      default: 0.25
+      update_frequency: every_10_decisions
+
+    min_samples:
+      bounds: [5, 50]
+      default: 20
+      update_frequency: every_epoch
+
+    update_frequency:
+      bounds: [1, 100]
+      default: 10
+      update_frequency: every_epoch
+
+    agent_entropy_threshold:
+      bounds: [0.1, 0.9]
+      default: 0.3
+      update_frequency: every_5_decisions
+
+  benefits:
+    - Självjusterande system utan hårdkodade tröskelvärden
+    - Förbättrad agentutveckling och beslutskvalitet
+    - Transparent parameterhistorik och belöningsflöde
+    - Fullt kompatibelt med befintlig arkitektur
