@@ -42,6 +42,7 @@ from modules.execution_engine import ExecutionEngine
 from modules.portfolio_manager import PortfolioManager
 from modules.rl_controller import RLController
 from modules.vote_engine import VoteEngine
+from modules.reward_tuner import RewardTunerAgent  # Sprint 4.4
 
 
 class SimulatedTester:
@@ -125,10 +126,18 @@ class SimulatedTester:
         # Sprint 4.3 modul
         self.vote_engine = VoteEngine(self.message_bus)
         
+        # Sprint 4.4 modul - RewardTunerAgent
+        self.reward_tuner = RewardTunerAgent(
+            message_bus=self.message_bus,
+            reward_scaling_factor=1.0,
+            volatility_penalty_weight=0.3,
+            overfitting_detector_threshold=0.2
+        )
+        
         # Sprint 4.3: Prenumerera på parameter_adjustment
         self.message_bus.subscribe('parameter_adjustment', self._on_parameter_adjustment)
         
-        print("✅ Alla moduler initialiserade")
+        print("✅ Alla moduler initialiserade (inkl. RewardTunerAgent från Sprint 4.4)")
     
     def _on_parameter_adjustment(self, adjustment: Dict[str, Any]) -> None:
         """

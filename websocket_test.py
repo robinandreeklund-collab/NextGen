@@ -46,6 +46,7 @@ from modules.decision_engine import DecisionEngine
 from modules.execution_engine import ExecutionEngine
 from modules.portfolio_manager import PortfolioManager
 from modules.rl_controller import RLController
+from modules.reward_tuner import RewardTunerAgent  # Sprint 4.4
 
 
 class WebSocketTester:
@@ -137,10 +138,18 @@ class WebSocketTester:
             transaction_fee=0.0025
         )
         
+        # Sprint 4.4 modul - RewardTunerAgent
+        self.reward_tuner = RewardTunerAgent(
+            message_bus=self.message_bus,
+            reward_scaling_factor=1.0,
+            volatility_penalty_weight=0.3,
+            overfitting_detector_threshold=0.2
+        )
+        
         # Sprint 4.2: Prenumerera på parameter_adjustment för debug-visning
         self.message_bus.subscribe('parameter_adjustment', self._on_parameter_adjustment)
         
-        print("✅ Alla moduler initialiserade")
+        print("✅ Alla moduler initialiserade (inkl. RewardTunerAgent från Sprint 4.4)")
     
     def _on_parameter_adjustment(self, adjustment: Dict[str, Any]) -> None:
         """
