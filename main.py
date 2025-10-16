@@ -33,7 +33,7 @@ def load_rl_config():
     try:
         with open('config/rl_parameters.yaml', 'r') as f:
             return yaml.safe_load(f)
-    except:
+    except (FileNotFoundError, yaml.YAMLError):
         # Fallback till default config
         return None
 
