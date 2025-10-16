@@ -287,10 +287,16 @@ def create_events_table(events: List[Dict[str, Any]]) -> html.Table:
 
 if __name__ == '__main__':
     # Demo mode - kör med mock data
+    import sys
+    import os
+    
+    # Lägg till projektroot till path
+    sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+    
     from modules.introspection_panel import IntrospectionPanel
     from modules.message_bus import message_bus
     
     panel = IntrospectionPanel(message_bus)
     app = create_feedback_flow_dashboard(panel)
-    app.run_server(debug=True, port=8050)
+    app.run(debug=True, port=8050)
 

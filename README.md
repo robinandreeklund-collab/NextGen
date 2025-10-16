@@ -334,9 +334,15 @@ Sprint 3 inkluderar en komplett Dash-baserad dashboard (`dashboards/feedback_flo
 
 **Kör dashboard:**
 ```bash
+# Installera beroenden först (om inte redan gjort)
+pip install -r requirements.txt
+
+# Kör dashboard
 python dashboards/feedback_flow.py
 # Öppna http://localhost:8050 i webbläsare
 ```
+
+**Obs:** Dashboard kräver att följande paket är installerade: `dash`, `plotly`, `numpy`. Installera alla beroenden med `pip install -r requirements.txt`.
 
 ### Demo och Testning
 
