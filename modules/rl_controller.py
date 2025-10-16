@@ -359,11 +359,12 @@ class RLController:
         self.meta_parameter_agent = self._initialize_meta_parameter_agent()
         self.parameter_update_counter = 0
         
-        # Prenumerera på reward och feedback
-        self.message_bus.subscribe('reward', self._on_reward)
+        # Prenumerera på feedback
         self.message_bus.subscribe('feedback_event', self._on_feedback)
         
-        # Sprint 4.4: Prenumerera även på tuned_reward från RewardTunerAgent
+        # Sprint 4.4: Prenumerera på tuned_reward från RewardTunerAgent
+        # NOTE: Only subscribed to 'tuned_reward' - all rewards now flow through RewardTunerAgent
+        # RewardTuner transforms base_reward → tuned_reward for optimal RL training
         self.message_bus.subscribe('tuned_reward', self._on_tuned_reward)
         
         # Sprint 4.2: Prenumerera på agent_status för meta-parameter belöning
