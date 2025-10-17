@@ -65,6 +65,9 @@ from modules.consensus_engine import ConsensusEngine
 from modules.timespan_tracker import TimespanTracker
 from modules.action_chain_engine import ActionChainEngine
 from modules.system_monitor import SystemMonitor
+from modules.dqn_controller import DQNController
+from modules.gan_evolution_engine import GANEvolutionEngine
+from modules.gnn_timespan_analyzer import GNNTimespanAnalyzer
 
 
 class AnalyzerDebugDashboard:
@@ -159,7 +162,12 @@ class AnalyzerDebugDashboard:
         self.action_chain_engine = ActionChainEngine(self.message_bus)
         self.system_monitor = SystemMonitor(self.message_bus)
         
-        print("✅ Alla moduler initialiserade")
+        # Sprint 8 moduler
+        self.dqn_controller = DQNController(self.message_bus, state_dim=10, action_dim=3)
+        self.gan_evolution = GANEvolutionEngine(self.message_bus, latent_dim=64, param_dim=16)
+        self.gnn_analyzer = GNNTimespanAnalyzer(self.message_bus, input_dim=32, temporal_window=20)
+        
+        print("✅ Alla moduler initialiserade (inkl. Sprint 8: DQN, GAN, GNN)")
     
     def setup_layout(self) -> None:
         """Skapar dashboard layout."""
