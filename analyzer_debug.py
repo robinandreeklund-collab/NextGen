@@ -39,7 +39,6 @@ import threading
 import dash
 from dash import dcc, html, Input, Output
 import plotly.graph_objs as go
-from plotly.subplots import make_subplots
 
 # WebSocket för Finnhub
 import websocket
