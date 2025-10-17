@@ -40,6 +40,12 @@ class ActionChainEngine:
         self.chain_executions: List[Dict[str, Any]] = []
         self.chain_templates: Dict[str, List[str]] = {}
         
+        # Counters for statistics (not affected by history limits)
+        self.total_executions_count = 0
+        self.template_executions_count = 0
+        self.custom_executions_count = 0
+        self.total_execution_duration = 0.0
+        
         # Subscribe to chain definition requests
         self.message_bus.subscribe('chain_definition', self._on_chain_definition)
         self.message_bus.subscribe('execute_chain', self._on_execute_chain)
@@ -139,6 +145,11 @@ class ActionChainEngine:
         
         self.chain_executions.append(execution)
         
+        # Update counters
+        self.total_executions_count += 1
+        self.template_executions_count += 1
+        self.total_execution_duration += execution['duration']
+        
         # Keep only last 100 executions
         if len(self.chain_executions) > 100:
             self.chain_executions = self.chain_executions[-100:]
@@ -172,6 +183,11 @@ class ActionChainEngine:
         execution['duration'] = execution['completed_at'] - execution['started_at']
         
         self.chain_executions.append(execution)
+        
+        # Update counters
+        self.total_executions_count += 1
+        self.custom_executions_count += 1
+        self.total_execution_duration += execution['duration']
     
     def define_chain(self, chain_id: str, steps: List[str], metadata: Dict[str, Any] = None) -> bool:
         """
@@ -224,15 +240,13 @@ class ActionChainEngine:
     
     def get_chain_statistics(self) -> Dict[str, Any]:
         """Get statistics about chain executions."""
-        total_executions = len(self.chain_executions)
+        # Use counters for accurate totals (not limited by history size)
+        total_executions = self.total_executions_count
+        template_executions = self.template_executions_count
+        custom_executions = self.custom_executions_count
         
-        # Count by chain type
-        template_executions = sum(1 for e in self.chain_executions if e.get('chain_type') == 'template')
-        custom_executions = sum(1 for e in self.chain_executions if e.get('chain_type') == 'custom')
-        
-        # Average duration
-        durations = [e['duration'] for e in self.chain_executions if 'duration' in e]
-        avg_duration = sum(durations) / len(durations) if durations else 0
+        # Average duration from counter
+        avg_duration = (self.total_execution_duration / total_executions) if total_executions > 0 else 0
         
         return {
             'total_chains_defined': len(self.chains),
