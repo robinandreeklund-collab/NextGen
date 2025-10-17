@@ -132,7 +132,7 @@ class SimulatedTester:
         )
         
         # Sprint 4.4: Register RewardTunerAgent callback with PortfolioManager
-        self.portfolio_manager.register_reward_tuner_callback(self.reward_tuner._on_base_reward)
+        self.portfolio_manager.register_reward_tuner_callback(self.reward_tuner.on_base_reward)
         
         # Sprint 4.3 modul
         self.vote_engine = VoteEngine(self.message_bus)
