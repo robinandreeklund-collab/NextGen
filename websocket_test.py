@@ -47,6 +47,8 @@ from modules.execution_engine import ExecutionEngine
 from modules.portfolio_manager import PortfolioManager
 from modules.rl_controller import RLController
 from modules.reward_tuner import RewardTunerAgent  # Sprint 4.4
+from modules.decision_simulator import DecisionSimulator  # Sprint 5
+from modules.consensus_engine import ConsensusEngine  # Sprint 5
 
 
 class WebSocketTester:
@@ -108,6 +110,9 @@ class WebSocketTester:
         # Sprint 4.2: Spåra parameter adjustments för debug-visning
         self.parameter_history = []
         self.last_parameter_display = 0
+        
+        # Sprint 5: Spåra simuleringar och konsensus
+        self.simulation_results = []
     
     def setup_modules(self) -> None:
         """Initialiserar alla Sprint 1-4 moduler."""
@@ -149,10 +154,17 @@ class WebSocketTester:
         # Sprint 4.4: Register RewardTunerAgent callback with PortfolioManager
         self.portfolio_manager.register_reward_tuner_callback(self.reward_tuner._on_base_reward)
         
+        # Sprint 5 moduler
+        self.decision_simulator = DecisionSimulator(self.message_bus)
+        self.consensus_engine = ConsensusEngine(self.message_bus, consensus_model='weighted')
+        
         # Sprint 4.2: Prenumerera på parameter_adjustment för debug-visning
         self.message_bus.subscribe('parameter_adjustment', self._on_parameter_adjustment)
         
-        print("✅ Alla moduler initialiserade (inkl. RewardTunerAgent från Sprint 4.4)")
+        # Sprint 5: Prenumerera på simulation_result
+        self.message_bus.subscribe('simulation_result', self._on_simulation_result)
+        
+        print("✅ Alla moduler initialiserade (inkl. RewardTunerAgent från Sprint 4.4 och Sprint 5-moduler)")
     
     def _on_parameter_adjustment(self, adjustment: Dict[str, Any]) -> None:
         """
@@ -200,6 +212,20 @@ class WebSocketTester:
                 print(f"   💰 Reward Signals:")
                 for signal_name, value in signals.items():
                     print(f"      {signal_name}: {value:.4f}")
+    
+    def _on_simulation_result(self, result: Dict[str, Any]) -> None:
+        """
+        Callback för simulation results (Sprint 5).
+        Loggar simuleringsresultat.
+        """
+        self.simulation_results.append({
+            'timestamp': time.time(),
+            'result': result
+        })
+        
+        # Behåll senaste 50
+        if len(self.simulation_results) > 50:
+            self.simulation_results = self.simulation_results[-50:]
     
     def on_message(self, ws, message: str) -> None:
         """
@@ -315,6 +341,9 @@ class WebSocketTester:
         # Decision engine fattar beslut (tar symbol och price för insufficient funds check)
         # Nu har den både proposal och risk_profile via message_bus
         decision = self.decision_engine.make_decision(symbol, current_price=price)
+        
+        # Sprint 5: Publicera beslut för vote_engine och consensus_engine
+        self.decision_engine.publish_decision(decision)
         
         if self.debug_mode and self.stats['decisions_made'] < 5:
             print(f"   ⚖️  Final decision: {decision.get('action')} "
@@ -504,6 +533,31 @@ class WebSocketTester:
                         diff = latest[param] - older[param]
                         trend = "↑" if diff > 0 else "↓" if diff < 0 else "→"
                         print(f"      {param}: {trend} ({diff:+.4f})" if isinstance(diff, float) else f"      {param}: {trend} ({int(diff):+d})")
+        
+        # Sprint 5: Simulering och Konsensus
+        print(f"\n{'='*80}")
+        print(f"🎲 SPRINT 5 - Simulering och Konsensus")
+        print(f"{'='*80}")
+        
+        # Decision Simulator stats
+        sim_stats = self.decision_simulator.get_simulation_statistics()
+        print(f"\n🎲 Decision Simulator:")
+        print(f"   Totalt simuleringar: {sim_stats['total_simulations']}")
+        if sim_stats['total_simulations'] > 0:
+            print(f"   Rekommendationer:")
+            print(f"      ✅ Proceed: {sim_stats['proceed_recommendations']}")
+            print(f"      ⚠️  Caution: {sim_stats['caution_recommendations']}")
+            print(f"      ❌ Reject:  {sim_stats['reject_recommendations']}")
+            print(f"   Genomsnittlig expected value: ${sim_stats['average_expected_value']:.2f}")
+        
+        # Consensus Engine stats
+        consensus_stats = self.consensus_engine.get_consensus_statistics()
+        print(f"\n⚖️  Consensus Engine:")
+        print(f"   Totalt konsensusbeslut: {consensus_stats['total_decisions']}")
+        print(f"   Konsensusmodell: {consensus_stats['consensus_model']}")
+        if consensus_stats['total_decisions'] > 0:
+            print(f"   Genomsnittlig confidence: {consensus_stats['average_confidence']:.2f}")
+            print(f"   Genomsnittlig robusthet: {consensus_stats['average_robustness']:.2f}")
         
         # Sprint 4.4: RewardTunerAgent Debug Info
         print(f"\n{'='*80}")
