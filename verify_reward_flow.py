@@ -49,7 +49,7 @@ rt2 = RewardTunerAgent(message_bus=message_bus2)
 pm2 = PortfolioManager(message_bus=message_bus2, start_capital=1000.0)
 
 # Simulate portfolio value change to trigger reward
-pm2._prev_portfolio_value = 1000.0
+pm2.previous_portfolio_value = 1000.0
 pm2.calculate_and_publish_reward()
 
 # Wait a moment for message processing
