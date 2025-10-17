@@ -1,0 +1,322 @@
+ci_matrix_sprint7:
+  description: CI test matrix för Sprint 7 moduler och integration
+  
+  test_environments:
+    - name: python_3.12
+      python_version: "3.12"
+      os: ubuntu-latest
+      priority: high
+      
+    - name: python_3.11
+      python_version: "3.11"
+      os: ubuntu-latest
+      priority: medium
+      
+    - name: python_3.10
+      python_version: "3.10"
+      os: ubuntu-latest
+      priority: low
+  
+  test_scenarios:
+    resource_allocation:
+      - scenario: default_allocation
+        description: Test default resource allocation strategy
+        modules: [resource_planner]
+        config:
+          compute_pool: 100
+          memory_pool: 100
+          strategy: priority_based
+        expected:
+          strategy_agent_compute: 25
+          risk_agent_compute: 20
+          
+      - scenario: high_demand
+        description: Test resource allocation under high demand
+        modules: [resource_planner]
+        config:
+          compute_pool: 100
+          memory_pool: 100
+          concurrent_requests: 20
+        expected:
+          allocation_latency: < 50ms
+          reallocation_triggered: true
+          
+      - scenario: resource_scarcity
+        description: Test behavior when resources are scarce
+        modules: [resource_planner]
+        config:
+          compute_pool: 20
+          memory_pool: 20
+        expected:
+          priority_based_allocation: true
+          low_priority_denied: true
+    
+    team_dynamics:
+      - scenario: team_formation_all_patterns
+        description: Test all team formation patterns
+        modules: [team_dynamics_engine]
+        patterns: [aggressive_trading, conservative_trading, balanced_trading, exploration_phase]
+        expected:
+          teams_formed: 4
+          resource_boost_applied: true
+          
+      - scenario: high_synergy_teams
+        description: Test teams with high synergy
+        modules: [team_dynamics_engine]
+        config:
+          team_members: [strategy_agent, risk_agent, decision_agent]
+        expected:
+          synergy_score: "> 0.5"
+          coordination_score: "> 0.3"
+          
+      - scenario: team_performance_tracking
+        description: Test team performance over multiple decisions
+        modules: [team_dynamics_engine]
+        config:
+          decisions_count: 50
+        expected:
+          performance_tracked: true
+          synergy_trends_identified: true
+    
+    indicator_visualization:
+      - scenario: real_time_updates
+        description: Test real-time indicator updates
+        modules: [introspection_panel, indicator_registry]
+        config:
+          update_frequency: 1s
+          indicators: [RSI, MACD, ATR]
+        expected:
+          charts_updated: true
+          latency: < 100ms
+          
+      - scenario: correlation_analysis
+        description: Test indicator correlation analysis
+        modules: [introspection_panel, strategic_memory_engine]
+        config:
+          historical_window: 100
+          indicators: [RSI, Volume, SMA]
+        expected:
+          correlations_calculated: true
+          heatmap_generated: true
+          
+      - scenario: multi_symbol_visualization
+        description: Test visualization across multiple symbols
+        modules: [introspection_panel]
+        config:
+          symbols: [AAPL, GOOGL, MSFT]
+        expected:
+          all_symbols_displayed: true
+          comparison_charts: true
+    
+    system_overview:
+      - scenario: all_modules_reporting
+        description: Test system monitor receives from all modules
+        modules: [system_monitor, all_modules]
+        expected:
+          module_count: ">= 20"
+          health_scores_calculated: true
+          stale_detection_working: true
+          
+      - scenario: system_health_calculation
+        description: Test overall system health calculation
+        modules: [system_monitor]
+        config:
+          module_health_scores: [0.9, 0.8, 0.95, 0.7, 0.85]
+        expected:
+          system_health: "> 0.8"
+          warnings_for_low_health: true
+          
+      - scenario: performance_aggregation
+        description: Test performance metric aggregation
+        modules: [system_monitor]
+        expected:
+          aggregated_metrics: true
+          trends_identified: true
+          history_maintained: true
+    
+    integration:
+      - scenario: resource_planner_team_dynamics
+        description: Test integration between resource allocation and teams
+        modules: [resource_planner, team_dynamics_engine]
+        steps:
+          - form_team: balanced_trading
+          - request_resources: team_boost_applied
+          - verify_allocation: increased_by_1.1x
+        expected:
+          resource_boost_applied: true
+          team_allocation_priority: high
+          
+      - scenario: rl_controller_resource_planner
+        description: Test RL training with resource allocation
+        modules: [rl_controller, resource_planner]
+        config:
+          training_budget: 100
+          agents: [strategy_agent, risk_agent]
+        expected:
+          training_resources_allocated: true
+          budget_respected: true
+          
+      - scenario: sprint_1_to_7_integration
+        description: Test full system integration from Sprint 1 to 7
+        modules: [all_modules]
+        flow:
+          - data_ingestion: market_data
+          - indicator_registry: indicators
+          - strategy_engine: proposals
+          - vote_engine: voting
+          - consensus_engine: decision
+          - resource_planner: allocation
+          - team_dynamics: coordination
+          - execution_engine: execution
+          - portfolio_manager: reward
+          - reward_tuner: tuned_reward
+          - rl_controller: training
+          - strategic_memory: logging
+          - system_monitor: aggregation
+          - introspection_panel: visualization
+        expected:
+          all_steps_completed: true
+          no_errors: true
+          data_flow_complete: true
+  
+  performance_tests:
+    - test: resource_allocation_throughput
+      module: resource_planner
+      metric: requests_per_second
+      target: "> 1000"
+      
+    - test: team_formation_latency
+      module: team_dynamics_engine
+      metric: formation_time_ms
+      target: "< 5"
+      
+    - test: indicator_visualization_refresh
+      module: introspection_panel
+      metric: refresh_rate_hz
+      target: "> 1"
+      
+    - test: system_monitor_aggregation_time
+      module: system_monitor
+      metric: aggregation_time_ms
+      target: "< 20"
+      
+    - test: memory_usage_all_modules
+      modules: all
+      metric: total_memory_mb
+      target: "< 500"
+  
+  stress_tests:
+    - test: high_concurrent_resource_requests
+      module: resource_planner
+      config:
+        concurrent_requests: 100
+        duration: 60s
+      expected:
+        no_deadlocks: true
+        allocation_fairness: true
+        
+    - test: rapid_team_formation_dissolution
+      module: team_dynamics_engine
+      config:
+        operations: 1000
+        mix: [50% form, 50% dissolve]
+      expected:
+        no_memory_leaks: true
+        consistent_state: true
+        
+    - test: continuous_indicator_updates
+      module: introspection_panel
+      config:
+        update_frequency: 10/sec
+        duration: 300s
+      expected:
+        no_dropped_updates: true
+        ui_responsive: true
+  
+  regression_tests:
+    - test: sprint_1_functionality
+      description: Ensure Sprint 1 still works
+      modules: [data_ingestion, strategy_engine, decision_engine, execution_engine, portfolio_manager]
+      expected:
+        all_tests_pass: true
+        
+    - test: sprint_2_rl_functionality
+      description: Ensure Sprint 2 RL still works
+      modules: [rl_controller, reward_tuner]
+      expected:
+        ppo_training_works: true
+        reward_flow_intact: true
+        
+    - test: sprint_3_feedback_functionality
+      description: Ensure Sprint 3 feedback still works
+      modules: [feedback_router, feedback_analyzer, introspection_panel]
+      expected:
+        feedback_routing_works: true
+        pattern_detection_works: true
+        
+    - test: sprint_4_memory_functionality
+      description: Ensure Sprint 4 memory still works
+      modules: [strategic_memory_engine, meta_agent_evolution_engine, agent_manager]
+      expected:
+        memory_logging_works: true
+        evolution_tracking_works: true
+        
+    - test: sprint_5_consensus_functionality
+      description: Ensure Sprint 5 consensus still works
+      modules: [vote_engine, consensus_engine, decision_simulator]
+      expected:
+        voting_works: true
+        consensus_models_work: true
+        
+    - test: sprint_6_timespan_functionality
+      description: Ensure Sprint 6 timespan still works
+      modules: [timespan_tracker, action_chain_engine, system_monitor]
+      expected:
+        timeline_tracking_works: true
+        action_chains_work: true
+  
+  test_execution_order:
+    - stage: 1
+      name: Unit Tests
+      tests: [resource_planner, team_dynamics_engine]
+      
+    - stage: 2
+      name: Module Integration
+      tests: [resource_planner_team_dynamics, rl_controller_resource_planner]
+      
+    - stage: 3
+      name: System Integration
+      tests: [sprint_1_to_7_integration]
+      
+    - stage: 4
+      name: Performance Tests
+      tests: [all_performance_tests]
+      
+    - stage: 5
+      name: Stress Tests
+      tests: [all_stress_tests]
+      
+    - stage: 6
+      name: Regression Tests
+      tests: [all_regression_tests]
+  
+  success_criteria:
+    unit_tests:
+      pass_rate: 100%
+      coverage: ">= 80%"
+      
+    integration_tests:
+      pass_rate: 100%
+      no_integration_errors: true
+      
+    performance_tests:
+      all_targets_met: true
+      no_regressions: true
+      
+    stress_tests:
+      no_crashes: true
+      no_memory_leaks: true
+      
+    regression_tests:
+      all_sprints_working: true
+      no_breaking_changes: true
