@@ -146,6 +146,9 @@ class WebSocketTester:
             transaction_fee=0.0025
         )
         
+        # Sprint 4.4: Register RewardTunerAgent callback with PortfolioManager
+        self.portfolio_manager.register_reward_tuner_callback(self.reward_tuner._on_base_reward)
+        
         # Sprint 4.2: Prenumerera på parameter_adjustment för debug-visning
         self.message_bus.subscribe('parameter_adjustment', self._on_parameter_adjustment)
         
