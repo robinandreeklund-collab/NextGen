@@ -1,0 +1,237 @@
+ci_pipeline_sprint8:
+  version: 1.0
+  name: Sprint 8 CI/CD Pipeline
+  
+  trigger:
+    on_push:
+      branches:
+        - main
+        - develop
+        - sprint-8
+        - copilot/integrate-sprint-8-*
+    on_pull_request:
+      branches:
+        - main
+        - develop
+        
+  environment:
+    python_version: "3.12"
+    os: ubuntu-latest
+    
+  stages:
+    - stage: setup
+      name: Environment Setup
+      steps:
+        - checkout_code
+        - setup_python
+        - install_dependencies:
+            command: pip install -r requirements.txt
+            cache: pip
+        - verify_installation:
+            command: python --version && pip list
+            
+    - stage: lint
+      name: Code Quality Checks
+      steps:
+        - check_syntax:
+            command: python -m py_compile modules/dqn_controller.py modules/gan_evolution_engine.py modules/gnn_timespan_analyzer.py
+            fail_on_error: true
+        - check_imports:
+            command: python -c "from modules import dqn_controller, gan_evolution_engine, gnn_timespan_analyzer"
+            fail_on_error: true
+      timeout: 5m
+      
+    - stage: unit_tests
+      name: Unit Tests
+      parallel: true
+      steps:
+        - test_dqn:
+            command: pytest tests/test_dqn_controller.py -v --tb=short
+            expected_tests: 21
+            expected_pass: 21
+            
+        - test_gan:
+            command: pytest tests/test_gan_evolution_engine.py -v --tb=short
+            expected_tests: 24
+            expected_pass: 24
+            
+        - test_gnn:
+            command: pytest tests/test_gnn_timespan_analyzer.py -v --tb=short
+            expected_tests: 27
+            expected_pass: 27
+      timeout: 10m
+      
+    - stage: integration_tests
+      name: Integration Tests
+      steps:
+        - test_hybrid_rl:
+            command: pytest tests/test_hybrid_rl.py -v --tb=short
+            expected_tests: 14
+            expected_pass: 14
+            
+        - test_sprint8_integration:
+            command: pytest tests/test_sprint8_integration.py -v --tb=short
+            expected_tests: 14
+            expected_pass: 14
+      timeout: 10m
+      
+    - stage: regression_tests
+      name: Sprint 1-7 Regression Tests
+      steps:
+        - test_all_previous_sprints:
+            command: pytest tests/ -v --tb=short -k "not (dqn or gan or gnn or hybrid or sprint8)"
+            expected_tests: 214
+            expected_pass: 214
+            description: Verify Sprint 1-7 tests still pass
+      timeout: 15m
+      
+    - stage: full_test_suite
+      name: Complete Test Suite
+      steps:
+        - test_all:
+            command: pytest tests/ -v --tb=short
+            expected_tests: 314
+            expected_pass: 314
+            
+        - coverage_report:
+            command: pytest tests/ --cov=modules --cov-report=html --cov-report=term
+            coverage_threshold: 85%
+      timeout: 20m
+      
+    - stage: performance_tests
+      name: Performance Validation
+      steps:
+        - memory_usage:
+            command: pytest tests/test_sprint8_integration.py::TestSprint8Integration::test_end_to_end_scenario -v
+            max_memory: 2GB
+            
+        - training_speed:
+            command: pytest tests/test_dqn_controller.py::TestDQNController::test_q_learning_convergence -v
+            max_time: 10s
+      optional: true
+      timeout: 15m
+      
+    - stage: build_artifacts
+      name: Build and Package
+      steps:
+        - create_distribution:
+            command: python setup.py sdist bdist_wheel
+            optional: true
+            
+        - save_test_results:
+            artifacts:
+              - test_results.xml
+              - coverage_report/
+              - logs/
+      timeout: 5m
+      
+    - stage: deploy
+      name: Deployment
+      condition: branch == 'main' AND all_tests_passed
+      steps:
+        - update_documentation:
+            command: python scripts/update_docs.py
+            optional: true
+            
+        - notify_success:
+            channels:
+              - slack: "#ci-notifications"
+              - email: "dev@nextgen.ai"
+            message: "Sprint 8 CI passed: 314/314 tests ✅"
+      timeout: 5m
+
+  failure_handling:
+    on_failure:
+      steps:
+        - collect_logs:
+            artifacts:
+              - pytest.log
+              - error_trace.log
+              
+        - notify_failure:
+            channels:
+              - slack: "#ci-alerts"
+              - email: "dev@nextgen.ai"
+            message: "Sprint 8 CI failed. Check logs for details."
+            
+        - create_issue:
+            repo: robinandreeklund-collab/NextGen
+            title: "CI Pipeline Failed - Sprint 8"
+            labels: ["bug", "ci", "sprint-8"]
+
+  metrics:
+    collect:
+      - test_duration
+      - test_pass_rate
+      - code_coverage
+      - memory_usage
+      - cpu_usage
+      
+    thresholds:
+      test_pass_rate_min: 100%
+      code_coverage_min: 85%
+      max_test_time: 300s
+      max_memory: 2GB
+      
+    dashboard:
+      grafana_url: "http://dashboard.nextgen.ai/ci"
+      metrics_endpoint: "http://metrics.nextgen.ai/sprint8"
+
+  caching:
+    pip_cache:
+      key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+      paths:
+        - ~/.cache/pip
+        
+    pytest_cache:
+      key: ${{ runner.os }}-pytest-${{ hashFiles('tests/**/*.py') }}
+      paths:
+        - .pytest_cache
+
+  notifications:
+    slack:
+      webhook_url: ${SLACK_WEBHOOK_URL}
+      on_success: true
+      on_failure: true
+      
+    email:
+      recipients:
+        - dev@nextgen.ai
+      on_success: false
+      on_failure: true
+
+  badges:
+    - name: Tests
+      status: passing
+      value: "314/314"
+      color: brightgreen
+      
+    - name: Coverage
+      status: passing
+      value: "85%"
+      color: green
+      
+    - name: Sprint
+      status: complete
+      value: "8"
+      color: blue
+
+  schedule:
+    nightly_build:
+      cron: "0 2 * * *"
+      branches: [main, develop]
+      
+    weekly_full_test:
+      cron: "0 0 * * 0"
+      branches: [main]
+      include_performance_tests: true
+
+  documentation:
+    auto_generate:
+      - API documentation from docstrings
+      - Test coverage reports
+      - Performance benchmarks
+      
+    publish_to:
+      - GitHub Pages
+      - Internal wiki

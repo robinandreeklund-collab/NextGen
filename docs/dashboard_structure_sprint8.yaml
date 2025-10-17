@@ -1,0 +1,328 @@
+dashboard_structure_sprint8:
+  version: 1.0
+  name: Sprint 8 Dashboard Extensions
+  
+  new_sections:
+    hybrid_rl_comparison:
+      title: "Hybrid RL: PPO vs DQN"
+      layout: two_column
+      position: after_rl_analysis
+      
+      components:
+        - component: performance_comparison
+          type: line_chart
+          data:
+            ppo_rewards: []
+            dqn_rewards: []
+            combined_rewards: []
+          x_axis: episodes
+          y_axis: cumulative_reward
+          
+        - component: action_distribution
+          type: stacked_bar
+          data:
+            ppo_actions: [BUY, SELL, HOLD]
+            dqn_actions: [BUY, SELL, HOLD]
+          colors:
+            BUY: green
+            SELL: red
+            HOLD: gray
+            
+        - component: q_values_vs_policy
+          type: scatter
+          data:
+            q_values: []
+            policy_probs: []
+          description: "DQN Q-values vs PPO policy probabilities"
+          
+        - component: epsilon_schedule
+          type: line_chart
+          data:
+            epsilon: []
+            steps: []
+          description: "DQN epsilon decay over time"
+          
+    gan_evolution:
+      title: "GAN Evolution Engine"
+      layout: grid_2x2
+      position: after_agent_development
+      
+      components:
+        - component: generator_discriminator_loss
+          type: dual_line_chart
+          data:
+            g_loss: []
+            d_loss: []
+          x_axis: training_steps
+          y_axis: loss
+          
+        - component: candidate_acceptance
+          type: gauge
+          data:
+            acceptance_rate: 0.0
+          range: [0, 1]
+          thresholds:
+            good: 0.7
+            warning: 0.5
+            critical: 0.3
+            
+        - component: candidate_distribution
+          type: histogram
+          data:
+            candidate_scores: []
+          bins: 20
+          x_axis: discriminator_score
+          y_axis: count
+          
+        - component: evolution_timeline
+          type: timeline
+          data:
+            candidates_generated: []
+            candidates_accepted: []
+            candidates_deployed: []
+          events:
+            - type: generation
+              color: blue
+            - type: acceptance
+              color: green
+            - type: deployment
+              color: purple
+              
+    gnn_temporal_analysis:
+      title: "GNN Temporal Patterns"
+      layout: grid_3x2
+      position: after_debug_logging
+      
+      components:
+        - component: pattern_detection
+          type: category_chart
+          data:
+            patterns:
+              - uptrend: 0
+              - downtrend: 0
+              - reversal: 0
+              - consolidation: 0
+              - breakout: 0
+              - breakdown: 0
+              - divergence: 0
+              - convergence: 0
+          colors: viridis
+          
+        - component: pattern_confidence
+          type: box_plot
+          data:
+            pattern_confidences: []
+          by_pattern: true
+          
+        - component: temporal_graph
+          type: network_graph
+          data:
+            nodes: []
+            edges: []
+          node_types:
+            decision: circle
+            indicator: square
+            outcome: triangle
+          edge_weights: attention_scores
+          
+        - component: pattern_timeline
+          type: gantt
+          data:
+            patterns_over_time: []
+          x_axis: time
+          y_axis: pattern_type
+          
+        - component: success_by_pattern
+          type: grouped_bar
+          data:
+            pattern_success_rates: {}
+          x_axis: pattern_type
+          y_axis: success_rate
+          
+        - component: temporal_insights
+          type: text_panel
+          data:
+            insights: []
+            recommendations: []
+          format: markdown
+          
+    conflict_resolution:
+      title: "Hybrid RL Conflict Resolution"
+      layout: single_column
+      position: after_hybrid_rl_comparison
+      
+      components:
+        - component: conflict_frequency
+          type: line_chart
+          data:
+            parameter_conflicts: []
+            decision_conflicts: []
+          x_axis: time
+          y_axis: conflicts_per_hour
+          
+        - component: resolution_strategy
+          type: pie_chart
+          data:
+            weighted: 0
+            consensus: 0
+            best_performer: 0
+            random: 0
+          
+        - component: conflict_details
+          type: table
+          columns:
+            - timestamp
+            - conflict_type
+            - ppo_value
+            - dqn_value
+            - resolution
+            - outcome
+          sortable: true
+          filterable: true
+          
+  updated_sections:
+    rl_analysis:
+      new_components:
+        - component: dqn_metrics
+          type: metric_cards
+          metrics:
+            - training_steps
+            - epsilon
+            - avg_loss
+            - buffer_size
+          position: after_reward_flow
+          
+        - component: replay_buffer_stats
+          type: line_chart
+          data:
+            buffer_fill: []
+            buffer_turnover: []
+          x_axis: time
+          y_axis: percentage
+          
+    agent_development:
+      new_components:
+        - component: gan_generated_agents
+          type: list
+          data:
+            candidates: []
+          fields:
+            - id
+            - generation_time
+            - discriminator_score
+            - deployment_status
+          actions:
+            - view_details
+            - deploy
+            - reject
+            
+    debug_logging:
+      new_components:
+        - component: hybrid_rl_events
+          type: log_viewer
+          filters:
+            - dqn_events
+            - gan_events
+            - gnn_events
+            - hybrid_conflicts
+          real_time: true
+          max_lines: 1000
+
+  controls:
+    new_controls:
+      - control: dqn_epsilon_override
+        type: slider
+        range: [0.01, 1.0]
+        default: current_epsilon
+        
+      - control: gan_generate_candidates
+        type: button
+        action: trigger_gan_generation
+        parameters:
+          num_candidates: [1, 10]
+          
+      - control: gnn_analyze_now
+        type: button
+        action: trigger_gnn_analysis
+        
+      - control: hybrid_mode_toggle
+        type: dropdown
+        options:
+          - ppo_only
+          - dqn_only
+          - hybrid_weighted
+          - hybrid_consensus
+        default: hybrid_weighted
+        
+  data_sources:
+    dqn_controller:
+      topics:
+        - dqn_metrics
+        - dqn_action_response
+      update_frequency: 1s
+      
+    gan_evolution_engine:
+      topics:
+        - gan_metrics
+        - gan_candidates
+      update_frequency: 5s
+      
+    gnn_timespan_analyzer:
+      topics:
+        - gnn_analysis_response
+      update_frequency: 10s
+      
+  refresh_rates:
+    hybrid_rl_comparison: 2s
+    gan_evolution: 5s
+    gnn_temporal_analysis: 10s
+    conflict_resolution: 2s
+    
+  responsive_design:
+    mobile:
+      hide_sections:
+        - gnn_temporal_analysis.temporal_graph
+        - conflict_resolution.conflict_details
+      simplify_charts: true
+      
+    tablet:
+      layout_adjustments:
+        - stack_columns: true
+        - reduce_chart_height: 30%
+        
+  accessibility:
+    color_blind_mode: true
+    high_contrast: true
+    keyboard_navigation: true
+    screen_reader_support: true
+    
+  export_options:
+    - format: PNG
+      sections: all_charts
+    - format: CSV
+      sections: all_tables
+    - format: PDF
+      sections: full_dashboard
+    - format: JSON
+      sections: raw_data
+
+  alerts:
+    dqn_training_stalled:
+      condition: avg_loss > 1.0 for 100 steps
+      severity: warning
+      notification: dashboard_banner
+      
+    gan_low_acceptance:
+      condition: acceptance_rate < 0.3
+      severity: critical
+      notification: dashboard_banner + email
+      
+    gnn_no_patterns:
+      condition: patterns_detected == 0 for 50 decisions
+      severity: info
+      notification: dashboard_banner
+      
+    hybrid_high_conflicts:
+      condition: conflicts_per_hour > 10
+      severity: warning
+      notification: dashboard_banner

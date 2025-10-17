@@ -178,3 +178,30 @@ functions:
     subscribes: [dashboard_data]
     uses_rl: false
     receives_feedback: false
+
+  dqn_controller:
+    description: Deep Q-Network för reinforcement learning med experience replay och target network
+    inputs: [state, reward, tuned_reward]
+    outputs: [action, q_values]
+    publishes: [dqn_metrics, dqn_action_response]
+    subscribes: [reward, tuned_reward, dqn_action_request]
+    uses_rl: true
+    receives_feedback: true
+    
+  gan_evolution_engine:
+    description: GAN för att generera nya agentkandidater baserat på historisk performance
+    inputs: [agent_performance]
+    outputs: [gan_candidates]
+    publishes: [gan_metrics, gan_candidates]
+    subscribes: [agent_performance, gan_generate_request]
+    uses_rl: false
+    receives_feedback: true
+    
+  gnn_timespan_analyzer:
+    description: Graph Neural Network för temporal mönsteranalys i beslut och indikatorer
+    inputs: [final_decision, indicator_data, execution_result]
+    outputs: [temporal_patterns, temporal_insights]
+    publishes: [gnn_analysis_response]
+    subscribes: [final_decision, indicator_data, execution_result, gnn_analysis_request]
+    uses_rl: false
+    receives_feedback: true
