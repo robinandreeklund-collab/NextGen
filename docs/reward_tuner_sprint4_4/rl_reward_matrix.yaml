@@ -120,7 +120,7 @@ reward_signals:
     source: rl_controller
     description: Ackumulerad belöning över tid
     calculation: sum(episode_rewards)
-    range: [-inf, inf]
+    range: ['-inf', 'inf']
     controls:
       parameter: indicator_weighting
       module: strategy_engine
