@@ -49,6 +49,9 @@ from modules.rl_controller import RLController
 from modules.reward_tuner import RewardTunerAgent  # Sprint 4.4
 from modules.decision_simulator import DecisionSimulator  # Sprint 5
 from modules.consensus_engine import ConsensusEngine  # Sprint 5
+from modules.timespan_tracker import TimespanTracker  # Sprint 6
+from modules.action_chain_engine import ActionChainEngine  # Sprint 6
+from modules.system_monitor import SystemMonitor  # Sprint 6
 
 
 class WebSocketTester:
@@ -115,7 +118,7 @@ class WebSocketTester:
         self.simulation_results = []
     
     def setup_modules(self) -> None:
-        """Initialiserar alla Sprint 1-4 moduler."""
+        """Initialiserar alla Sprint 1-6 moduler."""
         print("🔧 Initialiserar moduler...")
         
         # Sprint 4 moduler
@@ -158,13 +161,18 @@ class WebSocketTester:
         self.decision_simulator = DecisionSimulator(self.message_bus)
         self.consensus_engine = ConsensusEngine(self.message_bus, consensus_model='weighted')
         
+        # Sprint 6 moduler
+        self.timespan_tracker = TimespanTracker(self.message_bus)
+        self.action_chain_engine = ActionChainEngine(self.message_bus)
+        self.system_monitor = SystemMonitor(self.message_bus)
+        
         # Sprint 4.2: Prenumerera på parameter_adjustment för debug-visning
         self.message_bus.subscribe('parameter_adjustment', self._on_parameter_adjustment)
         
         # Sprint 5: Prenumerera på simulation_result
         self.message_bus.subscribe('simulation_result', self._on_simulation_result)
         
-        print("✅ Alla moduler initialiserade (inkl. RewardTunerAgent från Sprint 4.4 och Sprint 5-moduler)")
+        print("✅ Alla moduler initialiserade (inkl. Sprint 6: timespan_tracker, action_chain_engine, system_monitor)")
     
     def _on_parameter_adjustment(self, adjustment: Dict[str, Any]) -> None:
         """
