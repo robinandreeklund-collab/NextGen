@@ -164,7 +164,7 @@ python -c "import analyzer_debug; print('OK')"
 ### Port redan i bruk
 ```python
 # Ändra port i analyzer_debug.py, sista raden:
-self.app.run_server(debug=True, host='0.0.0.0', port=8051)  # Ändra 8050 → 8051
+self.app.run(debug=True, host='0.0.0.0', port=8051)  # Ändra 8050 → 8051
 ```
 
 ### Grafer visar inga data
