@@ -1,0 +1,285 @@
+rl_trigger_sprint7:
+  description: Triggers för RL-uppdateringar och optimering i Sprint 7
+  
+  event_based_triggers:
+    resource_constraint:
+      event: resource_allocation_denied
+      condition: available_resources < requested_resources
+      action:
+        - trigger_evolution: resource_efficiency_optimization
+        - adjust_parameter: evolution_threshold (decrease by 20%)
+        - notify: meta_agent_evolution_engine
+      frequency: immediate
+      priority: high
+      
+    team_formed:
+      event: team_formed
+      condition: team_pattern in [aggressive, conservative, balanced]
+      action:
+        - allocate_resource_boost: based_on_pattern
+        - adjust_parameter: agent_vote_weight (team members)
+        - update_coordination_baseline
+      frequency: immediate
+      priority: medium
+      
+    high_synergy_detected:
+      event: synergy_score > 0.75
+      condition: team_active and decisions_made > 10
+      action:
+        - increase_resource_boost: +10%
+        - share_knowledge: between_team_members
+        - trigger_evolution: synergy_optimization
+      frequency: every_epoch
+      priority: medium
+      
+    performance_degradation:
+      event: module_efficiency < 0.5
+      condition: consecutive_low_performance > 5
+      action:
+        - reallocate_resources: to_higher_priority
+        - adjust_parameter: relevant_adaptive_params
+        - trigger_evolution: performance_recovery
+      frequency: immediate
+      priority: critical
+      
+    resource_waste:
+      event: utilization_rate < 0.5
+      condition: allocated_resources > 0 and duration > 100 decisions
+      action:
+        - reduce_allocation: by_30%
+        - redistribute: to_active_modules
+        - log_waste_event
+      frequency: every_50_decisions
+      priority: low
+  
+  time_based_triggers:
+    periodic_optimization:
+      schedule: every_epoch
+      condition: epoch_completed
+      action:
+        - optimize_resource_allocation
+        - evaluate_team_performance
+        - update_synergy_scores
+        - adjust_adaptive_parameters
+      modules: [resource_planner, team_dynamics_engine, rl_controller]
+      
+    daily_rebalance:
+      schedule: every_1000_decisions
+      condition: system_active
+      action:
+        - rebalance_resource_pools
+        - dissolve_underperforming_teams
+        - form_new_teams_based_on_context
+        - update_efficiency_baselines
+      modules: [resource_planner, team_dynamics_engine]
+      
+    health_check:
+      schedule: every_100_decisions
+      condition: always
+      action:
+        - check_module_health
+        - detect_stale_modules
+        - identify_bottlenecks
+        - generate_health_report
+      modules: [system_monitor]
+      
+    visualization_update:
+      schedule: every_10_decisions
+      condition: dashboard_active
+      action:
+        - update_indicator_charts
+        - refresh_resource_dashboard
+        - update_team_dynamics_display
+        - refresh_system_health
+      modules: [introspection_panel]
+  
+  condition_based_triggers:
+    bottleneck_detected:
+      condition: pending_requests / available_resources > 2.0
+      evaluation: continuous
+      action:
+        - identify_bottleneck_source
+        - emergency_reallocation
+        - notify_system_monitor
+        - log_bottleneck_event
+      priority: critical
+      
+    team_underperforming:
+      condition: (synergy_score + coordination_score) / 2 < 0.4
+      evaluation: every_20_decisions
+      action:
+        - analyze_team_composition
+        - recommend_member_changes
+        - reduce_resource_boost
+        - consider_dissolution
+      priority: medium
+      
+    agent_overperforming:
+      condition: efficiency_score > 1.5 and consistent_for > 50_decisions
+      evaluation: every_epoch
+      action:
+        - increase_resource_allocation: +20%
+        - promote_agent_version
+        - share_agent_strategy: with_team
+        - increase_vote_weight
+      priority: medium
+      
+    system_health_critical:
+      condition: system_health_score < 0.6
+      evaluation: every_10_decisions
+      action:
+        - emergency_diagnostic
+        - halt_low_priority_modules
+        - reallocate_to_critical_modules
+        - notify_administrators
+      priority: critical
+      
+    memory_pressure:
+      condition: memory_utilization > 0.9
+      evaluation: continuous
+      action:
+        - reduce_memory_allocations
+        - trigger_garbage_collection
+        - archive_old_data
+        - notify_resource_planner
+      priority: high
+  
+  rl_training_triggers:
+    reward_tuner_update:
+      trigger: tuned_reward_published
+      condition: every_reward
+      action:
+        - train_reward_tuner_agent
+        - update_volatility_metrics
+        - check_overfitting_patterns
+        - adjust_reward_scaling
+      frequency: every_reward
+      
+    ppo_agent_update:
+      trigger: training_budget_available
+      condition: allocated_training_resources > 0
+      action:
+        - train_strategy_agent
+        - train_risk_agent
+        - train_decision_agent
+        - train_execution_agent
+      frequency: every_epoch
+      
+    meta_parameter_update:
+      trigger: parameter_adjustment_needed
+      condition: reward_signal_changed
+      action:
+        - calculate_new_parameters
+        - validate_parameter_bounds
+        - distribute_to_modules
+        - log_adjustment
+      frequency: every_10_decisions
+      
+    evolution_trigger:
+      trigger: evolution_suggestion_generated
+      condition: evolution_threshold_met
+      action:
+        - create_new_agent_version
+        - test_new_version
+        - promote_if_better
+        - archive_old_version
+      frequency: every_100_decisions
+  
+  integration_triggers:
+    vote_to_team:
+      trigger: vote_matrix_created
+      condition: team_active
+      action:
+        - aggregate_team_votes
+        - apply_team_coordination_bonus
+        - weight_by_synergy_score
+      modules: [vote_engine, team_dynamics_engine]
+      
+    resource_to_rl:
+      trigger: training_budget_allocated
+      condition: rl_controller_active
+      action:
+        - distribute_to_ppo_agents
+        - prioritize_by_performance
+        - respect_allocation_limits
+      modules: [resource_planner, rl_controller]
+      
+    evolution_to_resource:
+      trigger: evolution_suggestion
+      condition: resource_efficiency_considered
+      action:
+        - evaluate_resource_impact
+        - adjust_allocation_if_needed
+        - optimize_for_efficiency
+      modules: [meta_agent_evolution_engine, resource_planner]
+      
+    team_to_resource:
+      trigger: team_formed
+      condition: resource_boost_applicable
+      action:
+        - calculate_boost_amount
+        - allocate_additional_resources
+        - track_team_usage
+      modules: [team_dynamics_engine, resource_planner]
+  
+  emergency_triggers:
+    system_crash_recovery:
+      trigger: module_crash_detected
+      condition: critical_module_down
+      action:
+        - restart_module
+        - reallocate_resources
+        - restore_from_checkpoint
+        - notify_system_monitor
+      priority: critical
+      
+    infinite_loop_detection:
+      trigger: module_stuck
+      condition: no_progress_for > 60s
+      action:
+        - kill_stuck_module
+        - reallocate_resources
+        - log_incident
+        - restart_if_critical
+      priority: critical
+      
+    resource_deadlock:
+      trigger: circular_dependency_detected
+      condition: all_modules_waiting
+      action:
+        - break_deadlock
+        - force_release_resources
+        - restart_affected_modules
+        - prevent_future_deadlocks
+      priority: critical
+  
+  monitoring_triggers:
+    metrics_collection:
+      trigger: decision_completed
+      condition: always
+      action:
+        - collect_resource_metrics
+        - collect_team_metrics
+        - collect_performance_metrics
+        - update_dashboards
+      frequency: every_decision
+      
+    alert_generation:
+      trigger: threshold_exceeded
+      condition: metric_value > threshold
+      action:
+        - generate_alert
+        - notify_relevant_modules
+        - log_alert
+        - suggest_actions
+      priority: varies_by_metric
+      
+    trend_analysis:
+      trigger: sufficient_data_collected
+      condition: data_points > 100
+      action:
+        - analyze_trends
+        - identify_patterns
+        - predict_future_needs
+        - recommend_optimizations
+      frequency: every_100_decisions

@@ -5,6 +5,7 @@ Beskrivning:
     Visualiserar modulstatus, RL-performance och kommunikation.
     Dashboard för transparens och debugging av systemet.
     Sprint 4.2: Visualiserar även parameterhistorik och trends.
+    Sprint 7: Indikatorvisualisering, resursallokering och teamdynamik.
 
 Roll:
     - Prenumererar på agent_status, feedback_event, indicator_data
@@ -13,12 +14,17 @@ Roll:
     - Visar reward trends över tid
     - Renderar dashboard för Dash-applikation
     - Visualiserar parameterhistorik och trends (Sprint 4.2)
+    - Visualiserar indikator-trender och korrelationer (Sprint 7)
+    - Visualiserar resursallokering och effektivitet (Sprint 7)
+    - Visualiserar teamdynamik och synergier (Sprint 7)
 
 Inputs:
     - agent_status: Dict - Status från rl_controller
     - feedback_event: Dict - Feedback från feedback_router
     - indicator_data: Dict - Indikatorer från indicator_registry
     - parameter_adjustment: Dict - Parameterjusteringar från RL-controller (Sprint 4.2)
+    - resource_allocation: Dict - Resursallokering från resource_planner (Sprint 7)
+    - team_metrics: Dict - Teammetrik från team_dynamics_engine (Sprint 7)
 
 Outputs:
     - dashboard_render: Dict - Data för Dash-visualisering
@@ -31,11 +37,13 @@ Prenumererar på (från functions_v2.yaml):
     - feedback_event (från feedback_router)
     - indicator_data (från indicator_registry)
     - parameter_adjustment (från rl_controller) - Sprint 4.2
+    - resource_allocation (från resource_planner) - Sprint 7
+    - team_metrics (från team_dynamics_engine) - Sprint 7
 
 Använder RL: Nej (från functions_v2.yaml)
 Tar emot feedback: Nej (från functions_v2.yaml)
 
-Anslutningar (från flowchart_v2.yaml - visualization):
+Anslutningar (från flowchart_sprint1_7.yaml - visualization):
     Från:
     - rl_controller (agent_status, parameter_adjustment)
     - feedback_router (feedback_event)
@@ -43,9 +51,11 @@ Anslutningar (från flowchart_v2.yaml - visualization):
     - portfolio_manager (portfolio_status)
     - strategic_memory_engine (memory_insights)
     - decision_simulator (simulation_result)
+    - resource_planner (resource_allocation) - Sprint 7
+    - team_dynamics_engine (team_metrics) - Sprint 7
     Till: dashboard_render
 
-Visualisering (från feedback_loop_v2.yaml):
+Visualisering (från feedback_loop_sprint1_7.yaml):
     Displays:
     - feedback flow: Visuell representation av feedback mellan moduler
     - agent adaptation: Hur agenter anpassar sig över tid
@@ -91,6 +101,14 @@ class IntrospectionPanel:
         
         # Sprint 4.4: Reward metrics history
         self.reward_metrics_history: List[Dict[str, Any]] = []
+        
+        # Sprint 7: Prenumerera på resource och team metrics
+        self.message_bus.subscribe('resource_allocation', self._on_resource_allocation)
+        self.message_bus.subscribe('team_metrics', self._on_team_metrics)
+        
+        # Sprint 7: Resource och team history
+        self.resource_allocations: List[Dict[str, Any]] = []
+        self.team_metrics_history: List[Dict[str, Any]] = []
     
     def _on_agent_status(self, status: Dict[str, Any]) -> None:
         """Callback för agent status från rl_controller."""
@@ -138,6 +156,30 @@ class IntrospectionPanel:
             metrics: Reward transformation metrics
         """
         self.reward_metrics_history.append(metrics)
+    
+    def _on_resource_allocation(self, allocation: Dict[str, Any]) -> None:
+        """
+        Callback för resource allocations från ResourcePlanner (Sprint 7).
+        
+        Args:
+            allocation: Resource allocation event
+        """
+        self.resource_allocations.append(allocation)
+        # Behåll senaste 100
+        if len(self.resource_allocations) > 100:
+            self.resource_allocations = self.resource_allocations[-100:]
+    
+    def _on_team_metrics(self, metrics: Dict[str, Any]) -> None:
+        """
+        Callback för team metrics från TeamDynamicsEngine (Sprint 7).
+        
+        Args:
+            metrics: Team performance metrics
+        """
+        self.team_metrics_history.append(metrics)
+        # Behåll senaste 100
+        if len(self.team_metrics_history) > 100:
+            self.team_metrics_history = self.team_metrics_history[-100:]
         # Behåll senaste 100
         if len(self.reward_metrics_history) > 100:
             self.reward_metrics_history = self.reward_metrics_history[-100:]
@@ -487,16 +529,171 @@ class IntrospectionPanel:
     
     def get_comprehensive_dashboard_data(self) -> Dict[str, Any]:
         """
-        Genererar omfattande dashboard data inklusive parametrar (Sprint 4.2+4.4).
+        Genererar omfattande dashboard data inklusive parametrar (Sprint 4.2+4.4) och Sprint 7 data.
         
         Returns:
             Dict med all dashboard data
         """
         base_data = self.get_dashboard_data()
         parameter_data = self.get_parameter_visualization_data()
+        sprint7_data = self.get_sprint7_visualization_data()
         
         return {
             **base_data,
-            'parameter_visualization': parameter_data
+            'parameter_visualization': parameter_data,
+            'sprint7_visualization': sprint7_data
+        }
+    
+    def get_sprint7_visualization_data(self) -> Dict[str, Any]:
+        """
+        Genererar Sprint 7 visualization data (Sprint 7).
+        
+        Returns:
+            Dict med Sprint 7 visualization data
+        """
+        return {
+            'resource_dashboard': self._extract_resource_data(),
+            'team_dashboard': self._extract_team_data(),
+            'indicator_correlation': self._extract_indicator_correlation(),
+            'system_overview': self._extract_system_overview()
+        }
+    
+    def _extract_resource_data(self) -> Dict[str, Any]:
+        """
+        Extraherar resource allocation visualization data.
+        
+        Returns:
+            Dict med resource data
+        """
+        if not self.resource_allocations:
+            return {
+                'allocations_over_time': [],
+                'utilization_by_module': {},
+                'efficiency_metrics': {},
+                'bottleneck_alerts': []
+            }
+        
+        # Allocation timeline
+        allocations_over_time = []
+        module_allocations = {}
+        
+        for i, allocation in enumerate(self.resource_allocations):
+            allocations_over_time.append({
+                'step': i,
+                'module_id': allocation.get('module_id', 'unknown'),
+                'resource_type': allocation.get('resource_type', 'unknown'),
+                'amount': allocation.get('allocated_amount', 0),
+                'score': allocation.get('allocation_score', 0.0),
+                'timestamp': allocation.get('timestamp', 0)
+            })
+            
+            # Aggregate by module
+            module_id = allocation.get('module_id', 'unknown')
+            if module_id not in module_allocations:
+                module_allocations[module_id] = {'compute': 0, 'memory': 0, 'training': 0}
+            
+            resource_type = allocation.get('resource_type', 'compute')
+            module_allocations[module_id][resource_type] += allocation.get('allocated_amount', 0)
+        
+        return {
+            'allocations_over_time': allocations_over_time,
+            'utilization_by_module': module_allocations,
+            'total_allocations': len(self.resource_allocations),
+            'recent_allocations': self.resource_allocations[-10:]
+        }
+    
+    def _extract_team_data(self) -> Dict[str, Any]:
+        """
+        Extraherar team dynamics visualization data.
+        
+        Returns:
+            Dict med team data
+        """
+        if not self.team_metrics_history:
+            return {
+                'team_performance': [],
+                'synergy_trends': [],
+                'coordination_trends': [],
+                'active_teams': []
+            }
+        
+        team_performance = []
+        synergy_by_team = {}
+        coordination_by_team = {}
+        
+        for i, metrics in enumerate(self.team_metrics_history):
+            team_id = metrics.get('team_id', 'unknown')
+            
+            team_performance.append({
+                'step': i,
+                'team_id': team_id,
+                'synergy_score': metrics.get('synergy_score', 0.0),
+                'coordination_score': metrics.get('coordination_score', 0.0),
+                'decisions_made': metrics.get('decisions_made', 0)
+            })
+            
+            # Track trends per team
+            if team_id not in synergy_by_team:
+                synergy_by_team[team_id] = []
+                coordination_by_team[team_id] = []
+            
+            synergy_by_team[team_id].append(metrics.get('synergy_score', 0.0))
+            coordination_by_team[team_id].append(metrics.get('coordination_score', 0.0))
+        
+        return {
+            'team_performance': team_performance,
+            'synergy_trends': synergy_by_team,
+            'coordination_trends': coordination_by_team,
+            'total_teams': len(synergy_by_team),
+            'recent_metrics': self.team_metrics_history[-10:]
+        }
+    
+    def _extract_indicator_correlation(self) -> Dict[str, Any]:
+        """
+        Extraherar indicator correlation visualization data.
+        
+        Returns:
+            Dict med indicator correlation data
+        """
+        if len(self.indicator_snapshots) < 2:
+            return {
+                'indicator_trends': {},
+                'correlation_matrix': {},
+                'effectiveness_ranking': []
+            }
+        
+        # Extract indicator trends
+        indicator_trends = {}
+        
+        for snapshot in self.indicator_snapshots:
+            for indicator_name, value in snapshot.items():
+                if indicator_name not in ['symbol', 'timestamp']:
+                    if indicator_name not in indicator_trends:
+                        indicator_trends[indicator_name] = []
+                    
+                    if isinstance(value, (int, float)):
+                        indicator_trends[indicator_name].append(value)
+        
+        return {
+            'indicator_trends': indicator_trends,
+            'total_indicators': len(indicator_trends),
+            'recent_snapshots': self.indicator_snapshots[-10:]
+        }
+    
+    def _extract_system_overview(self) -> Dict[str, Any]:
+        """
+        Extraherar system overview data.
+        
+        Returns:
+            Dict med system overview
+        """
+        return {
+            'total_agent_updates': len(self.agent_status_history),
+            'total_feedback_events': len(self.feedback_events),
+            'total_indicator_snapshots': len(self.indicator_snapshots),
+            'total_parameter_adjustments': len(self.parameter_adjustments),
+            'total_resource_allocations': len(self.resource_allocations),
+            'total_team_metrics': len(self.team_metrics_history),
+            'system_active': True
         }
 

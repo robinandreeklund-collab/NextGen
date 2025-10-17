@@ -1,0 +1,180 @@
+resource_flowchart:
+  description: Resursflöde och allokering i Sprint 7
+  
+  resource_sources:
+    compute_pool:
+      total_units: 100
+      allocation_strategy: priority_based
+      reallocation_frequency: every_epoch
+      
+    memory_pool:
+      total_units: 100
+      allocation_strategy: demand_based
+      reallocation_frequency: every_10_decisions
+      
+    training_budget:
+      total_units: 100
+      allocation_strategy: performance_weighted
+      reallocation_frequency: every_50_episodes
+  
+  flow:
+    - step: 1
+      name: Resource Request
+      source: [all_modules, all_agents]
+      action: submit_resource_request
+      data:
+        module_id: string
+        resource_type: [compute, memory, training]
+        amount_requested: integer
+        priority: [critical, high, medium, low]
+        justification: string
+      target: resource_planner
+      
+    - step: 2
+      name: Resource Assessment
+      source: resource_planner
+      action: assess_request
+      logic:
+        - Check current availability
+        - Evaluate request priority
+        - Consider historical usage
+        - Calculate allocation score
+      output: allocation_decision
+      
+    - step: 3
+      name: Priority Calculation
+      source: resource_planner
+      action: calculate_priority
+      factors:
+        - module_performance: 0.35
+        - system_criticality: 0.25
+        - resource_efficiency: 0.20
+        - team_coordination: 0.20
+      formula: weighted_sum(factors)
+      
+    - step: 4
+      name: Resource Allocation
+      source: resource_planner
+      action: allocate_resources
+      target: [requesting_module, system_monitor]
+      message: resource_allocation
+      data:
+        module_id: string
+        resource_type: string
+        allocated_amount: integer
+        allocation_duration: integer
+        reallocation_trigger: conditions
+        
+    - step: 5
+      name: Usage Monitoring
+      source: system_monitor
+      action: track_resource_usage
+      metrics:
+        - utilization_rate
+        - efficiency_score
+        - waste_detection
+        - bottleneck_identification
+      frequency: continuous
+      
+    - step: 6
+      name: Performance Feedback
+      source: [all_modules]
+      action: report_performance
+      target: resource_planner
+      message: performance_metric
+      data:
+        module_id: string
+        resource_consumed: integer
+        performance_achieved: float
+        efficiency_score: float
+        
+    - step: 7
+      name: Dynamic Reallocation
+      source: resource_planner
+      action: reallocate_resources
+      triggers:
+        - performance_drop_detected
+        - resource_waste_detected
+        - critical_module_needs
+        - team_coordination_required
+      target: all_affected_modules
+      
+    - step: 8
+      name: Strategic Logging
+      source: resource_planner
+      action: log_allocation_history
+      target: strategic_memory_engine
+      data:
+        timestamp: datetime
+        allocation_decisions: list
+        performance_outcomes: dict
+        efficiency_metrics: dict
+  
+  allocation_strategies:
+    priority_based:
+      description: Allokerar baserat på modulprioritet
+      logic: |
+        1. Sortera requests efter priority (critical > high > medium > low)
+        2. Allokera till critical först, tills resurser tar slut
+        3. Fortsätt med high, medium, low
+        4. Om konflikter inom samma priority, använd performance_score
+      
+    demand_based:
+      description: Allokerar baserat på faktisk efterfrågan
+      logic: |
+        1. Beräkna genomsnittlig usage för varje modul
+        2. Allokera baserat på predicted demand
+        3. Reservera buffer (20%) för spikes
+        4. Dynamisk justering varje 10 beslut
+      
+    performance_weighted:
+      description: Allokerar mer resurser till högpresterande moduler
+      logic: |
+        1. Beräkna performance_score för varje modul
+        2. Allokera proportionellt till performance
+        3. Garantera minimum allocation för alla
+        4. Bonus resources till top 20% performers
+      
+    team_coordinated:
+      description: Koordinerar allokering inom agentteam
+      logic: |
+        1. Identifiera active teams (via team_dynamics_engine)
+        2. Allokera gruppresurser till teams
+        3. Team fördelar internt baserat på behov
+        4. Synergy bonus om team presterar bra
+  
+  resource_metrics:
+    utilization_rate:
+      formula: resources_used / resources_allocated
+      target: 0.80
+      warning_threshold: 0.95
+      
+    efficiency_score:
+      formula: performance_gain / resources_consumed
+      target: 1.20
+      minimum_acceptable: 0.80
+      
+    waste_detection:
+      formula: (resources_allocated - resources_used) / resources_allocated
+      maximum_acceptable: 0.20
+      action_threshold: 0.30
+      
+    bottleneck_score:
+      formula: pending_requests / available_resources
+      warning_threshold: 2.0
+      critical_threshold: 5.0
+  
+  visualization:
+    resource_dashboard:
+      charts:
+        - resource_allocation_over_time
+        - utilization_by_module
+        - efficiency_heatmap
+        - bottleneck_alerts
+        - team_resource_coordination
+      update_frequency: real_time
+      
+    allocation_history:
+      display: timeline_view
+      filters: [module, resource_type, date_range]
+      export: strategic_memory_engine

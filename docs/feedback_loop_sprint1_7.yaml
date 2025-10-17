@@ -1,0 +1,344 @@
+feedback_loop_sprint1_7:
+  description: Komplett feedback-system från Sprint 1 till Sprint 7
+  
+  feedback_sources:
+    execution_engine:
+      events:
+        - trade_result:
+            trigger: trade_completed
+            data: [action, symbol, quantity, price, success]
+            targets: [feedback_router, strategic_memory]
+            
+        - slippage:
+            trigger: price_difference > 0.002
+            data: [expected_price, actual_price, slippage_amount]
+            targets: [feedback_router, risk_manager]
+            
+        - latency:
+            trigger: execution_completed
+            data: [execution_time_ms]
+            targets: [feedback_analyzer, resource_planner]
+    
+    portfolio_manager:
+      events:
+        - capital_change:
+            trigger: portfolio_value_changed
+            data: [old_value, new_value, change_percent]
+            targets: [feedback_router, strategic_memory]
+            
+        - transaction_cost:
+            trigger: trade_completed
+            data: [cost_amount, cost_percent]
+            targets: [feedback_analyzer]
+            
+        - base_reward:
+            trigger: portfolio_updated
+            data: [reward_value, portfolio_change]
+            targets: [reward_tuner]
+    
+    reward_tuner:
+      events:
+        - tuned_reward:
+            trigger: reward_transformed
+            data: [base_reward, tuned_reward, transformation_ratio]
+            targets: [rl_controller, strategic_memory]
+            
+        - volatility_detected:
+            trigger: volatility > threshold
+            data: [volatility_value, penalty_applied]
+            targets: [feedback_analyzer, introspection_panel]
+            
+        - overfitting_detected:
+            trigger: overfitting_pattern_found
+            data: [detection_score, penalty_applied]
+            targets: [meta_agent_evolution_engine, feedback_analyzer]
+    
+    rl_controller:
+      events:
+        - agent_status:
+            trigger: agent_updated
+            data: [agent_id, loss, performance, version]
+            targets: [meta_agent_evolution_engine, system_monitor]
+            
+        - parameter_adjustment:
+            trigger: meta_parameter_changed
+            data: [parameter_name, old_value, new_value, module_id]
+            targets: [all_modules, strategic_memory]
+            
+        - training_metrics:
+            trigger: training_completed
+            data: [episode_reward, loss, epsilon]
+            targets: [introspection_panel, strategic_memory]
+    
+    resource_planner:
+      events:
+        - resource_allocation:
+            trigger: resources_allocated
+            data: [module_id, resource_type, amount, allocation_score]
+            targets: [system_monitor, strategic_memory]
+            
+        - resource_reallocation:
+            trigger: resources_moved
+            data: [from_module, to_module, amount, reason]
+            targets: [feedback_analyzer, system_monitor]
+            
+        - bottleneck_detected:
+            trigger: pending_requests > threshold
+            data: [bottleneck_score, affected_modules]
+            targets: [feedback_router, system_monitor]
+    
+    team_dynamics_engine:
+      events:
+        - team_formed:
+            trigger: team_created
+            data: [team_id, pattern, members, resource_boost]
+            targets: [resource_planner, vote_engine, system_monitor]
+            
+        - synergy_changed:
+            trigger: synergy_score_updated
+            data: [team_id, old_score, new_score]
+            targets: [feedback_analyzer, introspection_panel]
+            
+        - coordination_improved:
+            trigger: coordination_score > threshold
+            data: [team_id, coordination_score, interactions_count]
+            targets: [meta_agent_evolution_engine, strategic_memory]
+    
+    meta_agent_evolution_engine:
+      events:
+        - evolution_suggestion:
+            trigger: evolution_threshold_met
+            data: [agent_id, reason, suggested_changes]
+            targets: [agent_manager, feedback_analyzer]
+            
+        - performance_degradation:
+            trigger: performance_drop > 0.15
+            data: [agent_id, degradation_amount, time_period]
+            targets: [feedback_router, rl_controller, resource_planner]
+            
+        - evolution_completed:
+            trigger: agent_version_updated
+            data: [agent_id, old_version, new_version, improvement]
+            targets: [strategic_memory, introspection_panel]
+  
+  feedback_routing:
+    critical_priority:
+      conditions:
+        - system_health < 0.6
+        - module_crash_detected
+        - resource_deadlock
+      targets: [system_monitor, resource_planner, all_modules]
+      action: immediate_broadcast
+      
+    high_priority:
+      conditions:
+        - performance_degradation > 0.15
+        - bottleneck_detected
+        - overfitting_detected
+      targets: [meta_agent_evolution_engine, rl_controller, resource_planner]
+      action: prioritized_routing
+      
+    medium_priority:
+      conditions:
+        - parameter_adjustment
+        - team_formed
+        - evolution_suggestion
+      targets: [relevant_modules, strategic_memory]
+      action: normal_routing
+      
+    low_priority:
+      conditions:
+        - metrics_update
+        - status_update
+        - visualization_update
+      targets: [introspection_panel, system_monitor]
+      action: batched_routing
+  
+  feedback_loops:
+    reward_loop:
+      flow: portfolio_manager → reward_tuner → rl_controller → agents → strategy/risk/decision/execution → portfolio_manager
+      frequency: every_trade
+      optimization_target: maximize_cumulative_reward
+      feedback_signals:
+        - base_reward
+        - tuned_reward
+        - agent_performance
+        - portfolio_change
+      
+    resource_loop:
+      flow: modules → resource_planner → resource_allocation → modules → performance_metric → resource_planner
+      frequency: continuous
+      optimization_target: maximize_efficiency
+      feedback_signals:
+        - utilization_rate
+        - efficiency_score
+        - bottleneck_score
+        - waste_detection
+      
+    team_loop:
+      flow: agents → team_dynamics → team_formed → vote_engine → consensus → performance → team_dynamics
+      frequency: every_epoch
+      optimization_target: maximize_synergy
+      feedback_signals:
+        - synergy_score
+        - coordination_score
+        - team_performance
+        - decision_quality
+      
+    evolution_loop:
+      flow: agents → meta_evolution → evolution_suggestion → agent_manager → new_version → agents
+      frequency: every_100_decisions
+      optimization_target: continuous_improvement
+      feedback_signals:
+        - agent_performance_gain
+        - efficiency_improvement
+        - adaptation_speed
+        - generalization_score
+      
+    parameter_loop:
+      flow: system_metrics → rl_controller → parameter_adjustment → all_modules → performance → rl_controller
+      frequency: adaptive
+      optimization_target: optimal_parameters
+      feedback_signals:
+        - 19 reward signals (from rl_reward_matrix)
+        - module_performance
+        - system_health
+        - adaptation_quality
+  
+  pattern_detection:
+    slippage_pattern:
+      detector: feedback_analyzer
+      condition: slippage > threshold for consecutive_trades > 5
+      action:
+        - adjust: execution_delay
+        - notify: execution_engine
+        - log: strategic_memory
+      
+    success_rate_pattern:
+      detector: feedback_analyzer
+      condition: trade_success_rate trend detected
+      action:
+        - adjust: signal_threshold, risk_tolerance
+        - notify: strategy_engine, risk_manager
+        - visualize: introspection_panel
+      
+    indicator_mismatch_pattern:
+      detector: feedback_analyzer
+      condition: indicator prediction != actual outcome
+      action:
+        - adjust: indicator_weighting
+        - correlation_analysis: strategic_memory
+        - notify: strategy_engine
+      
+    agent_drift_pattern:
+      detector: feedback_analyzer
+      condition: agent_performance degrading over time
+      action:
+        - trigger: evolution_suggestion
+        - adjust: learning_rate, exploration
+        - notify: meta_agent_evolution_engine
+      
+    resource_waste_pattern:
+      detector: resource_planner
+      condition: utilization_rate < 0.5 for duration > 100_decisions
+      action:
+        - reduce_allocation: by_30%
+        - redistribute: to_active_modules
+        - notify: feedback_analyzer
+      
+    team_synergy_pattern:
+      detector: team_dynamics_engine
+      condition: synergy_score > 0.75 consistently
+      action:
+        - increase_resource_boost: +10%
+        - share_knowledge: between_members
+        - notify: meta_agent_evolution_engine
+  
+  feedback_aggregation:
+    strategic_memory_aggregation:
+      inputs:
+        - decision_history
+        - execution_results
+        - indicator_data
+        - agent_status
+        - parameter_adjustments
+        - resource_allocations
+        - team_metrics
+      analysis:
+        - correlation_analysis: indicators ↔ outcomes
+        - success_rate_by_indicator
+        - parameter_effectiveness
+        - resource_efficiency_trends
+        - team_performance_trends
+      outputs:
+        - memory_insights
+        - correlation_report
+        - performance_summary
+      
+    introspection_panel_aggregation:
+      inputs:
+        - dashboard_data (all modules)
+        - reward_metrics
+        - feedback_insights
+        - timeline_insights
+        - system_view
+        - resource_status
+        - team_metrics
+      visualization:
+        - reward_flow_chart
+        - indicator_trends
+        - resource_allocation_chart
+        - team_dynamics_display
+        - system_health_dashboard
+        - correlation_heatmap
+      outputs:
+        - visualization_data
+        - dashboard_updates
+      
+    system_monitor_aggregation:
+      inputs:
+        - module_dashboard_data
+        - agent_status
+        - portfolio_status
+        - resource_metrics
+        - team_metrics
+      analysis:
+        - health_score_calculation
+        - stale_module_detection
+        - performance_aggregation
+        - bottleneck_identification
+      outputs:
+        - system_view
+        - system_health
+        - module_status
+        - alerts
+  
+  feedback_optimization:
+    adaptive_feedback_routing:
+      strategy: priority_based_with_learning
+      learning_signals:
+        - feedback_effectiveness
+        - response_time
+        - improvement_achieved
+      optimization:
+        - adjust_priorities: based_on_effectiveness
+        - optimize_batching: reduce_overhead
+        - cache_frequent: reduce_latency
+      
+    feedback_compression:
+      strategy: aggregate_similar_events
+      conditions:
+        - same_type_within_window
+        - low_priority_events
+      benefits:
+        - reduce_message_volume
+        - maintain_information
+        - improve_efficiency
+      
+    feedback_prediction:
+      strategy: predict_needed_feedback
+      model: pattern_based
+      actions:
+        - preemptive_routing
+        - resource_preallocation
+        - early_warning_system

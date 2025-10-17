@@ -1,0 +1,278 @@
+flowchart_sprint1_7:
+  description: Komplett systemflöde från Sprint 1 till Sprint 7
+  
+  system_flow:
+    - layer: Data Layer (Sprint 1)
+      modules:
+        - data_ingestion:
+            input: Finnhub WebSocket
+            output: market_data
+            flow: → indicator_registry, portfolio_manager
+            
+        - indicator_registry:
+            input: Finnhub API, market_data
+            output: indicator_data
+            flow: → strategy_engine, decision_engine
+            indicators: [RSI, MACD, ATR, Analyst_Ratings, News_Sentiment, Insider_Sentiment, ROE, ROA, ESG, Bollinger_Bands, ADX, VIX]
+    
+    - layer: Strategy Layer (Sprint 1, 2)
+      modules:
+        - strategy_engine:
+            input: indicator_data, portfolio_status, agent_update
+            output: decision_proposal
+            flow: → decision_simulator, decision_engine
+            rl_agent: strategy_agent
+            adaptive_params: [signal_threshold, indicator_weighting]
+            
+        - risk_manager:
+            input: indicator_data, portfolio_status, agent_update
+            output: risk_profile
+            flow: → decision_engine
+            rl_agent: risk_agent
+            adaptive_params: [risk_tolerance, max_drawdown]
+    
+    - layer: Decision Layer (Sprint 1, 2, 5)
+      modules:
+        - decision_simulator:
+            input: decision_proposal
+            output: simulation_result
+            flow: → strategic_memory
+            scenarios: [best_case, expected_case, worst_case, no_action]
+            
+        - decision_engine:
+            input: decision_proposal, risk_profile, memory_insights, agent_update
+            output: decision_vote
+            flow: → vote_engine
+            rl_agent: decision_agent
+            adaptive_params: [consensus_threshold, memory_weighting]
+            
+        - vote_engine:
+            input: decision_vote (multiple agents)
+            output: vote_matrix
+            flow: → consensus_engine
+            adaptive_params: [agent_vote_weight]
+            
+        - consensus_engine:
+            input: vote_matrix
+            output: final_decision
+            flow: → execution_engine, timespan_tracker
+            models: [majority, weighted, unanimous, threshold]
+    
+    - layer: Execution Layer (Sprint 1, 2)
+      modules:
+        - execution_engine:
+            input: final_decision, agent_update
+            output: execution_result, trade_log, feedback_event
+            flow: → portfolio_manager
+            rl_agent: execution_agent
+            adaptive_params: [execution_delay, slippage_tolerance]
+            
+        - portfolio_manager:
+            input: execution_result, market_data
+            output: portfolio_status, base_reward, feedback_event
+            flow: → reward_tuner, system_monitor
+            metrics: [capital, positions, P&L, trade_history]
+    
+    - layer: RL Layer (Sprint 2, 4.2, 4.4)
+      modules:
+        - reward_tuner:
+            input: base_reward, agent_status
+            output: tuned_reward, reward_metrics
+            flow: → rl_controller, strategic_memory, introspection_panel
+            capabilities: [volatility_reduction, overfitting_detection, reward_scaling]
+            adaptive_params: [reward_scaling_factor, volatility_penalty_weight, overfitting_detector_threshold]
+            
+        - rl_controller:
+            input: tuned_reward
+            output: agent_update, agent_status, parameter_adjustment
+            flow: → [strategy_engine, risk_manager, decision_engine, execution_engine, all_modules]
+            agents: [strategy_agent, risk_agent, decision_agent, execution_agent, meta_parameter_agent]
+            ppo_training: true
+            adaptive_params: [update_frequency, agent_entropy_threshold]
+    
+    - layer: Feedback Layer (Sprint 3)
+      modules:
+        - feedback_router:
+            input: feedback_event
+            output: routed_feedback
+            flow: → feedback_analyzer, rl_controller, strategic_memory
+            priorities: [critical, high, medium, low]
+            
+        - feedback_analyzer:
+            input: routed_feedback, performance_metric
+            output: feedback_insights
+            flow: → meta_agent_evolution_engine, introspection_panel
+            patterns: [slippage, success_rate, capital_changes, indicator_mismatch, agent_drift]
+    
+    - layer: Memory Layer (Sprint 4, 4.2, 4.3)
+      modules:
+        - strategic_memory_engine:
+            input: [final_decision, execution_result, indicator_data, agent_status, parameter_adjustment, simulation_result, reward_metrics]
+            output: memory_insights, decision_history
+            flow: → decision_engine, meta_agent_evolution_engine, introspection_panel
+            capabilities: [correlation_analysis, success_rate_tracking, parameter_logging]
+            
+        - meta_agent_evolution_engine:
+            input: agent_status, feedback_insights, memory_insights, resource_metrics
+            output: evolution_suggestion, evolution_trigger
+            flow: → agent_manager, resource_planner
+            adaptive_params: [evolution_threshold, min_samples]
+            triggers: [performance_degradation, consistent_improvement, resource_constraint, team_synergy]
+            
+        - agent_manager:
+            input: evolution_suggestion, agent_status
+            output: agent_profile, agent_version
+            flow: → rl_controller, team_dynamics_engine
+            capabilities: [version_management, profile_tracking, evolution_history]
+    
+    - layer: Coordination Layer (Sprint 5, 6)
+      modules:
+        - timespan_tracker:
+            input: decision_event, final_decision, indicator_data
+            output: timeline_insight
+            flow: → strategic_memory, introspection_panel
+            capabilities: [timeline_analysis, time_window_queries, temporal_patterns]
+            
+        - action_chain_engine:
+            input: execute_chain, chain_definition
+            output: chain_execution, chain_statistics
+            flow: → strategic_memory, system_monitor
+            templates: [standard_trade, risk_averse, aggressive, analysis_only]
+    
+    - layer: Resource Layer (Sprint 7)
+      modules:
+        - resource_planner:
+            input: resource_request, performance_metric, module_completed
+            output: resource_allocation, resource_reallocation
+            flow: → all_modules, team_dynamics_engine, system_monitor
+            pools: [compute_pool, memory_pool, training_budget]
+            strategies: [priority_based, demand_based, performance_weighted, team_coordinated]
+            
+        - team_dynamics_engine:
+            input: decision_vote, agent_status, final_decision, form_team
+            output: team_formed, team_dissolved, team_metrics
+            flow: → resource_planner, vote_engine, system_monitor
+            patterns: [aggressive_trading, conservative_trading, balanced_trading, exploration_phase]
+            capabilities: [synergy_tracking, coordination_scoring, team_performance]
+    
+    - layer: Monitoring Layer (Sprint 3, 6, 7)
+      modules:
+        - system_monitor:
+            input: [dashboard_data, agent_status, portfolio_status, timeline_insight, chain_execution, resource_metrics, team_metrics]
+            output: system_view, system_health, module_status
+            flow: → introspection_panel
+            capabilities: [health_score, stale_detection, performance_aggregation]
+            
+        - introspection_panel:
+            input: [dashboard_data, reward_metrics, feedback_insights, memory_insights, timeline_insight, system_view]
+            output: visualization_data, dashboard_updates
+            flow: → external_dashboard
+            visualizations: [indicator_trends, reward_flow, team_dynamics, resource_allocation, system_health, evolution_tree, correlation_heatmap]
+  
+  data_flow_paths:
+    trading_flow:
+      path: data_ingestion → indicator_registry → strategy_engine → decision_engine → vote_engine → consensus_engine → execution_engine → portfolio_manager
+      sprints: [1, 2, 5]
+      
+    reward_flow:
+      path: portfolio_manager → reward_tuner → rl_controller → agents → strategy/risk/decision/execution_engines
+      sprints: [2, 4.4]
+      
+    feedback_flow:
+      path: execution_engine/portfolio_manager → feedback_router → feedback_analyzer → meta_agent_evolution_engine → agent_manager
+      sprints: [3, 4]
+      
+    memory_flow:
+      path: final_decision/execution_result → strategic_memory_engine → memory_insights → decision_engine
+      sprints: [4]
+      
+    resource_flow:
+      path: resource_request → resource_planner → resource_allocation → all_modules
+      sprints: [7]
+      
+    team_flow:
+      path: form_team → team_dynamics_engine → team_formed → resource_planner (resource_boost) → vote_engine (team_voting)
+      sprints: [7]
+      
+    evolution_flow:
+      path: agent_status → meta_agent_evolution_engine → evolution_suggestion → agent_manager → agent_profile → rl_controller
+      sprints: [4, 4.2, 7]
+  
+  message_topics:
+    sprint_1:
+      - market_data
+      - indicator_data
+      - decision_proposal
+      - final_decision
+      - execution_result
+      - portfolio_status
+      
+    sprint_2:
+      - reward  # Changed to base_reward in Sprint 4.4
+      - agent_update
+      - agent_status
+      
+    sprint_3:
+      - feedback_event
+      - routed_feedback
+      - feedback_insights
+      - dashboard_data
+      
+    sprint_4:
+      - memory_insights
+      - evolution_suggestion
+      - agent_profile
+      
+    sprint_4_2:
+      - parameter_adjustment
+      
+    sprint_4_4:
+      - base_reward
+      - tuned_reward
+      - reward_metrics
+      
+    sprint_5:
+      - decision_vote
+      - vote_matrix
+      - simulation_result
+      
+    sprint_6:
+      - decision_event
+      - timeline_insight
+      - execute_chain
+      - chain_execution
+      
+    sprint_7:
+      - resource_request
+      - resource_allocation
+      - resource_reallocation
+      - performance_metric
+      - form_team
+      - team_formed
+      - team_dissolved
+      - team_metrics
+  
+  integration_points:
+    reward_tuner_rl:
+      description: RewardTunerAgent transforms base_reward before RL training
+      flow: portfolio_manager → reward_tuner → rl_controller
+      
+    resource_team:
+      description: Teams get resource boost based on pattern
+      flow: team_dynamics_engine → resource_planner
+      
+    evolution_resource:
+      description: Agent evolution considers resource efficiency
+      flow: meta_agent_evolution_engine → resource_planner
+      
+    team_voting:
+      description: Teams participate in coordinated voting
+      flow: team_dynamics_engine → vote_engine
+      
+    adaptive_parameters:
+      description: All 16 adaptive parameters distributed from RL controller
+      flow: rl_controller → all_modules
+      
+    strategic_memory_correlation:
+      description: Memory engine analyzes indicator-outcome correlations
+      flow: strategic_memory_engine → introspection_panel

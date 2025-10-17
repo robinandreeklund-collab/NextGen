@@ -1,0 +1,471 @@
+rl_test_suite_sprint7:
+  description: Test suite för RL/PPO-integration med Sprint 7 moduler
+  
+  test_categories:
+    - category: RP
+      name: Resource Planner Tests
+      module: resource_planner
+      test_count: 13
+      
+    - category: TD
+      name: Team Dynamics Tests
+      module: team_dynamics_engine
+      test_count: 16
+      
+    - category: IV
+      name: Indicator Visualization Tests
+      module: introspection_panel
+      test_count: 6
+      
+    - category: SO
+      name: System Overview Tests
+      module: system_monitor
+      test_count: 8
+      
+    - category: INT
+      name: Sprint 7 Integration Tests
+      module: integration
+      test_count: 7
+  
+  test_cases:
+    # Resource Planner Tests (RP-001 to RP-013)
+    - test_id: RP-001
+      name: Resource pool initialization
+      module: resource_planner
+      description: Verify resource pools initialized correctly
+      success_criteria:
+        - compute_pool.total == 100
+        - memory_pool.total == 100
+        - training_budget.total == 100
+      
+    - test_id: RP-002
+      name: Default allocation strategy
+      module: resource_planner
+      description: Verify default allocations for known modules
+      success_criteria:
+        - strategy_agent gets 25% compute
+        - strategic_memory gets 30% memory
+        
+    - test_id: RP-003
+      name: Priority-based allocation
+      module: resource_planner
+      description: Higher priority requests get resources first
+      success_criteria:
+        - critical priority > high priority
+        - allocation_score reflects priority
+        
+    - test_id: RP-004
+      name: Performance metric tracking
+      module: resource_planner
+      description: Track module performance and efficiency
+      success_criteria:
+        - efficiency_score calculated correctly
+        - utilization_rate tracked
+        
+    - test_id: RP-005
+      name: Resource reallocation
+      module: resource_planner
+      description: Reallocate from low to high priority
+      success_criteria:
+        - resources moved when needed
+        - reallocation event published
+        
+    - test_id: RP-006
+      name: Resource release
+      module: resource_planner
+      description: Release resources when module completes
+      success_criteria:
+        - resources returned to pool
+        - allocation removed from tracking
+        
+    - test_id: RP-007
+      name: Allocation history logging
+      module: resource_planner
+      description: Log all allocation decisions
+      success_criteria:
+        - history entries created
+        - max 1000 entries maintained
+        
+    - test_id: RP-008
+      name: Dashboard data generation
+      module: resource_planner
+      description: Generate dashboard data for visualization
+      success_criteria:
+        - utilization rates calculated
+        - metrics included
+        
+    - test_id: RP-009
+      name: Multiple resource types
+      module: resource_planner
+      description: Handle compute, memory, training separately
+      success_criteria:
+        - each type tracked independently
+        - no cross-contamination
+        
+    - test_id: RP-010
+      name: Efficiency calculation
+      module: resource_planner
+      description: Calculate efficiency from performance metrics
+      success_criteria:
+        - efficiency = performance / resources
+        - formula correct
+        
+    - test_id: RP-011
+      name: Bottleneck detection
+      module: resource_planner
+      description: Detect resource bottlenecks
+      success_criteria:
+        - high pending requests detected
+        - warning when bottleneck occurs
+        
+    - test_id: RP-012
+      name: Resource optimization
+      module: resource_planner
+      description: Optimize allocation based on usage
+      success_criteria:
+        - underused resources reallocated
+        - waste minimized
+        
+    - test_id: RP-013
+      name: Integration with RL controller
+      module: resource_planner
+      description: Allocate training resources to RL agents
+      success_criteria:
+        - PPO agents get training budget
+        - allocation based on performance
+    
+    # Team Dynamics Tests (TD-001 to TD-016)
+    - test_id: TD-001
+      name: Team formation
+      module: team_dynamics_engine
+      description: Form teams with specified patterns
+      success_criteria:
+        - team created with members
+        - pattern applied correctly
+        
+    - test_id: TD-002
+      name: Team dissolution
+      module: team_dynamics_engine
+      description: Dissolve teams when no longer needed
+      success_criteria:
+        - team removed from active
+        - resources freed
+        
+    - test_id: TD-003
+      name: Agent synergy tracking
+      module: team_dynamics_engine
+      description: Track synergies between agents
+      success_criteria:
+        - synergy_score calculated
+        - recommendations generated
+        
+    - test_id: TD-004
+      name: Coordination score calculation
+      module: team_dynamics_engine
+      description: Calculate coordination based on interactions
+      success_criteria:
+        - coordination_score based on frequency
+        - normalized to 0-1
+        
+    - test_id: TD-005
+      name: Team performance evaluation
+      module: team_dynamics_engine
+      description: Evaluate team performance over time
+      success_criteria:
+        - decisions_made tracked
+        - synergy and coordination updated
+        
+    - test_id: TD-006
+      name: Communication flow logging
+      module: team_dynamics_engine
+      description: Log agent communications
+      success_criteria:
+        - interactions tracked
+        - communication_flows maintained
+        
+    - test_id: TD-007
+      name: Team pattern recommendations
+      module: team_dynamics_engine
+      description: Recommend team patterns based on context
+      success_criteria:
+        - aggressive for high risk
+        - conservative for low risk
+        
+    - test_id: TD-008
+      name: High performing team identification
+      module: team_dynamics_engine
+      description: Identify teams with high synergy
+      success_criteria:
+        - threshold check (>= 0.75)
+        - list returned
+        
+    - test_id: TD-009
+      name: Resource boost allocation
+      module: team_dynamics_engine
+      description: Teams get resource boosts based on pattern
+      success_criteria:
+        - aggressive gets 1.3x boost
+        - conservative gets 1.0x
+        
+    - test_id: TD-010
+      name: Agent interaction tracking
+      module: team_dynamics_engine
+      description: Track interactions between agents
+      success_criteria:
+        - interaction counts maintained
+        - per-agent statistics
+        
+    - test_id: TD-011
+      name: Multiple team patterns
+      module: team_dynamics_engine
+      description: Support all 4 team patterns
+      success_criteria:
+        - aggressive_trading works
+        - conservative_trading works
+        - balanced_trading works
+        - exploration_phase works
+        
+    - test_id: TD-012
+      name: Team info retrieval
+      module: team_dynamics_engine
+      description: Get comprehensive team information
+      success_criteria:
+        - all fields present
+        - performance metrics included
+        
+    - test_id: TD-013
+      name: Dashboard data generation
+      module: team_dynamics_engine
+      description: Generate dashboard data for visualization
+      success_criteria:
+        - metrics included
+        - high performers listed
+        
+    - test_id: TD-014
+      name: Integration with voting
+      module: team_dynamics_engine
+      description: Track team decisions via voting
+      success_criteria:
+        - votes tracked per team
+        - team contribution calculated
+        
+    - test_id: TD-015
+      name: Integration with resource planner
+      module: team_dynamics_engine
+      description: Coordinate with resource allocation
+      success_criteria:
+        - resource_boost applied
+        - team priority considered
+        
+    - test_id: TD-016
+      name: Dynamic team optimization
+      module: team_dynamics_engine
+      description: Optimize team composition based on performance
+      success_criteria:
+        - underperforming members identified
+        - replacement suggestions
+    
+    # Indicator Visualization Tests (IV-001 to IV-006)
+    - test_id: IV-001
+      name: Indicator trend visualization
+      module: introspection_panel
+      description: Visualize indicator trends over time
+      success_criteria:
+        - charts generated for indicators
+        - time series data present
+        
+    - test_id: IV-002
+      name: Correlation heatmap
+      module: introspection_panel
+      description: Show correlations between indicators and outcomes
+      success_criteria:
+        - heatmap data structure
+        - correlation values calculated
+        
+    - test_id: IV-003
+      name: Real-time indicator updates
+      module: introspection_panel
+      description: Update indicator displays in real-time
+      success_criteria:
+        - new data reflected immediately
+        - smooth updates
+        
+    - test_id: IV-004
+      name: Multi-symbol indicator comparison
+      module: introspection_panel
+      description: Compare indicators across symbols
+      success_criteria:
+        - multiple symbols displayed
+        - comparison charts
+        
+    - test_id: IV-005
+      name: Indicator effectiveness analysis
+      module: introspection_panel
+      description: Show which indicators predict outcomes best
+      success_criteria:
+        - effectiveness scores calculated
+        - ranking displayed
+        
+    - test_id: IV-006
+      name: Integration with strategic memory
+      module: introspection_panel
+      description: Use indicator history from strategic memory
+      success_criteria:
+        - historical data retrieved
+        - correlations analyzed
+    
+    # System Overview Tests (SO-001 to SO-008)
+    - test_id: SO-001
+      name: Module health monitoring
+      module: system_monitor
+      description: Monitor health of all modules
+      success_criteria:
+        - health scores calculated
+        - stale modules detected
+        
+    - test_id: SO-002
+      name: System-wide metrics aggregation
+      module: system_monitor
+      description: Aggregate metrics from all modules
+      success_criteria:
+        - all module metrics collected
+        - summary statistics
+        
+    - test_id: SO-003
+      name: Resource utilization overview
+      module: system_monitor
+      description: Show resource usage across system
+      success_criteria:
+        - resource data from planner
+        - utilization charts
+        
+    - test_id: SO-004
+      name: Team performance overview
+      module: system_monitor
+      description: Show all team performance metrics
+      success_criteria:
+        - team data from dynamics engine
+        - performance trends
+        
+    - test_id: SO-005
+      name: Agent status aggregation
+      module: system_monitor
+      description: Aggregate status from all agents
+      success_criteria:
+        - agent health tracked
+        - performance metrics
+        
+    - test_id: SO-006
+      name: System health score
+      module: system_monitor
+      description: Calculate overall system health
+      success_criteria:
+        - weighted health score
+        - warning thresholds
+        
+    - test_id: SO-007
+      name: Performance history tracking
+      module: system_monitor
+      description: Track system performance over time
+      success_criteria:
+        - history maintained
+        - trends identified
+        
+    - test_id: SO-008
+      name: Integration with all modules
+      module: system_monitor
+      description: Receive data from all modules
+      success_criteria:
+        - all modules reporting
+        - no missing data
+    
+    # Integration Tests (INT-001 to INT-007)
+    - test_id: INT-001
+      name: Resource planner + Team dynamics
+      description: Integration between resource allocation and team formation
+      success_criteria:
+        - teams get resource boost
+        - allocation considers team needs
+        
+    - test_id: INT-002
+      name: System monitor + All modules
+      description: System monitor aggregates from all Sprint 7 modules
+      success_criteria:
+        - resource planner data included
+        - team dynamics data included
+        
+    - test_id: INT-003
+      name: Introspection panel + Strategic memory
+      description: Indicator visualization uses strategic memory data
+      success_criteria:
+        - historical indicators retrieved
+        - correlations calculated
+        
+    - test_id: INT-004
+      name: RL controller + Resource planner
+      description: RL training uses allocated resources
+      success_criteria:
+        - training budget allocated
+        - PPO agents respect limits
+        
+    - test_id: INT-005
+      name: Team dynamics + Voting/Consensus
+      description: Teams participate in voting and consensus
+      success_criteria:
+        - team votes tracked
+        - synergy affects voting weight
+        
+    - test_id: INT-006
+      name: Meta evolution + Resource planner
+      description: Agent evolution considers resource efficiency
+      success_criteria:
+        - efficient agents get more resources
+        - evolution triggered by resource constraints
+        
+    - test_id: INT-007
+      name: Full Sprint 1-7 integration
+      description: All sprints work together end-to-end
+      success_criteria:
+        - data flows through all modules
+        - no integration errors
+        - all 214 tests pass
+
+  performance_targets:
+    resource_planner:
+      allocation_latency: < 10ms
+      reallocation_overhead: < 5ms
+      memory_usage: < 50MB
+      
+    team_dynamics_engine:
+      team_formation_time: < 5ms
+      interaction_tracking_overhead: < 2ms
+      memory_usage: < 30MB
+      
+    introspection_panel:
+      chart_render_time: < 100ms
+      data_refresh_rate: 1 update/sec
+      memory_usage: < 100MB
+      
+    system_monitor:
+      aggregation_time: < 20ms
+      health_check_frequency: 1 check/sec
+      memory_usage: < 50MB
+
+  test_execution:
+    order:
+      - Unit tests (per module)
+      - Integration tests
+      - Performance tests
+      - End-to-end test
+      
+    frequency:
+      - Pre-commit: Unit tests
+      - Pre-merge: All tests
+      - Nightly: Performance tests
+      - Weekly: Full regression
+      
+    success_criteria:
+      - 100% test pass rate
+      - No performance regressions
+      - All modules report healthy
+      - Resource utilization < 90%

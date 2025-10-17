@@ -1,0 +1,274 @@
+ci_pipeline_sprint7:
+  description: CI/CD pipeline för Sprint 7 deployment och validering
+  
+  stages:
+    - stage: 1
+      name: Code Quality
+      description: Linting, formatting, and security checks
+      jobs:
+        - job: lint
+          steps:
+            - checkout_code
+            - install_dependencies
+            - run: flake8 modules/ tests/
+            - run: pylint modules/resource_planner.py modules/team_dynamics_engine.py
+          success_criteria:
+            - no_lint_errors: true
+            - code_style_compliant: true
+            
+        - job: security_scan
+          steps:
+            - checkout_code
+            - run: bandit -r modules/
+            - run: safety check
+          success_criteria:
+            - no_security_vulnerabilities: true
+            - dependencies_safe: true
+    
+    - stage: 2
+      name: Unit Tests
+      description: Test individual Sprint 7 modules
+      jobs:
+        - job: test_resource_planner
+          steps:
+            - checkout_code
+            - install_dependencies
+            - run: pytest tests/test_resource_planner.py -v --cov=modules.resource_planner
+          success_criteria:
+            - all_tests_pass: true
+            - coverage: ">= 80%"
+            
+        - job: test_team_dynamics
+          steps:
+            - checkout_code
+            - install_dependencies
+            - run: pytest tests/test_team_dynamics_engine.py -v --cov=modules.team_dynamics_engine
+          success_criteria:
+            - all_tests_pass: true
+            - coverage: ">= 80%"
+            
+        - job: test_all_modules
+          steps:
+            - checkout_code
+            - install_dependencies
+            - run: pytest tests/ -v --cov=modules/
+          success_criteria:
+            - pass_rate: 100%
+            - total_tests: ">= 214"
+    
+    - stage: 3
+      name: Integration Tests
+      description: Test Sprint 7 module interactions
+      jobs:
+        - job: resource_team_integration
+          steps:
+            - checkout_code
+            - install_dependencies
+            - run: pytest tests/ -v -k "resource or team"
+          success_criteria:
+            - integration_works: true
+            - no_communication_errors: true
+            
+        - job: rl_resource_integration
+          steps:
+            - checkout_code
+            - install_dependencies
+            - run: pytest tests/test_rl_controller.py -v
+          success_criteria:
+            - rl_uses_resources: true
+            - training_budget_respected: true
+            
+        - job: visualization_integration
+          steps:
+            - checkout_code
+            - install_dependencies
+            - run: pytest tests/test_introspection_panel.py -v
+          success_criteria:
+            - dashboard_data_generated: true
+            - charts_render: true
+    
+    - stage: 4
+      name: System Validation
+      description: End-to-end system validation
+      jobs:
+        - job: sprint_1_to_7_flow
+          steps:
+            - checkout_code
+            - install_dependencies
+            - run: python sim_test.py --sprint 7 --iterations 10
+          success_criteria:
+            - flow_completes: true
+            - all_modules_active: true
+            - no_errors: true
+            
+        - job: demo_validation
+          steps:
+            - checkout_code
+            - install_dependencies
+            - run: python demo_sprint4.py
+          success_criteria:
+            - demo_runs: true
+            - metrics_generated: true
+            
+        - job: websocket_test
+          steps:
+            - checkout_code
+            - install_dependencies
+            - run: python websocket_test.py --duration 30
+          success_criteria:
+            - websocket_connects: true
+            - data_flows: true
+            - sprint_7_modules_active: true
+    
+    - stage: 5
+      name: Performance Tests
+      description: Performance benchmarking and optimization
+      jobs:
+        - job: resource_allocation_performance
+          steps:
+            - checkout_code
+            - install_dependencies
+            - run: pytest tests/test_resource_planner.py::test_allocation_performance -v
+          success_criteria:
+            - allocation_latency: "< 10ms"
+            - throughput: "> 1000 req/sec"
+            
+        - job: team_dynamics_performance
+          steps:
+            - checkout_code
+            - install_dependencies
+            - run: pytest tests/test_team_dynamics_engine.py::test_team_performance -v
+          success_criteria:
+            - team_formation_time: "< 5ms"
+            - coordination_overhead: "< 2ms"
+            
+        - job: system_monitor_performance
+          steps:
+            - checkout_code
+            - install_dependencies
+            - run: pytest tests/test_system_monitor.py::test_aggregation_performance -v
+          success_criteria:
+            - aggregation_time: "< 20ms"
+            - memory_usage: "< 50MB"
+    
+    - stage: 6
+      name: Documentation
+      description: Validate documentation and YAML files
+      jobs:
+        - job: yaml_validation
+          steps:
+            - checkout_code
+            - run: yamllint docs/*.yaml
+            - run: python -c "import yaml; yaml.safe_load(open('docs/sprint_7.yaml'))"
+          success_criteria:
+            - yaml_valid: true
+            - no_syntax_errors: true
+            
+        - job: readme_validation
+          steps:
+            - checkout_code
+            - run: markdown-lint README.md
+            - run: check_sprint_status_updated
+          success_criteria:
+            - readme_updated: true
+            - sprint_6_marked_complete: true
+            - sprint_7_marked_ongoing: true
+  
+  triggers:
+    - trigger: push
+      branches: [main, copilot/*]
+      stages: [1, 2, 3, 4]
+      
+    - trigger: pull_request
+      branches: [main]
+      stages: [1, 2, 3, 4, 5, 6]
+      
+    - trigger: schedule
+      cron: "0 2 * * *"  # Daily at 2 AM
+      stages: [1, 2, 3, 4, 5, 6]
+      
+    - trigger: manual
+      stages: [all]
+  
+  notifications:
+    - on: failure
+      channels: [slack, email]
+      message: "Sprint 7 CI pipeline failed at stage {stage}"
+      
+    - on: success
+      channels: [slack]
+      message: "Sprint 7 CI pipeline succeeded - all {total_tests} tests passed"
+      
+    - on: performance_regression
+      channels: [slack, email]
+      message: "Performance regression detected in {module}"
+  
+  artifacts:
+    - name: test_results
+      path: test-results/
+      retention: 30 days
+      
+    - name: coverage_reports
+      path: coverage/
+      retention: 30 days
+      
+    - name: performance_metrics
+      path: performance/
+      retention: 90 days
+      
+    - name: logs
+      path: logs/
+      retention: 7 days
+  
+  deployment:
+    - environment: staging
+      trigger: push to main
+      validation:
+        - all_tests_pass: true
+        - no_regressions: true
+      steps:
+        - deploy_modules
+        - run_smoke_tests
+        - validate_system_health
+        
+    - environment: production
+      trigger: manual approval
+      validation:
+        - staging_validated: true
+        - performance_benchmarks_met: true
+        - documentation_complete: true
+      steps:
+        - backup_current_version
+        - deploy_modules
+        - run_smoke_tests
+        - validate_system_health
+        - monitor_for_24h
+  
+  rollback:
+    conditions:
+      - test_failure_rate: "> 5%"
+      - performance_degradation: "> 20%"
+      - system_health: "< 0.7"
+      - critical_error: true
+    steps:
+      - stop_deployment
+      - restore_previous_version
+      - notify_team
+      - create_incident_report
+  
+  monitoring:
+    metrics:
+      - test_pass_rate
+      - coverage_percentage
+      - performance_benchmarks
+      - resource_utilization
+      - system_health_score
+    dashboards:
+      - ci_pipeline_status
+      - test_trends
+      - performance_trends
+      - module_health
+    alerts:
+      - test_failures: immediate
+      - performance_regression: within_1h
+      - coverage_drop: within_4h

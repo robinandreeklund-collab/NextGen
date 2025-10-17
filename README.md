@@ -14,7 +14,8 @@ Ett självreflekterande, modulärt och RL-drivet handelssystem byggt för transp
 **Sprint 4.3 färdig ✅** – Full adaptiv parameterstyrning i alla moduler
 **Sprint 4.4 färdig ✅** – Meta-belöningsjustering via RewardTunerAgent komplett
 **Sprint 5 färdig ✅** – Simulering och konsensus komplett
-**Sprint 6 pågående 🔄** – Tidsanalys och action chains
+**Sprint 6 färdig ✅** – Tidsanalys och action chains komplett
+**Sprint 7 pågående 🔄** – Indikatorvisualisering och systemöversikt
 
 ### Sprint 4.4: Meta-belöningsjustering via RewardTunerAgent ✅
 
@@ -160,7 +161,138 @@ reward_tuner
 - Introspection_panel visar reward transformation charts
 - Backward compatibility bevarad för existerande tester
 
-### Sprint 6: Tidsanalys och action chains 🔄
+### Sprint 7: Indikatorvisualisering och systemöversikt 🔄
+
+**Mål:** Visa indikatortrender, agentrespons och systemstatus med fokus på indikatorvisualisering, agentutveckling, feedback, resursfördelning och systemöversikt.
+
+**Motivation:**
+För att optimera systemets prestanda och förstå agentbeteenden behövs omfattande visualisering och resurshantering. Sprint 7 introducerar resursallokering mellan moduler och agenter, teamdynamik för koordinerat beslutsfattande, och förbättrad visualisering av indikatorer och systemoversikt. Detta möjliggör effektiv resursanvändning, teambaserad koordinering, och transparent systemhälsa.
+
+**Moduler i fokus:**
+- `resource_planner` - Hanterar resursallokering mellan agenter och moduler (NY)
+- `team_dynamics_engine` - Koordinerar agentteam och samarbete (NY)
+- `indicator_registry` - Utökad med Sprint 7 indikatorer
+- `system_monitor` - Förbättrad systemöversikt
+- `introspection_panel` - Indikatorvisualisering och systemhälsa
+- `meta_agent_evolution_engine` - Resursmedveten evolution
+- `feedback_analyzer` - Indikatoreffektivitet
+- `strategic_memory_engine` - Indikatorhistorik
+- `rl_controller` - Resursallokering för PPO-träning
+
+**Nya indikatorer i Sprint 7:**
+- VIX (Volatility Index) - Marknadsvolatilitet och rädsleindex
+- Earnings Surprise - Överraskning i vinstrappporter
+- Short Interest - Blankning och negativt sentiment
+- Put/Call Ratio - Options-baserad sentimentanalys
+
+**Implementerat:**
+- ✅ ResourcePlanner för resursallokering (compute, memory, training)
+- ✅ Priority-based allocation strategy
+- ✅ Performance-weighted resource distribution
+- ✅ Dynamic reallocation baserat på module performance
+- ✅ Resource efficiency tracking
+- ✅ TeamDynamicsEngine för agentkoordinering
+- ✅ 4 team patterns: aggressive, conservative, balanced, exploration
+- ✅ Team synergy och coordination scoring
+- ✅ Agent interaction tracking
+- ✅ Team performance evaluation
+- ✅ Resource boost för team (1.0x - 1.3x)
+- ✅ Integration med resource_planner
+- ✅ Dashboard data för visualisering
+- ✅ 29 tester för Sprint 7 moduler (alla passerar)
+
+**Testresultat:**
+- ✅ ResourcePlanner allokerar resurser baserat på prioritet
+- ✅ Default allocations: strategy_agent 25%, risk_agent 20% compute
+- ✅ Performance metrics tracked per module
+- ✅ Resource reallocation från låg till hög prioritet
+- ✅ Efficiency score calculation fungerar
+- ✅ TeamDynamicsEngine formar team med patterns
+- ✅ Synergy score beräknas från agent-par
+- ✅ Coordination score baserat på interactions
+- ✅ Team performance tracked över tid
+- ✅ Resource boost applied baserat på pattern
+- ✅ 29/29 Sprint 7 tester passerar
+- ✅ 214/214 totala tester passerar (100% pass rate)
+
+**Benefits:**
+- Effektiv resursanvändning baserat på module performance
+- Teambaserat beslutsfattande med synergy optimization
+- Transparent resursallokering och teamdynamik
+- Dynamisk anpassning till systembelastning
+- Förbättrad koordinering mellan agenter
+- Resource-aware agent evolution
+- Visualisering av systemhälsa och resursanvändning
+
+**Resource Allocation Flow:**
+```
+modules
+      │ resource_request (module_id, type, amount, priority)
+      ▼
+resource_planner
+      │ • Calculate allocation score (priority + efficiency + performance)
+      │ • Allocate from pool (compute/memory/training)
+      │ • Track usage and efficiency
+      │ • Dynamic reallocation if needed
+      ▼ resource_allocation
+modules
+      │ Use allocated resources
+      │ Report performance_metric
+      ▼
+resource_planner
+      │ • Update efficiency scores
+      │ • Optimize future allocations
+```
+
+**Team Dynamics Flow:**
+```
+form_team (pattern: aggressive/conservative/balanced/exploration)
+      ▼
+team_dynamics_engine
+      │ • Create team with members
+      │ • Apply resource_boost (1.0x - 1.3x)
+      │ • Track interactions
+      │ • Calculate synergy_score
+      │ • Calculate coordination_score
+      ▼ team_formed
+resource_planner + vote_engine
+      │ • Teams get priority resources
+      │ • Teams vote coordinately
+      ▼ team_metrics
+system_monitor
+      │ • Track team performance
+      │ • Identify high performers
+```
+
+**Resource Allocation Strategies:**
+1. **Priority-based**: Critical > High > Medium > Low
+2. **Demand-based**: Allocate baserat på predicted demand
+3. **Performance-weighted**: Högre resurser till högpresterande moduler
+4. **Team-coordinated**: Teams fördelar resurser internt
+
+**Team Patterns:**
+- **Aggressive Trading**: strategy_agent + execution_agent (1.3x boost, high risk)
+- **Conservative Trading**: risk_agent + decision_agent (1.0x boost, low risk)
+- **Balanced Trading**: strategy + risk + decision (1.1x boost, medium risk)
+- **Exploration Phase**: strategy + meta_parameter (0.9x boost, learning focus)
+
+**Metrics Tracked:**
+- Resource utilization per module (compute, memory, training)
+- Efficiency score (performance / resources_consumed)
+- Allocation history och reallocation events
+- Team synergy score och coordination score
+- Agent interactions och communication flows
+- System health score och module status
+
+**Integration med existerande system:**
+- ResourcePlanner allocates training_budget till rl_controller
+- TeamDynamicsEngine koordinerar med vote_engine för team voting
+- Meta_agent_evolution_engine considers resource efficiency
+- System_monitor aggregerar resource och team metrics
+- Introspection_panel visualiserar resource allocation och team dynamics
+- Strategic_memory loggar resource allocations och team decisions
+
+### Sprint 6: Tidsanalys och action chains ✅
 
 **Mål:** Synkronisera beslut över tid och skapa återanvändbara flöden.
 
@@ -1047,6 +1179,8 @@ Systemet består av fristående moduler som kommunicerar via en central `message
 | `decision_simulator.py`   | Testar alternativa beslut i sandbox                                   |
 | `timespan_tracker.py`     | Synkroniserar beslut över tid och spårar timeline events              |
 | `action_chain_engine.py`  | Definierar återanvändbara beslutskedjor och templates                 |
+| `resource_planner.py`     | Hanterar resursallokering mellan agenter och moduler (Sprint 7)       |
+| `team_dynamics_engine.py` | Koordinerar agentteam och samarbete (Sprint 7)                        |
 | `introspection_panel.py`  | Visualiserar modulstatus och RL-performance                           |
 | `system_monitor.py`       | Visar systemöversikt, modulhälsa och systemstatus                     |
 
@@ -1077,8 +1211,8 @@ Projektet är uppdelat i 7 sprintar. Se `sprint_plan.yaml` för detaljer.
 | 3      | Feedbackloopar och introspektion     | ✅ Färdig|
 | 4      | Strategiskt minne och agentutveckling| ✅ Färdig|
 | 5      | Simulering och konsensus             | ✅ Färdig|
-| 6      | Tidsanalys och action chains         | 🔄 Pågående|
-| 7      | Indikatorvisualisering och översikt  | ⏳ Planerad|
+| 6      | Tidsanalys och action chains         | ✅ Färdig|
+| 7      | Indikatorvisualisering och översikt  | 🔄 Pågående|
 
 Se `README_sprints.md` för detaljerad beskrivning av varje sprint.
 
