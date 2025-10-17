@@ -228,6 +228,23 @@ class AnalyzerDebugDashboard:
                         dcc.Graph(id='parameter-evolution-graph'),
                         html.H2("🤖 Agent Performance", style={'color': '#34495e'}),
                         dcc.Graph(id='agent-performance-graph'),
+                        
+                        # Sprint 8: DQN, GAN, GNN Metrics
+                        html.Hr(style={'margin': '30px 0', 'border': '2px solid #3498db'}),
+                        html.H2("🆕 Sprint 8 - Advanced RL & Temporal Intelligence", 
+                               style={'color': '#3498db', 'textAlign': 'center'}),
+                        
+                        html.H3("🎯 DQN Controller Metrics", style={'color': '#34495e'}),
+                        dcc.Graph(id='dqn-metrics-graph'),
+                        dcc.Graph(id='dqn-training-graph'),
+                        
+                        html.H3("🧬 GAN Evolution Engine Metrics", style={'color': '#34495e'}),
+                        dcc.Graph(id='gan-metrics-graph'),
+                        dcc.Graph(id='gan-training-graph'),
+                        
+                        html.H3("📊 GNN Timespan Analyzer Metrics", style={'color': '#34495e'}),
+                        dcc.Graph(id='gnn-metrics-graph'),
+                        dcc.Graph(id='gnn-patterns-graph'),
                     ])
                 ]),
                 
@@ -323,7 +340,14 @@ class AnalyzerDebugDashboard:
              Output('timeline-graph', 'figure'),
              Output('portfolio-value-graph', 'figure'),
              Output('positions-graph', 'figure'),
-             Output('portfolio-details', 'children')],
+             Output('portfolio-details', 'children'),
+             # Sprint 8 graphs
+             Output('dqn-metrics-graph', 'figure'),
+             Output('dqn-training-graph', 'figure'),
+             Output('gan-metrics-graph', 'figure'),
+             Output('gan-training-graph', 'figure'),
+             Output('gnn-metrics-graph', 'figure'),
+             Output('gnn-patterns-graph', 'figure')],
             [Input('interval-component', 'n_intervals')]
         )
         def update_all_graphs(n):
@@ -344,7 +368,14 @@ class AnalyzerDebugDashboard:
                 self.create_timeline_graph(),
                 self.create_portfolio_value_graph(),
                 self.create_positions_graph(),
-                self.create_portfolio_details()
+                self.create_portfolio_details(),
+                # Sprint 8 graphs
+                self.create_dqn_metrics_graph(),
+                self.create_dqn_training_graph(),
+                self.create_gan_metrics_graph(),
+                self.create_gan_training_graph(),
+                self.create_gnn_metrics_graph(),
+                self.create_gnn_patterns_graph()
             )
     
     def start_simulation(self) -> None:
@@ -914,6 +945,232 @@ class AnalyzerDebugDashboard:
         ])
         
         return details
+    
+    # Sprint 8: DQN, GAN, GNN Graph Creation Methods
+    
+    def create_dqn_metrics_graph(self):
+        """Create DQN controller metrics graph showing epsilon, buffer, and training progress."""
+        dqn_metrics = self.dqn_controller.get_metrics()
+        
+        fig = go.Figure()
+        
+        # Add epsilon decay trace
+        fig.add_trace(go.Indicator(
+            mode="gauge+number+delta",
+            value=dqn_metrics['epsilon'],
+            title={'text': f"Epsilon (Exploration)<br><sub>Training Steps: {dqn_metrics['training_steps']}</sub>"},
+            delta={'reference': 1.0, 'decreasing': {'color': "green"}},
+            gauge={
+                'axis': {'range': [None, 1.0]},
+                'bar': {'color': "#3498db"},
+                'steps': [
+                    {'range': [0, 0.1], 'color': "#e74c3c"},
+                    {'range': [0.1, 0.5], 'color': "#f39c12"},
+                    {'range': [0.5, 1.0], 'color': "#2ecc71"}
+                ],
+                'threshold': {
+                    'line': {'color': "red", 'width': 4},
+                    'thickness': 0.75,
+                    'value': dqn_metrics.get('epsilon_min', 0.01)
+                }
+            },
+            domain={'x': [0, 0.45], 'y': [0, 1]}
+        ))
+        
+        # Add buffer usage gauge
+        buffer_pct = (dqn_metrics['buffer_size'] / self.dqn_controller.replay_buffer.buffer.maxlen) * 100
+        fig.add_trace(go.Indicator(
+            mode="gauge+number",
+            value=buffer_pct,
+            title={'text': f"Replay Buffer<br><sub>{dqn_metrics['buffer_size']}/{self.dqn_controller.replay_buffer.buffer.maxlen}</sub>"},
+            gauge={
+                'axis': {'range': [None, 100]},
+                'bar': {'color': "#9b59b6"},
+                'steps': [
+                    {'range': [0, 50], 'color': "#ecf0f1"},
+                    {'range': [50, 80], 'color': "#bdc3c7"},
+                    {'range': [80, 100], 'color': "#95a5a6"}
+                ]
+            },
+            domain={'x': [0.55, 1], 'y': [0, 1]}
+        ))
+        
+        fig.update_layout(
+            title="DQN Controller - Core Metrics",
+            height=300,
+            showlegend=False
+        )
+        
+        return fig
+    
+    def create_dqn_training_graph(self):
+        """Create DQN training progress graph showing loss and Q-values over time."""
+        dqn_metrics = self.dqn_controller.get_metrics()
+        
+        fig = go.Figure()
+        
+        # Training loss over time (if we have history)
+        if hasattr(self.dqn_controller, 'losses') and self.dqn_controller.losses:
+            loss_history = self.dqn_controller.losses[-50:]  # Last 50 training steps
+            fig.add_trace(go.Scatter(
+                y=loss_history,
+                mode='lines+markers',
+                name='Training Loss',
+                line=dict(color='#e74c3c', width=2),
+                marker=dict(size=4)
+            ))
+        else:
+            # Show current average loss
+            fig.add_trace(go.Scatter(
+                x=[0, 1],
+                y=[dqn_metrics['avg_loss'], dqn_metrics['avg_loss']],
+                mode='lines',
+                name='Avg Loss',
+                line=dict(color='#e74c3c', width=3, dash='dash')
+            ))
+        
+        fig.update_layout(
+            title=f"DQN Training Loss (Avg: {dqn_metrics['avg_loss']:.4f})",
+            xaxis_title="Training Step",
+            yaxis_title="Loss",
+            height=350,
+            hovermode='x unified'
+        )
+        
+        return fig
+    
+    def create_gan_metrics_graph(self):
+        """Create GAN evolution engine metrics showing generator/discriminator performance."""
+        gan_metrics = self.gan_evolution.get_metrics()
+        
+        fig = go.Figure()
+        
+        # Generator and Discriminator losses
+        fig.add_trace(go.Bar(
+            name='Generator Loss',
+            x=['Generator'],
+            y=[gan_metrics['g_loss']],
+            marker_color='#3498db',
+            text=[f"{gan_metrics['g_loss']:.4f}"],
+            textposition='auto'
+        ))
+        
+        fig.add_trace(go.Bar(
+            name='Discriminator Loss',
+            x=['Discriminator'],
+            y=[gan_metrics['d_loss']],
+            marker_color='#e74c3c',
+            text=[f"{gan_metrics['d_loss']:.4f}"],
+            textposition='auto'
+        ))
+        
+        fig.update_layout(
+            title="GAN Evolution Engine - Adversarial Loss",
+            yaxis_title="Loss",
+            height=300,
+            showlegend=True
+        )
+        
+        return fig
+    
+    def create_gan_training_graph(self):
+        """Create GAN candidate generation and acceptance metrics."""
+        gan_metrics = self.gan_evolution.get_metrics()
+        
+        fig = go.Figure()
+        
+        # Acceptance rate gauge
+        fig.add_trace(go.Indicator(
+            mode="gauge+number+delta",
+            value=gan_metrics['acceptance_rate'] * 100,
+            title={'text': f"Candidate Acceptance Rate<br><sub>{gan_metrics['candidates_accepted']}/{gan_metrics['candidates_generated']} accepted</sub>"},
+            delta={'reference': 70, 'suffix': '%'},
+            gauge={
+                'axis': {'range': [0, 100]},
+                'bar': {'color': "#27ae60"},
+                'steps': [
+                    {'range': [0, 50], 'color': "#e74c3c"},
+                    {'range': [50, 70], 'color': "#f39c12"},
+                    {'range': [70, 100], 'color': "#2ecc71"}
+                ],
+                'threshold': {
+                    'line': {'color': "blue", 'width': 4},
+                    'thickness': 0.75,
+                    'value': 60
+                }
+            }
+        ))
+        
+        fig.update_layout(
+            title="GAN Candidate Generation Performance",
+            height=350
+        )
+        
+        return fig
+    
+    def create_gnn_metrics_graph(self):
+        """Create GNN timespan analyzer metrics showing graph size and history."""
+        gnn_metrics = self.gnn_analyzer.get_metrics()
+        
+        fig = go.Figure()
+        
+        # History sizes as grouped bar chart
+        categories = ['Decisions', 'Indicators', 'Outcomes']
+        values = [
+            gnn_metrics['decision_history_size'],
+            gnn_metrics['indicator_history_size'],
+            gnn_metrics['outcome_history_size']
+        ]
+        
+        fig.add_trace(go.Bar(
+            x=categories,
+            y=values,
+            marker_color=['#3498db', '#f39c12', '#27ae60'],
+            text=values,
+            textposition='auto'
+        ))
+        
+        fig.update_layout(
+            title=f"GNN Timespan Analyzer - Data History (Window: {gnn_metrics['temporal_window']})",
+            yaxis_title="History Size",
+            height=300
+        )
+        
+        return fig
+    
+    def create_gnn_patterns_graph(self):
+        """Create GNN pattern detection visualization."""
+        gnn_metrics = self.gnn_analyzer.get_metrics()
+        
+        fig = go.Figure()
+        
+        # Pattern detection count
+        fig.add_trace(go.Indicator(
+            mode="number+delta",
+            value=gnn_metrics['patterns_detected'],
+            title={'text': "Patterns Detected"},
+            delta={'reference': 0, 'increasing': {'color': "green"}},
+            domain={'x': [0, 0.5], 'y': [0, 1]}
+        ))
+        
+        # Temporal window gauge
+        fig.add_trace(go.Indicator(
+            mode="gauge+number",
+            value=gnn_metrics['decision_history_size'],
+            title={'text': f"Temporal Window Usage<br><sub>Max: {gnn_metrics['temporal_window']}</sub>"},
+            gauge={
+                'axis': {'range': [0, gnn_metrics['temporal_window']]},
+                'bar': {'color': "#9b59b6"}
+            },
+            domain={'x': [0.5, 1], 'y': [0, 1]}
+        ))
+        
+        fig.update_layout(
+            title="GNN Pattern Detection Status",
+            height=350
+        )
+        
+        return fig
     
     # WebSocket methods for live data
     def start_live_data(self):
