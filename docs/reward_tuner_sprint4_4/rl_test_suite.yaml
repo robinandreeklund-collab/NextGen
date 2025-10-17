@@ -14,7 +14,7 @@ rl_test_suite:
       voting/consensus integration.
     
     total_test_suites: 6
-    total_test_cases: 45
+    total_test_cases: 44
     estimated_runtime: 5-10 minuter
     
     test_categories:
