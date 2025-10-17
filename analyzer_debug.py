@@ -882,7 +882,7 @@ class AnalyzerDebugDashboard:
         print("🌐 Open browser at: http://localhost:8050")
         print("⏹️  Press Ctrl+C to stop\n")
         
-        self.app.run_server(debug=debug, host='0.0.0.0', port=8050)
+        self.app.run(debug=debug, host='0.0.0.0', port=8050)
 
 
 def main():
