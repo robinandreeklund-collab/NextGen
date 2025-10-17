@@ -80,7 +80,7 @@ Dashboard inkluderar inbyggd simulering baserad på `sim_test.py`:
 4. Beslut fattas var 10:e trade, indikatorer uppdateras var 5:e trade
 5. Klicka "Stop Simulation" för att stoppa
 
-**Obs:** Live data kräver giltig Finnhub API-nyckel (inkluderad i koden).
+**Obs:** Live data kräver giltig Finnhub API-nyckel. Ange API-nyckeln via en miljövariabel (`FINNHUB_API_KEY`) eller en säker konfigurationsfil – inkludera aldrig nyckeln direkt i koden.
 
 ### Datakällor
 - **Message Bus** - Central pub/sub för all modulkommunikation
