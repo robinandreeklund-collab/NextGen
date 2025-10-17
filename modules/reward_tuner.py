@@ -101,11 +101,14 @@ class RewardTunerAgent:
         
         Args:
             reward_data: Dict with base_reward and context, expected keys:
-                - 'reward': float - The base reward value
-                - 'source': str - Source of the reward (e.g., 'portfolio_manager')
-                - 'portfolio_value': float - Current portfolio value
-                - 'num_trades': int - Number of trades executed
-                - 'timestamp': float - Unix timestamp (optional)
+                - 'reward': float - The base reward value (required)
+                - 'source': str - Source of the reward (optional, for logging)
+                - 'portfolio_value': float - Current portfolio value (optional, for context)
+                - 'num_trades': int - Number of trades executed (optional, for context)
+                - 'timestamp': float - Unix timestamp (optional, auto-generated if not provided)
+                
+            Note: Only 'reward' is required. All other fields are optional and used for 
+            context/logging purposes. Missing fields are handled gracefully with defaults.
         """
         self._on_base_reward(reward_data)
     
