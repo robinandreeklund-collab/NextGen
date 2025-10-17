@@ -82,7 +82,6 @@ class PortfolioManager:
         self.positions: Dict[str, Dict[str, Any]] = {}  # symbol -> {quantity, avg_price}
         self.trade_history: List[Dict[str, Any]] = []
         self.previous_portfolio_value = start_capital
-        self.reward_tuner_callback = None  # Sprint 4.4: Direct callback to RewardTunerAgent
         
         # Prenumerera på execution_result
         self.message_bus.subscribe('execution_result', self._on_execution_result)
