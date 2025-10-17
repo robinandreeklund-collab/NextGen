@@ -94,6 +94,24 @@ class RewardTunerAgent:
         self.current_portfolio_status: Dict[str, Any] = {}
         self.current_agent_status: Dict[str, Any] = {}
     
+    def on_base_reward(self, reward_data: Dict[str, Any]) -> None:
+        """
+        Public method for callback registration from portfolio_manager.
+        Delegates to the private _on_base_reward method.
+        
+        Args:
+            reward_data: Dict with base_reward and context, expected keys:
+                - 'reward': float - The base reward value (required)
+                - 'source': str - Source of the reward (optional, for logging)
+                - 'portfolio_value': float - Current portfolio value (optional, for context)
+                - 'num_trades': int - Number of trades executed (optional, for context)
+                - 'timestamp': float - Unix timestamp (optional, auto-generated if not provided)
+                
+            Note: Only 'reward' is required. All other fields are optional and used for 
+            context/logging purposes. Missing fields are handled gracefully with defaults.
+        """
+        self._on_base_reward(reward_data)
+    
     def _on_base_reward(self, reward_data: Dict[str, Any]) -> None:
         """
         Callback när base_reward publiceras från portfolio_manager.
