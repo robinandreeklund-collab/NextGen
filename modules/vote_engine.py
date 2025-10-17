@@ -61,6 +61,10 @@ class VoteEngine:
         # Sprint 4.3: Adaptiv parameter
         self.agent_vote_weight = 1.0  # Default från adaptive_parameters.yaml
         
+        # Sprint 5: Spåra voting history
+        self.total_votes_received = 0
+        self.vote_matrices_published = 0
+        
         # Prenumerera på decision_vote och parameter_adjustment
         self.message_bus.subscribe('decision_vote', self._on_decision_vote)
         self.message_bus.subscribe('parameter_adjustment', self._on_parameter_adjustment)
@@ -68,13 +72,23 @@ class VoteEngine:
     def _on_decision_vote(self, vote: Dict[str, Any]) -> None:
         """
         Callback för besluts-röster från agenter.
+        Sprint 5: Automatiskt skapar och publicerar vote_matrix efter röstning.
         
         Args:
             vote: Röst från en agent
         """
         self.votes.append(vote)
+        self.total_votes_received += 1
         
-        # I Sprint 5 kommer logik för när alla röster samlats
+        # Sprint 5: Skapa och publicera vote_matrix automatiskt
+        # I nuvarande implementation (en decision_engine), publicera direkt
+        # I framtiden kan detta vänta på flera agenter eller tidsgräns
+        matrix = self.create_vote_matrix()
+        self.publish_vote_matrix(matrix)
+        self.vote_matrices_published += 1
+        
+        # INTE rensa röster automatiskt - låt användaren göra det explicit
+        # Detta möjliggör inspektion och statistik över aktiva röster
     
     def _on_parameter_adjustment(self, adjustment: Dict[str, Any]) -> None:
         """
@@ -191,7 +205,8 @@ class VoteEngine:
                 'total_votes': 0,
                 'unique_voters': 0,
                 'average_confidence': 0.0,
-                'action_distribution': {}
+                'action_distribution': {},
+                'vote_matrices_published': self.vote_matrices_published
             }
         
         unique_voters = len(set(v.get('agent_id', 'unknown') for v in self.votes))
@@ -207,6 +222,7 @@ class VoteEngine:
             'unique_voters': unique_voters,
             'average_confidence': avg_confidence,
             'action_distribution': action_dist,
-            'current_agent_vote_weight': self.agent_vote_weight
+            'current_agent_vote_weight': self.agent_vote_weight,
+            'vote_matrices_published': self.vote_matrices_published
         }
 

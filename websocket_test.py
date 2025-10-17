@@ -342,6 +342,9 @@ class WebSocketTester:
         # Nu har den både proposal och risk_profile via message_bus
         decision = self.decision_engine.make_decision(symbol, current_price=price)
         
+        # Sprint 5: Publicera beslut för vote_engine och consensus_engine
+        self.decision_engine.publish_decision(decision)
+        
         if self.debug_mode and self.stats['decisions_made'] < 5:
             print(f"   ⚖️  Final decision: {decision.get('action')} "
                   f"(confidence: {decision.get('confidence', 0):.2f})")

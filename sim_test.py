@@ -312,6 +312,9 @@ class SimulatedTester:
         # Decision engine fattar beslut
         decision = self.decision_engine.make_decision(symbol, current_price=price)
         
+        # Sprint 5: Publicera beslut för vote_engine och consensus_engine
+        self.decision_engine.publish_decision(decision)
+        
         # Räkna alla beslut
         self.stats['decisions_made'] += 1
         
