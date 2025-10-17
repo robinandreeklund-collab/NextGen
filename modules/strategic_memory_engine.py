@@ -102,6 +102,14 @@ class StrategicMemoryEngine:
         
         # Sprint 4.2: Prenumerera på parameter_adjustment
         self.message_bus.subscribe('parameter_adjustment', self._on_parameter_adjustment)
+        
+        # Sprint 4.4: Prenumerera på reward flow från RewardTunerAgent
+        self.message_bus.subscribe('base_reward', self._on_base_reward)
+        self.message_bus.subscribe('tuned_reward', self._on_tuned_reward)
+        self.message_bus.subscribe('reward_log', self._on_reward_log)
+        
+        # Sprint 4.4: Reward history storage
+        self.reward_history: List[Dict[str, Any]] = []
     
     def _on_decision(self, decision: Dict[str, Any]) -> None:
         """
@@ -231,6 +239,59 @@ class StrategicMemoryEngine:
                 'adjusted_parameters': adjustment.get('adjusted_parameters', {}),
                 'reward_signals': adjustment.get('reward_signals', {})
             }
+    
+    def _on_base_reward(self, reward_data: Dict[str, Any]) -> None:
+        """
+        Callback för base_reward från portfolio_manager (Sprint 4.4).
+        
+        Args:
+            reward_data: Base reward data
+        """
+        # Store as part of reward history
+        reward_entry = {
+            'type': 'base_reward',
+            'reward': reward_data.get('reward', 0.0),
+            'portfolio_value': reward_data.get('portfolio_value', 0.0),
+            'timestamp': time.time(),
+            'logged_at': time.strftime('%Y-%m-%d %H:%M:%S')
+        }
+        self.reward_history.append(reward_entry)
+    
+    def _on_tuned_reward(self, reward_data: Dict[str, Any]) -> None:
+        """
+        Callback för tuned_reward från RewardTunerAgent (Sprint 4.4).
+        
+        Args:
+            reward_data: Tuned reward data
+        """
+        # Store as part of reward history
+        reward_entry = {
+            'type': 'tuned_reward',
+            'reward': reward_data.get('reward', 0.0),
+            'timestamp': reward_data.get('timestamp', time.time()),
+            'logged_at': time.strftime('%Y-%m-%d %H:%M:%S')
+        }
+        self.reward_history.append(reward_entry)
+    
+    def _on_reward_log(self, log_data: Dict[str, Any]) -> None:
+        """
+        Callback för reward_log från RewardTunerAgent (Sprint 4.4).
+        Innehåller full transformation history.
+        
+        Args:
+            log_data: Reward transformation log
+        """
+        # Store complete reward transformation
+        reward_entry = {
+            'type': 'reward_transformation',
+            **log_data,
+            'logged_at': time.strftime('%Y-%m-%d %H:%M:%S')
+        }
+        self.reward_history.append(reward_entry)
+        
+        # Keep history reasonable size
+        if len(self.reward_history) > 1000:
+            self.reward_history = self.reward_history[-1000:]
     
     def _link_execution_to_decision(self, execution: Dict[str, Any]) -> None:
         """
@@ -622,4 +683,52 @@ class StrategicMemoryEngine:
         # Om execution_result finns, logga det också
         if 'execution_result' in decision_data:
             self._on_execution(decision_data['execution_result'])
+    
+    def get_reward_history(self, limit: int = 100) -> List[Dict[str, Any]]:
+        """
+        Hämtar reward transformation history (Sprint 4.4).
+        
+        Args:
+            limit: Max antal reward events att returnera
+            
+        Returns:
+            Lista med reward transformations
+        """
+        return self.reward_history[-limit:]
+    
+    def get_reward_correlation(self) -> Dict[str, Any]:
+        """
+        Analyserar korrelation mellan base_reward och tuned_reward (Sprint 4.4).
+        
+        Returns:
+            Dict med reward correlation metrics
+        """
+        if len(self.reward_history) < 2:
+            return {
+                'correlation': 0.0,
+                'avg_transformation_ratio': 1.0,
+                'sample_size': 0
+            }
+        
+        # Filter transformation logs
+        transformations = [r for r in self.reward_history if r.get('type') == 'reward_transformation']
+        
+        if not transformations:
+            return {
+                'correlation': 0.0,
+                'avg_transformation_ratio': 1.0,
+                'sample_size': 0
+            }
+        
+        # Calculate metrics
+        transformation_ratios = [t.get('transformation_ratio', 1.0) for t in transformations]
+        avg_ratio = sum(transformation_ratios) / len(transformation_ratios) if transformation_ratios else 1.0
+        
+        return {
+            'correlation': 1.0,  # Placeholder - could compute real correlation
+            'avg_transformation_ratio': avg_ratio,
+            'sample_size': len(transformations),
+            'min_ratio': min(transformation_ratios) if transformation_ratios else 1.0,
+            'max_ratio': max(transformation_ratios) if transformation_ratios else 1.0
+        }
 

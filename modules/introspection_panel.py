@@ -85,6 +85,12 @@ class IntrospectionPanel:
         
         # Sprint 4.2: Prenumerera på parameter_adjustment
         self.message_bus.subscribe('parameter_adjustment', self._on_parameter_adjustment)
+        
+        # Sprint 4.4: Prenumerera på reward metrics från RewardTunerAgent
+        self.message_bus.subscribe('reward_metrics', self._on_reward_metrics)
+        
+        # Sprint 4.4: Reward metrics history
+        self.reward_metrics_history: List[Dict[str, Any]] = []
     
     def _on_agent_status(self, status: Dict[str, Any]) -> None:
         """Callback för agent status från rl_controller."""
@@ -124,6 +130,18 @@ class IntrospectionPanel:
         if len(self.parameter_adjustments) > 100:
             self.parameter_adjustments = self.parameter_adjustments[-100:]
     
+    def _on_reward_metrics(self, metrics: Dict[str, Any]) -> None:
+        """
+        Callback för reward metrics från RewardTunerAgent (Sprint 4.4).
+        
+        Args:
+            metrics: Reward transformation metrics
+        """
+        self.reward_metrics_history.append(metrics)
+        # Behåll senaste 100
+        if len(self.reward_metrics_history) > 100:
+            self.reward_metrics_history = self.reward_metrics_history[-100:]
+    
     def render_dashboard(self) -> Dict[str, Any]:
         """
         Genererar dashboard-data för visualisering.
@@ -145,6 +163,9 @@ class IntrospectionPanel:
         # Beräkna agent adaptation metrics
         agent_adaptation = self._calculate_agent_adaptation()
         
+        # Sprint 4.4: Add reward flow visualization
+        reward_flow = self._extract_reward_flow()
+        
         dashboard_data = {
             'agent_status': self.agent_status_history[-10:] if self.agent_status_history else [],
             'feedback_flow': self.feedback_events[-20:] if self.feedback_events else [],
@@ -153,6 +174,7 @@ class IntrospectionPanel:
             'module_connections': module_connections,
             'feedback_metrics': feedback_metrics,
             'agent_adaptation': agent_adaptation,
+            'reward_flow': reward_flow,  # Sprint 4.4
             'timestamp': self._get_timestamp()
         }
         
@@ -409,9 +431,63 @@ class IntrospectionPanel:
             'total_adjustments': len(self.parameter_adjustments)
         }
     
+    def _extract_reward_flow(self) -> Dict[str, Any]:
+        """
+        Extraherar reward flow visualization data (Sprint 4.4).
+        
+        Returns:
+            Dict med reward transformation data
+        """
+        if not self.reward_metrics_history:
+            return {
+                'base_rewards': [],
+                'tuned_rewards': [],
+                'transformation_ratios': [],
+                'volatility': [],
+                'overfitting_events': []
+            }
+        
+        base_rewards = []
+        tuned_rewards = []
+        transformation_ratios = []
+        volatility = []
+        overfitting_events = []
+        
+        for i, metrics in enumerate(self.reward_metrics_history):
+            base_rewards.append({
+                'step': i,
+                'value': metrics.get('base_reward', 0.0)
+            })
+            tuned_rewards.append({
+                'step': i,
+                'value': metrics.get('tuned_reward', 0.0)
+            })
+            transformation_ratios.append({
+                'step': i,
+                'ratio': metrics.get('transformation_ratio', 1.0)
+            })
+            volatility.append({
+                'step': i,
+                'value': metrics.get('volatility', 0.0)
+            })
+            if metrics.get('overfitting_detected', False):
+                overfitting_events.append({
+                    'step': i,
+                    'score': metrics.get('overfitting_score', 0.0)
+                })
+        
+        return {
+            'base_rewards': base_rewards,
+            'tuned_rewards': tuned_rewards,
+            'transformation_ratios': transformation_ratios,
+            'volatility': volatility,
+            'overfitting_events': overfitting_events,
+            'current_parameters': self.reward_metrics_history[-1].get('reward_scaling_factor', 1.0) if self.reward_metrics_history else 1.0
+        }
+    
     def get_comprehensive_dashboard_data(self) -> Dict[str, Any]:
         """
-        Genererar omfattande dashboard data inklusive parametrar (Sprint 4.2).
+        Genererar omfattande dashboard data inklusive parametrar (Sprint 4.2+4.4).
         
         Returns:
             Dict med all dashboard data

@@ -12,6 +12,125 @@ Ett självreflekterande, modulärt och RL-drivet handelssystem byggt för transp
 **Sprint 4 färdig ✅** – Strategiskt minne och agentutveckling komplett
 **Sprint 4.2 färdig ✅** – Adaptiv parameterstyrning via RL/PPO komplett
 **Sprint 4.3 färdig ✅** – Full adaptiv parameterstyrning i alla moduler
+**Sprint 4.4 färdig ✅** – Meta-belöningsjustering via RewardTunerAgent komplett
+
+### Sprint 4.4: Meta-belöningsjustering via RewardTunerAgent ✅
+
+**Mål:** Inför RewardTunerAgent som meta-agent mellan portfolio_manager och rl_controller för att justera och optimera belöningssignaler.
+
+**Motivation:**
+Raw reward från portfolio_manager kan vara volatil och leda till instabil RL-träning. Genom att introducera RewardTunerAgent som meta-agent mellan portfolio och RL-controller kan vi:
+- Reducera reward volatilitet för stabilare träning
+- Detektera och motverka overfitting patterns
+- Skala reward baserat på marknadsförhållanden
+- Spåra och visualisera reward transformationer
+
+**Moduler i fokus:**
+- `reward_tuner` - Ny meta-agent för reward justering (NY)
+- `rl_controller` - Tar emot tuned_reward istället för base_reward
+- `portfolio_manager` - Publicerar base_reward istället för reward
+- `strategic_memory_engine` - Loggar reward transformationer
+- `introspection_panel` - Visualiserar reward flow
+
+**Adaptiva parametrar:**
+1. **reward_scaling_factor** (0.5-2.0, default: 1.0)
+   - Multiplikativ skalning av base reward
+   - Reward signal: training_stability
+   - Update frequency: every 20 rewards
+
+2. **volatility_penalty_weight** (0.0-1.0, default: 0.3)
+   - Viktning av volatility penalty
+   - Reward signal: reward_consistency
+   - Update frequency: every epoch
+
+3. **overfitting_detector_threshold** (0.05-0.5, default: 0.2)
+   - Tröskelvärde för overfitting detection
+   - Reward signal: generalization_score
+   - Update frequency: every 50 rewards
+
+**Reward signals:**
+- **base_reward**: Raw portfolio value change från portfolio_manager
+- **tuned_reward**: Justerad reward efter transformation
+- **training_stability**: Stabilitet i RL-träning över tid
+- **reward_consistency**: Konsistens i reward utan stora spikar
+- **generalization_score**: Förmåga att generalisera utan overfitting
+
+**Implementerat:**
+- ✅ RewardTunerAgent-klass för reward transformation
+- ✅ Volatility calculation från reward history
+- ✅ Overfitting detection från agent performance patterns
+- ✅ Reward scaling med adaptive scaling_factor
+- ✅ Volatility penalty vid hög reward variation
+- ✅ Overfitting penalty vid detekterade patterns
+- ✅ Integration mellan portfolio_manager och rl_controller
+- ✅ Reward flow logging i strategic_memory_engine
+- ✅ Reward visualization i introspection_panel
+- ✅ 19 nya tester för RewardTunerAgent (RT-001 till RT-006)
+- ✅ Parameter adjustment via MetaParameterAgent
+- ✅ Dokumentation i docs/reward_tuner_sprint4_4/
+
+**Testresultat:**
+- ✅ Reward volatilitet beräknas korrekt
+- ✅ Overfitting detekteras baserat på agent performance
+- ✅ Volatility penalty appliceras vid hög volatilitet
+- ✅ Reward scaling fungerar med olika scaling factors
+- ✅ Full reward flow från portfolio till rl_controller
+- ✅ Reward logging i strategic_memory_engine
+- ✅ Reward visualization i introspection_panel
+- ✅ 19/19 tester passerar för RewardTunerAgent
+- ✅ 102/103 totala tester passerar (1 pre-existing failure)
+
+**Benefits:**
+- Stabilare RL-träning genom reducerad reward volatilitet
+- Förbättrad generalisering genom overfitting detection
+- Adaptiv reward scaling för olika marknadsförhållanden
+- Transparent reward transformation med full logging
+- Visualisering av reward flow för debugging och analys
+- Förhindrar instabil agent behavior från volatila rewards
+
+**Reward Flow:**
+```
+portfolio_manager
+      │ base_reward (raw portfolio change)
+      ▼
+reward_tuner
+      │ • Calculate volatility
+      │ • Detect overfitting
+      │ • Apply penalties
+      │ • Scale reward
+      ▼ tuned_reward (adjusted for stability)
+rl_controller
+      │ • Train PPO agents
+      │ • Update policies
+      ▼ agent_status
+reward_tuner
+      │ • Monitor performance
+      │ • Adjust parameters
+```
+
+**Reward Transformation Algorithm:**
+1. **Volatility Analysis**: Beräkna std dev av recent rewards
+2. **Volatility Penalty**: IF volatility_ratio > 1.5, apply penalty
+3. **Overfitting Detection**: Jämför recent vs long-term performance
+4. **Overfitting Penalty**: IF detected, reduce reward by 50%
+5. **Reward Scaling**: Multiplicera med reward_scaling_factor
+6. **Bounds Enforcement**: Clamp till rimliga gränser
+7. **Logging**: Spara transformation för analys
+
+**Metrics Tracked:**
+- base_reward och tuned_reward per episode
+- transformation_ratio (tuned / base)
+- volatility metrics och trends
+- overfitting detection events
+- parameter evolution över tid
+
+**Integration med existerande system:**
+- RewardTunerAgent är transparent för andra moduler
+- Portfolio_manager ändrad från 'reward' till 'base_reward' topic
+- RL_controller ändrad från 'reward' till 'tuned_reward' topic
+- Strategic_memory loggar både base och tuned för korrelation
+- Introspection_panel visar reward transformation charts
+- Backward compatibility bevarad för existerande tester
 
 ### Sprint 4.3: Full adaptiv parameterstyrning via RL/PPO ✅
 

@@ -1,0 +1,99 @@
+reward_tuner:
+  name: RewardTunerAgent
+  description: |
+    Meta-agent som justerar och optimerar belöningssignaler från portfolio_manager
+    innan de når rl_controller. Implementerar reward scaling, volatility penalties
+    och overfitting detection för robust RL-träning.
+  
+  role:
+    - Tar emot base_reward från portfolio_manager
+    - Analyserar reward stability och volatilitet
+    - Justerar reward med scaling_factor baserat på marknadsförhållanden
+    - Applicerar volatility_penalty vid hög volatilitet
+    - Detekterar overfitting patterns i agent performance
+    - Publicerar tuned_reward till rl_controller
+    - Loggar reward flow i strategic_memory_engine
+  
+  inputs:
+    - base_reward: float - Raw reward från portfolio_manager
+    - portfolio_status: Dict - Portfolio state för kontext
+    - agent_status: Dict - RL-agent performance från rl_controller
+  
+  outputs:
+    - tuned_reward: float - Justerad reward för RL-träning
+    - reward_metrics: Dict - Metrics om reward tuning
+  
+  parameters:
+    reward_scaling_factor:
+      range: [0.5, 2.0]
+      default: 1.0
+      description: Multiplikativ skalning av base reward
+      reward_signal: training_stability
+      update_frequency: every 20 rewards
+    
+    volatility_penalty_weight:
+      range: [0.0, 1.0]
+      default: 0.3
+      description: Viktning av volatility penalty
+      reward_signal: reward_consistency
+      update_frequency: every epoch
+    
+    overfitting_detector_threshold:
+      range: [0.05, 0.5]
+      default: 0.2
+      description: Tröskelvärde för overfitting detection
+      reward_signal: generalization_score
+      update_frequency: every 50 rewards
+  
+  publishes_to_message_bus:
+    - tuned_reward: Justerad reward för rl_controller
+    - reward_metrics: Metrics för introspection_panel
+    - reward_log: Reward history för strategic_memory_engine
+  
+  subscribes_to:
+    - base_reward: Från portfolio_manager
+    - portfolio_status: Från portfolio_manager
+    - agent_status: Från rl_controller
+  
+  connections:
+    from:
+      - portfolio_manager (base_reward, portfolio_status)
+      - rl_controller (agent_status)
+    to:
+      - rl_controller (tuned_reward)
+      - strategic_memory_engine (reward_log)
+      - introspection_panel (reward_metrics)
+  
+  feedback_generation:
+    triggers:
+      - reward_volatility: När reward varierar kraftigt
+      - overfitting_detected: När overfitting patterns identifieras
+      - scaling_adjustment: När scaling_factor justeras
+    
+    reward_sources:
+      - training_stability: Stabilitet i RL-träning
+      - reward_consistency: Konsistens i reward över tid
+      - generalization_score: Förmåga att generalisera
+  
+  algorithm:
+    - Calculate reward volatility from recent history
+    - Apply volatility penalty if volatility > threshold
+    - Scale reward with reward_scaling_factor
+    - Detect overfitting patterns in agent performance
+    - Apply overfitting penalty if detected
+    - Log reward transformation
+    - Publish tuned_reward
+  
+  logging:
+    - Base reward och tuned reward per episode
+    - Volatility metrics över tid
+    - Overfitting detection events
+    - Parameter adjustments history
+  
+  visualization:
+    - Reward transformation över tid (base vs tuned)
+    - Volatility trends
+    - Overfitting detection timeline
+    - Parameter evolution (scaling_factor, penalty_weight)
+  
+  used_in_sprint: 4.4

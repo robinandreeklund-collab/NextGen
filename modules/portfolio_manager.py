@@ -59,6 +59,7 @@ Används i Sprint: 1, 2, 3
 """
 
 from typing import Dict, Any, List
+import time
 
 
 class PortfolioManager:
@@ -73,6 +74,7 @@ class PortfolioManager:
             start_capital: Startkapital i USD (default 1000)
             transaction_fee: Transaktionsavgift som decimal (0.0025 = 0.25%)
         """
+        self.reward_tuner_callback = None  # Sprint 4.4: Direct callback for RewardTunerAgent
         self.message_bus = message_bus
         self.start_capital = start_capital
         self.cash = start_capital
@@ -238,21 +240,46 @@ class PortfolioManager:
         status = self.get_status()
         self.message_bus.publish('portfolio_status', status)
     
+        
+    def register_reward_tuner_callback(self, callback):
+        """
+        Register a direct callback for RewardTunerAgent to receive rewards.
+        Sprint 4.4: Provides guaranteed delivery using callback pattern.
+        
+        Args:
+            callback: Function that accepts base_reward data dict
+        """
+        self.reward_tuner_callback = callback
+        print("[PortfolioManager] RewardTuner callback registered ✅")
+
     def calculate_and_publish_reward(self) -> None:
         """
         Beräknar reward för RL-controller och publicerar.
         Reward baserat på portfolio value change.
+        Sprint 4.4: Publicerar base_reward istället för reward (går via RewardTunerAgent)
         """
         current_value = self.get_portfolio_value()
         reward = current_value - self.previous_portfolio_value
         self.previous_portfolio_value = current_value
         
-        # Publicera reward till rl_controller
-        self.message_bus.publish('reward', {
-            'value': reward,
+        reward_data = {
+            'reward': reward,
             'source': 'portfolio_manager',
-            'portfolio_value': current_value
-        })
+            'portfolio_value': current_value,
+            'num_trades': len(self.trade_history),
+            'timestamp': time.time()
+        }
+        
+        # Sprint 4.4: Use BOTH callback AND message bus for guaranteed delivery
+        if len(self.trade_history) <= 3:
+            print(f"[PortfolioManager] Publishing base_reward #{len(self.trade_history)}: {reward:.4f}")
+        
+        # 1. Direct callback (guaranteed delivery if registered)
+        if self.reward_tuner_callback:
+            self.reward_tuner_callback(reward_data)
+        
+        # 2. Message bus (for backward compatibility)
+        self.message_bus.publish('base_reward', reward_data)
     
     def generate_feedback(self, execution_result: Dict[str, Any]) -> None:
         """

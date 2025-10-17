@@ -187,6 +187,48 @@ reward_signals:
   execution_efficiency:
     description: Effektivitet i trade execution
     modules: [execution_engine]
+  
+  # Sprint 4.4: RewardTuner signals
+  training_stability:
+    description: Stabilitet i RL-träning över tid
+    modules: [reward_tuner]
+  
+  reward_consistency:
+    description: Konsistens i reward utan stora spikar
+    modules: [reward_tuner]
+  
+  generalization_score:
+    description: Förmåga att generalisera utan overfitting
+    modules: [reward_tuner]
+
+# Sprint 4.4: RewardTuner parameters
+reward_tuner_parameters:
+  reward_scaling_factor:
+    module: reward_tuner
+    agent: MetaParameterAgent
+    reward_signal: training_stability
+    bounds: [0.5, 2.0]
+    update_frequency: every_20_rewards
+    default: 1.0
+    description: Multiplikativ skalning av base reward
+  
+  volatility_penalty_weight:
+    module: reward_tuner
+    agent: MetaParameterAgent
+    reward_signal: reward_consistency
+    bounds: [0.0, 1.0]
+    update_frequency: every_epoch
+    default: 0.3
+    description: Viktning av volatility penalty vid hög reward volatilitet
+  
+  overfitting_detector_threshold:
+    module: reward_tuner
+    agent: MetaParameterAgent
+    reward_signal: generalization_score
+    bounds: [0.05, 0.5]
+    update_frequency: every_50_rewards
+    default: 0.2
+    description: Tröskelvärde för overfitting detection
 
 # Sprint 4.3 - Module summary
 modules_with_adaptive_parameters:
@@ -216,4 +258,8 @@ modules_with_adaptive_parameters:
   
   meta_agent_evolution_engine:
     parameters: [evolution_threshold, min_samples]
+    has_adaptive_parameters: true
+  
+  reward_tuner:
+    parameters: [reward_scaling_factor, volatility_penalty_weight, overfitting_detector_threshold]
     has_adaptive_parameters: true

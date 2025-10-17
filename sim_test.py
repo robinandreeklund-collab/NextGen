@@ -42,6 +42,7 @@ from modules.execution_engine import ExecutionEngine
 from modules.portfolio_manager import PortfolioManager
 from modules.rl_controller import RLController
 from modules.vote_engine import VoteEngine
+from modules.reward_tuner import RewardTunerAgent  # Sprint 4.4
 
 
 class SimulatedTester:
@@ -111,6 +112,14 @@ class SimulatedTester:
         # Sprint 2 moduler
         self.rl_controller = RLController(self.message_bus)
         
+        # Sprint 4.4 modul - RewardTunerAgent (MUST be created BEFORE portfolio_manager)
+        self.reward_tuner = RewardTunerAgent(
+            message_bus=self.message_bus,
+            reward_scaling_factor=1.0,
+            volatility_penalty_weight=0.3,
+            overfitting_detector_threshold=0.2
+        )
+        
         # Sprint 1 moduler (utan API key för simulering)
         self.strategy_engine = StrategyEngine(self.message_bus)
         self.risk_manager = RiskManager(self.message_bus)
@@ -122,13 +131,16 @@ class SimulatedTester:
             transaction_fee=0.0025
         )
         
+        # Sprint 4.4: Register RewardTunerAgent callback with PortfolioManager
+        self.portfolio_manager.register_reward_tuner_callback(self.reward_tuner.on_base_reward)
+        
         # Sprint 4.3 modul
         self.vote_engine = VoteEngine(self.message_bus)
         
         # Sprint 4.3: Prenumerera på parameter_adjustment
         self.message_bus.subscribe('parameter_adjustment', self._on_parameter_adjustment)
         
-        print("✅ Alla moduler initialiserade")
+        print("✅ Alla moduler initialiserade (inkl. RewardTunerAgent från Sprint 4.4)")
     
     def _on_parameter_adjustment(self, adjustment: Dict[str, Any]) -> None:
         """
@@ -464,6 +476,101 @@ class SimulatedTester:
                             print(f"   {param}: {trend} ({diff:+.4f})")
                         else:
                             print(f"   {param}: {trend} ({int(diff):+d})")
+        
+        # Sprint 4.4: RewardTunerAgent Debug Info
+        print(f"\n{'='*90}")
+        print(f"🎯 SPRINT 4.4 - RewardTunerAgent (Meta-belöningsjustering)")
+        print(f"{'='*90}")
+        
+        reward_metrics = self.reward_tuner.get_reward_metrics()
+        
+        # Current parameters
+        print(f"\n⚙️  RewardTuner Parametrar:")
+        current_params = reward_metrics['current_parameters']
+        print(f"   reward_scaling_factor:          {current_params['reward_scaling_factor']:.4f} (bounds: 0.5-2.0)")
+        print(f"   volatility_penalty_weight:      {current_params['volatility_penalty_weight']:.4f} (bounds: 0.0-1.0)")
+        print(f"   overfitting_detector_threshold: {current_params['overfitting_detector_threshold']:.4f} (bounds: 0.05-0.5)")
+        print(f"   → Reward signals: training_stability, reward_consistency, generalization_score")
+        
+        # Reward transformation statistics
+        base_rewards = reward_metrics['base_reward_history']
+        tuned_rewards = reward_metrics['tuned_reward_history']
+        
+        # Diagnostic info
+        rl_reward_count = len(self.rl_controller.reward_history) if hasattr(self.rl_controller, 'reward_history') else 0
+        print(f"\n🔍 Diagnostic Info:")
+        print(f"   Base rewards received:     {len(base_rewards)}")
+        print(f"   Tuned rewards generated:   {len(tuned_rewards)}")
+        print(f"   RL controller rewards:     {rl_reward_count}")
+        print(f"   Portfolio executions:      {self.stats['buy_executions'] + self.stats['sell_executions']}")
+        
+        if base_rewards and tuned_rewards:
+            print(f"\n📊 Reward Transformation Stats:")
+            print(f"   Totalt rewards processade: {len(base_rewards)}")
+            
+            # Latest rewards
+            if len(base_rewards) > 0:
+                latest_base = base_rewards[-1]
+                latest_tuned = tuned_rewards[-1]
+                latest_ratio = latest_tuned / latest_base if latest_base != 0 else 1.0
+                print(f"   Senaste base_reward:   {latest_base:+.4f}")
+                print(f"   Senaste tuned_reward:  {latest_tuned:+.4f}")
+                print(f"   Transformation ratio:  {latest_ratio:.4f}")
+            
+            # Average transformation
+            if len(reward_metrics['transformation_ratios']) > 0:
+                avg_ratio = sum(reward_metrics['transformation_ratios']) / len(reward_metrics['transformation_ratios'])
+                print(f"   Genomsnittlig ratio:   {avg_ratio:.4f}")
+        else:
+            print(f"\n⏳ Reward Transformation Stats:")
+            print(f"   Väntar på första reward från portfolio_manager...")
+            print(f"   Status: RewardTunerAgent är redo men har inte fått några base_reward events än")
+        
+        # Volatility metrics
+        volatility_hist = reward_metrics['volatility_history']
+        if volatility_hist:
+            print(f"\n📈 Volatility Metrics:")
+            recent_volatility = volatility_hist[-1] if volatility_hist else 0.0
+            avg_volatility = sum(volatility_hist) / len(volatility_hist) if volatility_hist else 0.0
+            print(f"   Senaste volatility:    {recent_volatility:.4f}")
+            print(f"   Genomsnittlig:         {avg_volatility:.4f}")
+            print(f"   Volatility samples:    {len(volatility_hist)}")
+        else:
+            print(f"\n⏳ Volatility Metrics:")
+            print(f"   Inga volatility data än - krävs minst 2 rewards för beräkning")
+        
+        # Overfitting events
+        overfitting_events = reward_metrics['overfitting_events']
+        if overfitting_events:
+            print(f"\n⚠️  Overfitting Detection:")
+            print(f"   Totalt events:         {len(overfitting_events)}")
+            if len(overfitting_events) > 0:
+                latest_event = overfitting_events[-1]
+                print(f"   Senaste score:         {latest_event.get('overfitting_score', 0):.4f}")
+                print(f"   Recent performance:    {latest_event.get('recent_performance', 0):.4f}")
+                print(f"   Long-term performance: {latest_event.get('long_term_performance', 0):.4f}")
+        else:
+            print(f"\n✅ Overfitting Detection:")
+            print(f"   Inga overfitting events detekterade")
+        
+        # Parameter adjustment history
+        param_hist = reward_metrics['parameter_history']
+        if param_hist:
+            print(f"\n🔧 Parameter Adjustments:")
+            print(f"   Totalt adjustments:    {len(param_hist)}")
+            if len(param_hist) >= 2:
+                first = param_hist[0]
+                latest = param_hist[-1]
+                print(f"   Scaling factor trend:  {first['reward_scaling_factor']:.4f} → {latest['reward_scaling_factor']:.4f}")
+        
+        # Add helpful note if no data
+        if not base_rewards:
+            print(f"\n💡 Note:")
+            print(f"   RewardTunerAgent fungerar korrekt men har inte fått några rewards än.")
+            print(f"   Detta kan bero på:")
+            print(f"   • Systemet nyss startat och väntar på första trade att completea")
+            print(f"   • Portfolio value har inte ändrats sedan senaste reward")
+            print(f"   • Koden uppdaterades under körning - starta om sim_test.py för nya features")
         
         print(f"{'='*90}\n")
     

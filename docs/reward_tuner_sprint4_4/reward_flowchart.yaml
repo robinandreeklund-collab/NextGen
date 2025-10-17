@@ -1,0 +1,184 @@
+# Reward Flowchart - Sprint 4.4
+# Visuell representation av reward flow med RewardTunerAgent
+
+reward_flow:
+  description: |
+    Reward flow från portfolio_manager genom reward_tuner till rl_controller
+    med logging och visualization
+
+  flow_diagram: |
+    ┌────────────────────┐
+    │ portfolio_manager  │
+    │ (Beräknar reward)  │
+    └──────────┬─────────┘
+               │ base_reward
+               │ (raw portfolio value change)
+               ▼
+    ┌────────────────────┐
+    │   reward_tuner     │
+    │ (Meta-agent tuning)│
+    ├────────────────────┤
+    │ • Calculate        │
+    │   volatility       │
+    │ • Detect           │
+    │   overfitting      │
+    │ • Apply penalties  │
+    │ • Scale reward     │
+    └──────────┬─────────┘
+               │ tuned_reward
+               │ (adjusted for stability)
+               ▼
+    ┌────────────────────┐
+    │   rl_controller    │
+    │ (PPO training)     │
+    ├────────────────────┤
+    │ • strategy_agent   │
+    │ • risk_agent       │
+    │ • decision_agent   │
+    │ • execution_agent  │
+    └──────────┬─────────┘
+               │ agent_status
+               │ (performance feedback)
+               ▼
+    ┌────────────────────┐
+    │   reward_tuner     │
+    │ (Monitor & adjust) │
+    └────────────────────┘
+
+  parallel_logging:
+    strategic_memory_engine:
+      subscribes:
+        - base_reward
+        - tuned_reward
+        - reward_metrics
+      logs:
+        - reward_transformation_history
+        - volatility_trends
+        - overfitting_events
+    
+    introspection_panel:
+      subscribes:
+        - tuned_reward
+        - reward_metrics
+      visualizes:
+        - base_vs_tuned_reward_chart
+        - volatility_over_time
+        - transformation_ratio
+        - parameter_evolution
+
+  detailed_flow_steps:
+    step_1_portfolio_generates_reward:
+      module: portfolio_manager
+      trigger: execution_result processed
+      action: |
+        1. Calculate portfolio value change
+        2. Calculate profit/loss from trade
+        3. Generate base_reward
+        4. Publish base_reward to message_bus
+      output: base_reward event
+    
+    step_2_reward_tuner_analyzes:
+      module: reward_tuner
+      trigger: base_reward received
+      action: |
+        1. Store base_reward in history
+        2. Calculate reward volatility
+           - std dev of recent rewards
+           - compare to historical average
+        3. Check for overfitting
+           - compare agent performance trends
+           - detect sudden performance drops
+        4. Calculate penalties
+           - volatility_penalty if high volatility
+           - overfitting_penalty if detected
+      output: volatility_metrics, overfitting_score
+    
+    step_3_reward_tuner_transforms:
+      module: reward_tuner
+      action: |
+        1. Apply volatility penalty
+           adjusted = base * (1 - penalty)
+        2. Apply overfitting penalty
+           adjusted = adjusted * 0.5 if detected
+        3. Scale with reward_scaling_factor
+           tuned = adjusted * scaling_factor
+        4. Bound checking
+           clamp tuned_reward to [-10, 10]
+      output: tuned_reward
+    
+    step_4_reward_tuner_publishes:
+      module: reward_tuner
+      action: |
+        1. Publish tuned_reward to rl_controller
+        2. Publish reward_metrics to introspection
+        3. Publish reward_log to strategic_memory
+      output: 3 message_bus events
+    
+    step_5_rl_controller_trains:
+      module: rl_controller
+      trigger: tuned_reward received
+      action: |
+        1. Use tuned_reward for PPO update
+        2. Train all RL agents
+        3. Update agent policies
+        4. Publish agent_status
+      output: agent_status event
+    
+    step_6_reward_tuner_monitors:
+      module: reward_tuner
+      trigger: agent_status received
+      action: |
+        1. Monitor agent performance
+        2. Detect performance degradation
+        3. Detect overfitting patterns
+        4. Adjust parameters if needed (via MetaParameterAgent)
+      output: potential parameter_adjustment
+
+  feedback_loops:
+    primary_loop:
+      path: portfolio_manager → reward_tuner → rl_controller → agents → portfolio_manager
+      cycle_time: per episode
+      purpose: Continuous RL optimization with stable rewards
+    
+    monitoring_loop:
+      path: rl_controller → reward_tuner → rl_controller
+      cycle_time: per agent_status update
+      purpose: Overfitting detection and prevention
+    
+    parameter_adaptation_loop:
+      path: reward_tuner → rl_controller (MetaParameterAgent) → reward_tuner
+      cycle_time: per epoch
+      purpose: Adaptive parameter tuning for reward_tuner itself
+
+  reward_metrics_tracked:
+    - base_reward: Raw portfolio value change
+    - tuned_reward: Adjusted reward after tuning
+    - transformation_ratio: tuned / base ratio
+    - volatility: Standard deviation of recent rewards
+    - volatility_penalty_applied: Actual penalty amount
+    - overfitting_detected: Boolean flag
+    - overfitting_score: Continuous score [0, 1]
+    - reward_scaling_factor: Current scaling parameter
+    - volatility_penalty_weight: Current penalty weight
+    - overfitting_detector_threshold: Current detection threshold
+
+  integration_points:
+    portfolio_manager_changes:
+      - Change publish topic from 'reward' to 'base_reward'
+      - Include additional context in reward event
+      - Keep backward compatibility for tests
+    
+    rl_controller_changes:
+      - Change subscribe topic from 'reward' to 'tuned_reward'
+      - Handle missing tuned_reward gracefully (fallback to base_reward)
+      - Add parameter adjustment support for reward_tuner parameters
+    
+    strategic_memory_changes:
+      - Subscribe to both base_reward and tuned_reward
+      - Log reward transformations with context
+      - Add reward correlation analysis
+    
+    introspection_panel_changes:
+      - Subscribe to reward_metrics
+      - Add reward flow visualization components
+      - Display transformation ratio and trends

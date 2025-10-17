@@ -1,0 +1,176 @@
+# Functions - RewardTunerAgent (Sprint 4.4)
+
+reward_tuner:
+  module: reward_tuner
+  description: Meta-agent för reward justering och optimering
+  
+  functions:
+    __init__:
+      params:
+        - message_bus: MessageBus reference
+        - reward_scaling_factor: float (default 1.0)
+        - volatility_penalty_weight: float (default 0.3)
+        - overfitting_detector_threshold: float (default 0.2)
+        - history_window: int (default 50)
+      initializes:
+        - base_reward_history: List[float]
+        - tuned_reward_history: List[float]
+        - volatility_history: List[float]
+        - overfitting_events: List[Dict]
+        - parameter_history: List[Dict]
+      subscribes_to:
+        - base_reward: Från portfolio_manager
+        - portfolio_status: Från portfolio_manager
+        - agent_status: Från rl_controller
+        - parameter_adjustment: Från rl_controller (för egna parametrar)
+    
+    _on_base_reward:
+      description: Callback när base_reward publiceras
+      params:
+        - reward_data: Dict med base_reward och kontext
+      calls:
+        - _calculate_reward_volatility()
+        - _detect_overfitting()
+        - _apply_reward_transformation()
+        - _publish_tuned_reward()
+        - _log_reward_flow()
+    
+    _calculate_reward_volatility:
+      description: Beräknar volatilitet i reward history
+      params:
+        - None (använder self.base_reward_history)
+      returns:
+        - volatility: float (standard deviation)
+        - volatility_ratio: float (jämfört med medel)
+      algorithm: |
+        1. Ta senaste N rewards från history
+        2. Beräkna std dev och mean
+        3. Beräkna volatility_ratio = current_std / historical_mean_std
+        4. Return volatility metrics
+    
+    _detect_overfitting:
+      description: Detekterar overfitting patterns i agent performance
+      params:
+        - agent_status: Dict med agent performance metrics
+      returns:
+        - overfitting_detected: bool
+        - overfitting_score: float
+      algorithm: |
+        1. Hämta training performance från agent_status
+        2. Jämför recent performance vs long-term average
+        3. IF (recent - long_term) / long_term > threshold:
+             overfitting_detected = True
+        4. Logga event om detected
+        5. Return detection result
+    
+    _apply_reward_transformation:
+      description: Applicerar reward scaling och penalties
+      params:
+        - base_reward: float
+        - volatility_ratio: float
+        - overfitting_score: float
+      returns:
+        - tuned_reward: float
+      algorithm: |
+        1. Start with adjusted_reward = base_reward
+        2. IF volatility_ratio > 1.5:
+             penalty = volatility_penalty_weight * (volatility_ratio - 1.0)
+             adjusted_reward *= (1.0 - penalty)
+        3. IF overfitting_detected:
+             adjusted_reward *= 0.5
+        4. tuned_reward = adjusted_reward * reward_scaling_factor
+        5. Clamp tuned_reward to reasonable bounds
+        6. Return tuned_reward
+    
+    _publish_tuned_reward:
+      description: Publicerar justerad reward till message_bus
+      params:
+        - tuned_reward: float
+        - reward_metrics: Dict
+      publishes:
+        - tuned_reward: Till rl_controller
+        - reward_metrics: Till introspection_panel
+    
+    _log_reward_flow:
+      description: Loggar reward transformation history
+      params:
+        - base_reward: float
+        - tuned_reward: float
+        - metrics: Dict
+      publishes:
+        - reward_log: Till strategic_memory_engine
+      stores:
+        - base_reward_history
+        - tuned_reward_history
+        - volatility_history
+    
+    get_reward_metrics:
+      description: Returnerar metrics för visualization
+      params: None
+      returns:
+        - metrics: Dict med:
+            - base_reward_history: List[float]
+            - tuned_reward_history: List[float]
+            - volatility_history: List[float]
+            - overfitting_events: List[Dict]
+            - transformation_ratio: List[float]
+            - current_parameters: Dict
+    
+    update_parameters:
+      description: Uppdaterar adaptiva parametrar från rl_controller
+      params:
+        - parameter_adjustment: Dict
+      updates:
+        - reward_scaling_factor
+        - volatility_penalty_weight
+        - overfitting_detector_threshold
+      logs:
+        - parameter_history
+
+  connections:
+    subscribes_to_topics:
+      - base_reward: Från portfolio_manager
+      - portfolio_status: Från portfolio_manager  
+      - agent_status: Från rl_controller
+      - parameter_adjustment: Från rl_controller
+    
+    publishes_to_topics:
+      - tuned_reward: För rl_controller
+      - reward_metrics: För introspection_panel
+      - reward_log: För strategic_memory_engine
+  
+  uses_rl: false
+  receives_feedback: true
+  adaptive_parameters: true
+  
+  integration:
+    before_modules:
+      - rl_controller: Måste ta emot tuned_reward istället för base_reward
+    
+    after_modules:
+      - portfolio_manager: Måste publicera base_reward istället för reward
+    
+    logging_modules:
+      - strategic_memory_engine: Loggar både base och tuned reward
+    
+    visualization_modules:
+      - introspection_panel: Visar reward transformation
+
+  testing:
+    unit_tests:
+      - test_reward_volatility_calculation
+      - test_overfitting_detection
+      - test_reward_transformation
+      - test_parameter_updates
+    
+    integration_tests:
+      - test_reward_flow_portfolio_to_rl
+      - test_reward_logging_in_memory
+      - test_reward_visualization
+    
+    validation_tests:
+      - test_high_volatility_penalty
+      - test_low_volatility_no_penalty
+      - test_overfitting_detected_penalty
+      - test_scaling_factor_adjustment
+      - test_reward_bounds_enforcement

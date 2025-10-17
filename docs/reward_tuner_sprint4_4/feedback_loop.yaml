@@ -1,0 +1,122 @@
+# Feedback Loop - Sprint 4.4 Uppdatering
+# Ny feedback flow med RewardTunerAgent mellan portfolio_manager och rl_controller
+
+reward_feedback_flow:
+  description: |
+    RewardTunerAgent fungerar som meta-agent mellan portfolio_manager och rl_controller.
+    Den justerar raw reward baserat på volatilitet, overfitting och marknadsförhållanden.
+  
+  flow:
+    1_portfolio_manager_generates_reward:
+      source: portfolio_manager
+      event: base_reward
+      data:
+        - reward: float (raw portfolio value change)
+        - portfolio_value: float
+        - trade_count: int
+        - profit_loss: float
+      publishes_to: message_bus['base_reward']
+    
+    2_reward_tuner_receives_reward:
+      source: reward_tuner
+      subscribes_to: message_bus['base_reward']
+      action: |
+        - Calculate reward volatility from recent history
+        - Apply volatility penalty if needed
+        - Detect overfitting patterns
+        - Scale reward with reward_scaling_factor
+        - Generate tuned_reward
+      publishes_to: message_bus['tuned_reward']
+    
+    3_rl_controller_receives_tuned_reward:
+      source: rl_controller
+      subscribes_to: message_bus['tuned_reward']
+      action: |
+        - Use tuned_reward for PPO agent training
+        - Update all RL agents (strategy, risk, decision, execution)
+        - Publish agent_status
+      publishes_to: message_bus['agent_status']
+    
+    4_reward_tuner_monitors_agent_performance:
+      source: reward_tuner
+      subscribes_to: message_bus['agent_status']
+      action: |
+        - Monitor agent performance trends
+        - Detect overfitting patterns
+        - Adjust parameters if needed
+      feedback_to: self (parameter adjustment)
+    
+    5_strategic_memory_logs_reward_flow:
+      source: strategic_memory_engine
+      subscribes_to:
+        - message_bus['base_reward']
+        - message_bus['tuned_reward']
+        - message_bus['reward_metrics']
+      action: |
+        - Log base_reward and tuned_reward
+        - Store reward transformation history
+        - Track reward volatility over time
+      storage: reward_history
+    
+    6_introspection_visualizes_reward_flow:
+      source: introspection_panel
+      subscribes_to:
+        - message_bus['reward_metrics']
+        - message_bus['tuned_reward']
+      action: |
+        - Visualize reward transformation (base vs tuned)
+        - Display volatility trends
+        - Show overfitting detection events
+      output: dashboard_render
+
+feedback_triggers:
+  portfolio_manager:
+    - base_reward: När portfolio value ändras
+    - portfolio_status: Vid varje trade
+  
+  reward_tuner:
+    - reward_volatility: När reward variation överstiger threshold
+    - overfitting_detected: När overfitting patterns identifieras
+    - scaling_adjustment: När reward_scaling_factor ändras
+    - tuned_reward: Vid varje reward transformation
+  
+  rl_controller:
+    - agent_update: Efter PPO training step
+    - agent_status: Kontinuerligt performance tracking
+  
+  strategic_memory_engine:
+    - reward_log: Vid varje reward transformation
+    - reward_correlation: Analys av reward vs performance
+
+reward_transformation_algorithm:
+  step_1_calculate_volatility:
+    - Beräkna standard deviation av senaste N rewards
+    - Jämför med historiskt medelvärde
+    - Identifiera volatility_ratio
+  
+  step_2_apply_volatility_penalty:
+    - IF volatility_ratio > 1.5:
+        penalty = volatility_penalty_weight * (volatility_ratio - 1.0)
+        adjusted_reward = base_reward * (1.0 - penalty)
+  
+  step_3_detect_overfitting:
+    - Jämför training performance vs validation performance
+    - IF gap > overfitting_detector_threshold:
+        overfitting_penalty = 0.5
+        adjusted_reward *= (1.0 - overfitting_penalty)
+  
+  step_4_apply_scaling:
+    - tuned_reward = adjusted_reward * reward_scaling_factor
+  
+  step_5_log_and_publish:
+    - Log transformation: {base, tuned, volatility, overfitting}
+    - Publish tuned_reward to message_bus
+    - Publish reward_metrics to message_bus
+
+visualization_metrics:
+  - base_reward_history: Lista av raw rewards över tid
+  - tuned_reward_history: Lista av justerade rewards över tid
+  - reward_transformation_ratio: tuned / base ratio över tid
+  - volatility_metrics: Standard deviation och trends
+  - overfitting_detection_events: Timeline av detekterade events
+  - parameter_evolution: reward_scaling_factor över tid
