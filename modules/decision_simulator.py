@@ -29,7 +29,6 @@ Används i Sprint: 5
 """
 
 from typing import Dict, Any, List
-import random
 from datetime import datetime
 
 
