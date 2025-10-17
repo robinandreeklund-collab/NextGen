@@ -1,0 +1,371 @@
+# RL Reward Matrix - Sprint 4.2-5
+# Belönningsmatris för RL-system med adaptiva parametrar och RewardTunerAgent
+
+rl_reward_matrix:
+  name: RL Reward Matrix for Adaptive Parameter Control
+  version: 2.0
+  sprints: [4.2, 4.3, 4.4, 5]
+  description: |
+    Belönningsmatris som definierar hur olika reward signals används för att
+    styra adaptiva parametrar i hela systemet, från meta-parametrar (Sprint 4.2)
+    till modulspecifika parametrar (Sprint 4.3) till reward tuning (Sprint 4.4).
+
+# Reward signals och deras användning
+reward_signals:
+  # Sprint 4.4 - RewardTunerAgent signals
+  base_reward:
+    source: portfolio_manager
+    description: Raw portfolio value change från trade execution
+    range: [-10.0, 10.0]
+    frequency: per trade
+    used_by:
+      - reward_tuner: input för transformation
+      - strategic_memory_engine: logging och analys
+    
+  tuned_reward:
+    source: reward_tuner
+    description: Justerad reward efter volatility penalty och scaling
+    range: [-10.0, 10.0]
+    frequency: per trade
+    used_by:
+      - rl_controller: PPO training för alla agenter
+      - strategic_memory_engine: logging och korrelation
+    
+  training_stability:
+    source: rl_controller
+    description: Stabilitet i RL-träning över tid
+    calculation: variance av agent losses över episodes
+    range: [0.0, 1.0]
+    controls:
+      parameter: reward_scaling_factor
+      module: reward_tuner
+      update_frequency: every 20 rewards
+    
+  reward_consistency:
+    source: reward_tuner
+    description: Konsistens i reward utan stora spikar
+    calculation: inverse av reward volatility
+    range: [0.0, 1.0]
+    controls:
+      parameter: volatility_penalty_weight
+      module: reward_tuner
+      update_frequency: every epoch
+    
+  generalization_score:
+    source: reward_tuner
+    description: Förmåga att generalisera utan overfitting
+    calculation: |
+      1.0 - abs(recent_performance - longterm_performance) / longterm_performance
+    range: [0.0, 1.0]
+    controls:
+      parameter: overfitting_detector_threshold
+      module: reward_tuner
+      update_frequency: every 50 rewards
+
+  # Sprint 4.2 - Meta-parameter signals
+  agent_performance_gain:
+    source: meta_agent_evolution_engine
+    description: Förbättring i agentprestanda över tid
+    calculation: |
+      (current_episode_reward - baseline_reward) / baseline_reward
+    range: [-1.0, 1.0]
+    controls:
+      parameter: evolution_threshold
+      module: meta_agent_evolution_engine
+      update_frequency: every 10 decisions
+    
+  feedback_consistency:
+    source: feedback_analyzer
+    description: Kvalitet och frekvens av feedbacksignaler
+    calculation: |
+      (valid_feedback_count / total_feedback_count) * feedback_density
+    range: [0.0, 1.0]
+    controls:
+      parameter: min_samples
+      module: meta_agent_evolution_engine
+      update_frequency: every epoch
+    
+  reward_volatility:
+    source: reward_tuner
+    description: Volatilitet i belöningssignaler
+    calculation: std_dev(recent_rewards) / mean(recent_rewards)
+    range: [0.0, 5.0]
+    controls:
+      parameter: update_frequency
+      module: rl_controller
+      update_frequency: every epoch
+    
+  decision_diversity:
+    source: decision_engine
+    description: Variation i beslut och agentbeteenden
+    calculation: entropy av decision distribution
+    range: [0.0, 1.0]
+    controls:
+      parameter: agent_entropy_threshold
+      module: rl_controller
+      update_frequency: every 5 decisions
+
+  # Sprint 4.3 - Module-specific signals
+  trade_success_rate:
+    source: strategic_memory_engine
+    description: Andel framgångsrika trades
+    calculation: successful_trades / total_trades
+    range: [0.0, 1.0]
+    controls:
+      parameter: signal_threshold
+      module: strategy_engine
+      update_frequency: every 20 trades
+    
+  cumulative_reward:
+    source: rl_controller
+    description: Ackumulerad belöning över tid
+    calculation: sum(episode_rewards)
+    range: [-inf, inf]
+    controls:
+      parameter: indicator_weighting
+      module: strategy_engine
+      update_frequency: every epoch
+    
+  drawdown_avoidance:
+    source: risk_manager
+    description: Förmåga att undvika stora kapitalförluster
+    calculation: 1.0 - (max_drawdown / portfolio_value)
+    range: [0.0, 1.0]
+    controls:
+      parameter: risk_tolerance
+      module: risk_manager
+      update_frequency: every 10 trades
+    
+  portfolio_stability:
+    source: portfolio_manager
+    description: Stabilitet i portföljvärde över tid
+    calculation: 1.0 - (std_dev(portfolio_values) / mean(portfolio_values))
+    range: [0.0, 1.0]
+    controls:
+      parameter: max_drawdown
+      module: risk_manager
+      update_frequency: every epoch
+    
+  decision_accuracy:
+    source: decision_engine
+    description: Träffsäkerhet i beslut
+    calculation: correct_decisions / total_decisions
+    range: [0.0, 1.0]
+    controls:
+      parameter: consensus_threshold
+      module: decision_engine
+      update_frequency: every 50 decisions
+    
+  historical_alignment:
+    source: strategic_memory_engine
+    description: Överensstämmelse med historiska mönster
+    calculation: correlation(current_patterns, successful_patterns)
+    range: [-1.0, 1.0]
+    controls:
+      parameter: memory_weighting
+      module: decision_engine
+      update_frequency: every epoch
+    
+  agent_hit_rate:
+    source: vote_engine
+    description: Träffsäkerhet per agent för meritbaserad viktning
+    calculation: agent_correct_votes / agent_total_votes
+    range: [0.0, 1.0]
+    controls:
+      parameter: agent_vote_weight
+      module: vote_engine
+      update_frequency: every epoch
+    
+  slippage_reduction:
+    source: execution_engine
+    description: Minimering av slippage vid execution
+    calculation: 1.0 - (actual_slippage / expected_slippage)
+    range: [0.0, 1.0]
+    controls:
+      parameter: execution_delay
+      module: execution_engine
+      update_frequency: every trade
+    
+  execution_efficiency:
+    source: execution_engine
+    description: Effektivitet i trade execution
+    calculation: |
+      (executed_at_target_price_count / total_executions) * 
+      (1.0 - avg_slippage)
+    range: [0.0, 1.0]
+    controls:
+      parameter: slippage_tolerance
+      module: execution_engine
+      update_frequency: every 10 trades
+
+# Reward flow genom systemet
+reward_flow_stages:
+  stage_1_generation:
+    module: portfolio_manager
+    input: execution_result
+    output: base_reward
+    description: |
+      Portfolio manager beräknar raw reward baserat på portfolio value change.
+      Publicerar base_reward till message_bus.
+    
+  stage_2_transformation:
+    module: reward_tuner
+    input: base_reward
+    output: tuned_reward
+    description: |
+      RewardTunerAgent analyserar reward, applicerar penalties och scaling.
+      Publicerar tuned_reward till message_bus.
+    transforms:
+      - volatility_analysis: Beräkna reward volatility
+      - overfitting_detection: Detektera agent performance drop
+      - penalty_application: Applicera volatility och overfitting penalties
+      - scaling: Multiplicera med reward_scaling_factor
+      - bounds_check: Clamp till [-10, 10]
+    
+  stage_3_distribution:
+    module: rl_controller
+    input: tuned_reward
+    output: agent_updates
+    description: |
+      RL controller använder tuned_reward för PPO training av alla agenter.
+      Distribuerar uppdaterade agenter till moduler.
+    agents_trained:
+      - strategy_agent: Optimerar tradeförslag
+      - risk_agent: Förbättrar riskbedömning
+      - decision_agent: Optimerar beslutsfattande
+      - execution_agent: Förbättrar execution timing
+    
+  stage_4_parameter_adjustment:
+    module: rl_controller (MetaParameterAgent)
+    input: reward_signals
+    output: parameter_adjustment
+    description: |
+      MetaParameterAgent använder reward signals för att justera adaptiva
+      parametrar i alla moduler.
+    parameters_adjusted:
+      - Sprint 4.2: evolution_threshold, min_samples, update_frequency, agent_entropy_threshold
+      - Sprint 4.3: signal_threshold, indicator_weighting, risk_tolerance, max_drawdown,
+                    consensus_threshold, memory_weighting, agent_vote_weight,
+                    execution_delay, slippage_tolerance
+      - Sprint 4.4: reward_scaling_factor, volatility_penalty_weight,
+                    overfitting_detector_threshold
+    
+  stage_5_monitoring:
+    modules: [strategic_memory_engine, introspection_panel]
+    inputs: [base_reward, tuned_reward, reward_metrics, parameter_adjustment]
+    outputs: [logs, visualizations]
+    description: |
+      Strategic memory loggar reward history och transformationer.
+      Introspection panel visualiserar reward flow och parameter evolution.
+
+# Parameter adjustment triggers
+adjustment_triggers:
+  immediate_triggers:
+    - high_volatility:
+        condition: volatility_ratio > 2.0
+        action: Increase volatility_penalty_weight
+        urgency: high
+    
+    - overfitting_detected:
+        condition: overfitting_score > overfitting_detector_threshold
+        action: Apply overfitting penalty, adjust evolution_threshold
+        urgency: critical
+    
+    - poor_training_stability:
+        condition: training_stability < 0.3
+        action: Decrease reward_scaling_factor
+        urgency: high
+    
+    - excessive_drawdown:
+        condition: current_drawdown > max_drawdown
+        action: Increase risk_tolerance (more conservative)
+        urgency: critical
+  
+  periodic_triggers:
+    - epoch_end:
+        frequency: every epoch
+        parameters_adjusted:
+          - volatility_penalty_weight
+          - min_samples
+          - update_frequency
+          - indicator_weighting
+          - max_drawdown
+          - memory_weighting
+          - agent_vote_weight
+    
+    - trade_batch:
+        frequency: every 20 trades
+        parameters_adjusted:
+          - reward_scaling_factor
+          - signal_threshold
+    
+    - decision_batch:
+        frequency: every 50 decisions
+        parameters_adjusted:
+          - overfitting_detector_threshold
+          - consensus_threshold
+
+# Integration med Sprint 5 (Voting och Consensus)
+sprint_5_integration:
+  vote_quality_reward:
+    description: |
+      Röstningskvalitet påverkar agent_vote_weight via agent_hit_rate signal.
+      Meritbaserad röstning där framgångsrika agenter får högre vikt.
+    flow: |
+      vote_engine → agent_hit_rate → rl_controller → agent_vote_weight → vote_engine
+  
+  consensus_robustness_reward:
+    description: |
+      Konsensusrobusthet påverkar consensus_threshold via decision_accuracy signal.
+      Adaptiv threshold baserat på historisk träffsäkerhet.
+    flow: |
+      consensus_engine → decision_accuracy → rl_controller → consensus_threshold → decision_engine
+
+# Metrics tracking
+tracked_metrics:
+  reward_metrics:
+    - base_reward_mean: Genomsnittlig base reward
+    - base_reward_std: Standardavvikelse för base reward
+    - tuned_reward_mean: Genomsnittlig tuned reward
+    - tuned_reward_std: Standardavvikelse för tuned reward
+    - transformation_ratio_mean: Genomsnittlig transformation ratio
+    - volatility_events: Antal gånger hög volatilitet detekterades
+    - overfitting_events: Antal gånger overfitting detekterades
+  
+  parameter_metrics:
+    - parameter_changes: Antal parameterjusteringar per parameter
+    - parameter_drift: Totalt drift från default värde
+    - parameter_stability: Stabilitet i parametervärden över tid
+    - adjustment_success_rate: Andel justeringar som förbättrade performance
+  
+  agent_metrics:
+    - agent_performance_trend: Performance trend för varje agent
+    - agent_loss_mean: Genomsnittlig loss för varje agent
+    - agent_update_frequency: Hur ofta varje agent uppdateras
+    - convergence_rate: Hur snabbt agenter konvergerar
+
+# Success criteria
+success_criteria:
+  reward_transformation:
+    - base_reward och tuned_reward genereras för varje trade
+    - transformation_ratio loggas och är inom rimliga gränser [0.3, 2.0]
+    - volatility penalty appliceras korrekt vid hög volatilitet
+    - overfitting penalty appliceras vid detekterad overfitting
+  
+  parameter_adjustment:
+    - alla 16 adaptiva parametrar justeras baserat på reward signals
+    - parametrar håller sig inom definierade bounds
+    - parameter_adjustment events distribueras till rätt moduler
+    - parameterhistorik loggas i strategic_memory_engine
+  
+  system_integration:
+    - reward flow fungerar: portfolio → reward_tuner → rl_controller
+    - parameter flow fungerar: rl_controller → alla moduler
+    - logging fungerar: strategic_memory loggar allt
+    - visualization fungerar: introspection_panel visar data
+  
+  test_coverage:
+    - alla reward signals har tester
+    - alla parametrar har tester
+    - integration tests verifierar hela flödet
+    - 100% av kritiska paths täcks
