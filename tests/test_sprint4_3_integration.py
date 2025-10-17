@@ -120,8 +120,9 @@ def test_full_system_with_adaptive_parameters():
     vote_matrix = vote.create_vote_matrix()
     assert vote_matrix['agent_vote_weight'] == 1.2
     assert len(vote_matrix['votes']) == 2
-    # Verifiera viktning
-    assert vote_matrix['votes'][0]['weight'] == 1.2 * 1.1  # agent_vote_weight * agent_performance
+    # Verifiera viktning: agent_vote_weight * agent_performance * confidence
+    assert vote_matrix['votes'][0]['weight'] == 1.2 * 1.1 * 0.7
+    assert vote_matrix['votes'][1]['weight'] == 1.2 * 0.9 * 0.8
     print(f"  ✓ Vote matrix skapades med weight {vote_matrix['agent_vote_weight']}")
     
     print()
