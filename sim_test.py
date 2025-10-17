@@ -345,6 +345,29 @@ class SimulatedTester:
             symbol: Aktiesymbol
             price: Aktuellt pris
         """
+        # Sprint 6: Execute action chain for this trading decision
+        # Determine which chain to use based on market conditions
+        indicators = self.strategy_engine.current_indicators.get(symbol, {})
+        rsi = indicators.get('RSI', 50)
+        
+        # Choose chain based on market volatility/confidence
+        if rsi > 70 or rsi < 30:
+            # High RSI extremes - use aggressive chain for quick decisions
+            chain_name = 'aggressive'
+        elif 40 <= rsi <= 60:
+            # Neutral market - use standard trade chain
+            chain_name = 'standard_trade'
+        else:
+            # Moderate conditions - use risk-averse chain
+            chain_name = 'risk_averse'
+        
+        # Execute the chosen action chain
+        self.action_chain_engine.execute_chain(chain_name, {
+            'symbol': symbol,
+            'price': price,
+            'rsi': rsi
+        })
+        
         # Strategy engine genererar förslag
         proposal = self.strategy_engine.generate_proposal(symbol)
         self.strategy_engine.publish_proposal(proposal)
