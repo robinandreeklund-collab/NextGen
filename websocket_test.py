@@ -500,7 +500,7 @@ class WebSocketTester:
             
             # Publish portfolio status and calculate reward to keep system_monitor updated
             # and trigger reward_tuner
-            self.portfolio_manager.publish_status()
+            # See issue #TODO: Add issue/PR/ticket number for context on why this is needed.
             self.portfolio_manager.calculate_and_publish_reward()
             
             if self.debug_mode and self.stats['decisions_made'] < 10:
