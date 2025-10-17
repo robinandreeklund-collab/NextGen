@@ -11,21 +11,24 @@ ci_matrix:
 # Test dimensions
 test_dimensions:
   python_versions:
-    - "3.10"
-    - "3.11"
-    - "3.12"
+    versions:
+      - "3.10"
+      - "3.11"
+      - "3.12"
     primary: "3.12"
   
   operating_systems:
-    - ubuntu-20.04
-    - ubuntu-22.04
-    - ubuntu-latest
+    systems:
+      - ubuntu-20.04
+      - ubuntu-22.04
+      - ubuntu-latest
     primary: ubuntu-latest
   
   dependency_versions:
-    - minimal: requirements.txt (minimal versions)
-    - latest: requirements.txt (latest versions)
-    - pinned: requirements.txt (exact versions from lockfile)
+    versions:
+      - minimal: requirements.txt (minimal versions)
+      - latest: requirements.txt (latest versions)
+      - pinned: requirements.txt (exact versions from lockfile)
     primary: pinned
 
 # Reward transformation scenarios
@@ -37,7 +40,7 @@ reward_transformation_scenarios:
       volatility_penalty_weight: 0.3
       reward_scaling_factor: 1.0
     expected:
-      volatility_ratio: < 1.2
+      volatility_ratio:_max: 1.2
       volatility_penalty_applied: false
       transformation_ratio: ~1.0
       tuned_rewards_count: 8
@@ -49,9 +52,9 @@ reward_transformation_scenarios:
       volatility_penalty_weight: 0.3
       reward_scaling_factor: 1.0
     expected:
-      volatility_ratio: > 2.0
+      volatility_ratio_min: 2.0
       volatility_penalty_applied: true
-      transformation_ratio: < 0.8
+      transformation_ratio_max: 0.8
       tuned_rewards_count: 8
     
   overfitting_detected:
@@ -61,7 +64,7 @@ reward_transformation_scenarios:
       agent_performance_longterm: [0.8, 0.82, 0.79, 0.81]
       overfitting_detector_threshold: 0.2
     expected:
-      overfitting_score: > 0.2
+      overfitting_score:_min: 0.2
       overfitting_penalty_applied: true
       tuned_reward_reduction: ~50%
       evolution_triggered: true
@@ -73,7 +76,7 @@ reward_transformation_scenarios:
       agent_performance_longterm: [0.73, 0.74, 0.72, 0.73]
       overfitting_detector_threshold: 0.2
     expected:
-      overfitting_score: < 0.2
+      overfitting_score:_max: 0.2
       overfitting_penalty_applied: false
       transformation_ratio: ~1.0
       evolution_triggered: false
@@ -89,8 +92,8 @@ reward_transformation_scenarios:
     expected:
       volatility_penalty_applied: true
       overfitting_penalty_applied: true
-      transformation_ratio: < 0.4
-      tuned_reward_reduction: > 60%
+      transformation_ratio:_max: 0.4
+      tuned_reward_reduction:_min: 60%
 
 # Parameter adjustment scenarios
 parameter_adjustment_scenarios:
@@ -176,8 +179,8 @@ parameter_adjustment_scenarios:
       allow_adjustments: true
     expected:
       parameters_converge: true
-      convergence_time: < 50 episodes
-      drift_from_default: < 50%
+      convergence_time:_max: 50 episodes
+      drift_from_default:_max: 50%
       no_parameter_oscillation: true
 
 # Integration flow scenarios
@@ -314,10 +317,10 @@ performance_scenarios:
       trade_frequency: 10_per_minute
       duration: 5_minutes
     expected:
-      latency: < 10ms
+      latency:_max: 10ms
       throughput: handles_all_trades
-      cpu_usage: < 30%
-      memory_usage: < 200MB
+      cpu_usage:_max: 30%
+      memory_usage:_max: 200MB
     
   medium_load:
     description: Medium belastning - 100 trades/minut
@@ -325,10 +328,10 @@ performance_scenarios:
       trade_frequency: 100_per_minute
       duration: 5_minutes
     expected:
-      latency: < 50ms
+      latency:_max: 50ms
       throughput: handles_all_trades
-      cpu_usage: < 60%
-      memory_usage: < 400MB
+      cpu_usage:_max: 60%
+      memory_usage:_max: 400MB
     
   high_load:
     description: Hög belastning - 1000 trades/minut
@@ -336,10 +339,10 @@ performance_scenarios:
       trade_frequency: 1000_per_minute
       duration: 5_minutes
     expected:
-      latency: < 100ms
+      latency:_max: 100ms
       throughput: handles_all_trades
-      cpu_usage: < 90%
-      memory_usage: < 500MB
+      cpu_usage:_max: 90%
+      memory_usage:_max: 500MB
     
   burst_load:
     description: Burst av trades
@@ -422,14 +425,14 @@ configuration_matrix:
 execution_matrix:
   quick_validation:
     description: Snabb validering för varje commit
-    duration: < 5 minutes
+    duration:_max: 5 minutes
     includes:
       - Standard Configuration
     test_count: ~50 tests
   
   comprehensive_validation:
     description: Fullständig validering för PR
-    duration: < 15 minutes
+    duration:_max: 15 minutes
     includes:
       - Standard Configuration
       - Conservative Trading
@@ -439,14 +442,14 @@ execution_matrix:
   
   full_matrix:
     description: Komplett matrix för release
-    duration: < 60 minutes
+    duration:_max: 60 minutes
     includes:
       - All configurations
     test_count: ~300 tests
   
   nightly_build:
     description: Nattlig build med alla scenarier
-    duration: < 120 minutes
+    duration:_max: 120 minutes
     includes:
       - All configurations
       - Performance Testing

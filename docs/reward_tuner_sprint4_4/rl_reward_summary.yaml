@@ -399,9 +399,10 @@ system_performance_metrics:
       - transformation_ratio_mean: Genomsnittlig transformation
       - transformation_ratio_std: Stabilitet i transformation
     targets:
-      - reward_match_ratio: 1.0 (varje base → tuned)
-      - transformation_ratio_mean: [0.7, 1.3] (inte för stor transformation)
-      - transformation_ratio_std: < 0.3 (stabil transformation)
+      reward_match_ratio: 1.0  # varje base → tuned
+      transformation_ratio_mean_min: 0.7  # inte för stor transformation
+      transformation_ratio_mean_max: 1.3
+      transformation_ratio_std_max: 0.3  # stabil transformation
   
   parameter_adjustment_health:
     metrics:
@@ -410,9 +411,9 @@ system_performance_metrics:
       - parameter_convergence: Hur snabbt parametrar konvergerar
       - adjustment_impact: Förbättring i performance efter justering
     targets:
-      - parameters_in_bounds: 1.0 (100% inom bounds)
-      - parameter_convergence: < 100 episodes
-      - adjustment_impact: > 0.05 (5% förbättring)
+      parameters_in_bounds: 1.0  # 100% inom bounds
+      parameter_convergence_max: 100  # episodes
+      adjustment_impact_min: 0.05  # 5% förbättring
   
   agent_training_health:
     metrics:
@@ -421,43 +422,43 @@ system_performance_metrics:
       - training_stability: Stabilitet i träning (låg variance)
       - convergence_rate: Hur snabbt agenter konvergerar
     targets:
-      - agent_loss_trend: negative slope (minskar över tid)
-      - agent_performance_trend: positive slope (ökar över tid)
-      - training_stability: > 0.7
-      - convergence_rate: < 200 episodes
+      agent_loss_trend: negative_slope  # minskar över tid
+      agent_performance_trend: positive_slope  # ökar över tid
+      training_stability_min: 0.7
+      convergence_rate_max: 200  # episodes
 
 # Test coverage mapping
 test_coverage:
   unit_tests:
     reward_tuner:
-      - test_RT001_volatility_calculation: 3 test cases
-      - test_RT002_overfitting_detection: 3 test cases
-      - test_RT003_penalty_application: 3 test cases
-      - test_RT004_scaling: 4 test cases
+      test_RT001_volatility_calculation: 3 test cases
+      test_RT002_overfitting_detection: 3 test cases
+      test_RT003_penalty_application: 3 test cases
+      test_RT004_scaling: 4 test cases
       total: 13 test cases
     
     rl_controller:
-      - test_ppo_agent_initialization: 1 test
-      - test_ppo_agent_action_selection: 1 test
-      - test_ppo_agent_update: 1 test
-      - test_meta_parameter_agent: 3 tests
-      - test_rl_controller: 5 tests
+      test_ppo_agent_initialization: 1 test
+      test_ppo_agent_action_selection: 1 test
+      test_ppo_agent_update: 1 test
+      test_meta_parameter_agent: 3 tests
+      test_rl_controller: 5 tests
       total: 11 tests
     
     adaptive_parameters:
-      - test_strategy_engine_parameters: 2 tests
-      - test_risk_manager_parameters: 2 tests
-      - test_decision_engine_parameters: 2 tests
-      - test_vote_engine_parameters: 1 test
-      - test_execution_engine_parameters: 1 test
+      test_strategy_engine_parameters: 2 tests
+      test_risk_manager_parameters: 2 tests
+      test_decision_engine_parameters: 2 tests
+      test_vote_engine_parameters: 1 test
+      test_execution_engine_parameters: 1 test
       total: 8 tests
   
   integration_tests:
-    - test_RT005_full_reward_flow: Portfolio → RewardTuner → RLController
-    - test_RT006_logging_and_visualization: Logging och visualization
-    - test_full_system_with_adaptive_parameters: Hela systemet end-to-end
-    - test_parameter_bounds_enforcement: Bounds checking
-    - test_parameter_impact_on_decisions: Parameter impact validering
+    test_RT005_full_reward_flow: Portfolio → RewardTuner → RLController
+    test_RT006_logging_and_visualization: Logging och visualization
+    test_full_system_with_adaptive_parameters: Hela systemet end-to-end
+    test_parameter_bounds_enforcement: Bounds checking
+    test_parameter_impact_on_decisions: Parameter impact validering
     total: 5 integration tests
   
   total_test_coverage:
