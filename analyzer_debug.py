@@ -680,7 +680,7 @@ class AnalyzerDebugDashboard:
     
     def create_agent_evolution_graph(self):
         """Skapar agentutvecklingsgraf."""
-        profiles = self.agent_manager.get_all_agent_profiles()
+        profiles = self.agent_manager.get_all_profiles()
         
         agents = []
         versions = []
@@ -704,20 +704,30 @@ class AnalyzerDebugDashboard:
     
     def create_agent_metrics_graph(self):
         """Skapar agentmetrikergraf."""
-        evolution_metrics = self.meta_evolution.get_evolution_metrics()
+        # Get agent profiles to show basic metrics
+        profiles = self.agent_manager.get_all_profiles()
         
-        agents = list(evolution_metrics.get('agent_performance', {}).keys())
-        performance = [evolution_metrics['agent_performance'][a]['current_performance'] 
-                      for a in agents] if agents else []
+        agents = list(profiles.keys())
+        versions = [profiles[a]['version'] for a in agents] if agents else []
+        
+        # Convert version strings to numbers for plotting (e.g., "1.0.0" -> 1.0)
+        version_numbers = []
+        for v in versions:
+            try:
+                parts = v.split('.')
+                version_numbers.append(float(f"{parts[0]}.{parts[1]}"))
+            except:
+                version_numbers.append(1.0)
         
         fig = go.Figure(data=[
-            go.Bar(x=agents, y=performance, marker_color='lightblue')
+            go.Bar(x=agents, y=version_numbers, marker_color='lightblue',
+                   text=versions, textposition='auto')
         ])
         
         fig.update_layout(
-            title="Agent Performance Metrics",
+            title="Agent Versions",
             xaxis_title="Agent",
-            yaxis_title="Performance",
+            yaxis_title="Version",
             height=400
         )
         
