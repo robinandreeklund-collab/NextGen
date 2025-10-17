@@ -485,8 +485,7 @@ class NextGenDashboard:
             Input('interval-component', 'n_intervals')
         )
         def update_sidebar(n):
-            portfolio_value = self.portfolio_manager.get_portfolio_value()
-            total_value = portfolio_value.get('total_value', 0)
+            total_value = self.portfolio_manager.get_portfolio_value(self.current_prices)
             
             num_agents = len(self.agent_manager.get_all_agents())
             num_decisions = len(self.decision_history)
@@ -503,7 +502,11 @@ class NextGenDashboard:
     
     def create_portfolio_panel(self) -> html.Div:
         """Create Portfolio panel."""
-        portfolio = self.portfolio_manager.get_portfolio_value()
+        # Get portfolio data
+        total_value = self.portfolio_manager.get_portfolio_value(self.current_prices)
+        cash = self.portfolio_manager.cash
+        holdings_value = total_value - cash
+        roi = ((total_value - self.portfolio_manager.start_capital) / self.portfolio_manager.start_capital) * 100
         
         return html.Div([
             html.H2("Portfolio Overview", 
@@ -511,13 +514,13 @@ class NextGenDashboard:
             
             # Portfolio metrics cards
             html.Div([
-                self.create_metric_card("Total Value", f"${portfolio.get('total_value', 0):.2f}", 
+                self.create_metric_card("Total Value", f"${total_value:.2f}", 
                                        THEME_COLORS['primary']),
-                self.create_metric_card("Cash", f"${portfolio.get('cash', 0):.2f}", 
+                self.create_metric_card("Cash", f"${cash:.2f}", 
                                        THEME_COLORS['success']),
-                self.create_metric_card("Holdings", f"${portfolio.get('holdings_value', 0):.2f}", 
+                self.create_metric_card("Holdings", f"${holdings_value:.2f}", 
                                        THEME_COLORS['secondary']),
-                self.create_metric_card("ROI", f"{portfolio.get('roi', 0):.2f}%", 
+                self.create_metric_card("ROI", f"{roi:.2f}%", 
                                        THEME_COLORS['warning']),
             ], style={'display': 'grid', 'gridTemplateColumns': 'repeat(4, 1fr)', 
                      'gap': '20px', 'marginBottom': '30px'}),
