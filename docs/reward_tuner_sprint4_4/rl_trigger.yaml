@@ -1,0 +1,640 @@
+# RL Trigger Configuration
+# Definierar triggers för RL parameterjustering och agent updates
+
+rl_triggers:
+  name: RL Trigger Configuration for Adaptive Parameters
+  version: 2.0
+  description: |
+    Triggers som bestämmer när och hur RL-system ska justera parametrar,
+    uppdatera agenter och reagera på system events.
+
+# Event-based triggers
+event_triggers:
+  high_volatility_detected:
+    trigger_condition:
+      metric: volatility_ratio
+      operator: ">"
+      threshold: 2.0
+    actions:
+      - module: reward_tuner
+        action: increase_volatility_penalty_weight
+        delta: +0.05
+        max_value: 1.0
+      
+      - module: reward_tuner
+        action: decrease_reward_scaling_factor
+        delta: -0.1
+        min_value: 0.5
+      
+      - module: risk_manager
+        action: increase_risk_tolerance
+        delta: +0.02
+        max_value: 0.5
+    
+    priority: HIGH
+    immediate: true
+    log_event: true
+    notify: introspection_panel
+  
+  overfitting_detected:
+    trigger_condition:
+      metric: overfitting_score
+      operator: ">"
+      threshold_parameter: overfitting_detector_threshold
+    actions:
+      - module: reward_tuner
+        action: apply_overfitting_penalty
+        penalty_factor: 0.5
+      
+      - module: meta_agent_evolution_engine
+        action: trigger_evolution
+        reason: overfitting_detected
+      
+      - module: rl_controller
+        action: increase_agent_entropy_threshold
+        delta: +0.05
+        max_value: 0.9
+    
+    priority: CRITICAL
+    immediate: true
+    log_event: true
+    notify: [introspection_panel, strategic_memory_engine]
+  
+  performance_degradation:
+    trigger_condition:
+      metric: agent_performance_drop
+      operator: ">"
+      threshold: 0.15
+    actions:
+      - module: meta_agent_evolution_engine
+        action: analyze_degradation
+        generate_suggestions: true
+      
+      - module: rl_controller
+        action: adjust_learning_rate
+        factor: 0.8
+      
+      - module: rl_controller
+        action: increase_update_frequency
+        delta: +5
+        max_value: 100
+    
+    priority: HIGH
+    immediate: true
+    log_event: true
+    notify: meta_agent_evolution_engine
+  
+  excessive_drawdown:
+    trigger_condition:
+      metric: current_drawdown
+      operator: ">"
+      threshold_parameter: max_drawdown
+    actions:
+      - module: risk_manager
+        action: emergency_risk_reduction
+        new_risk_tolerance: 0.01
+      
+      - module: execution_engine
+        action: pause_trading
+        duration: 60  # seconds
+      
+      - module: rl_controller
+        action: decrease_agent_entropy_threshold
+        delta: -0.1
+        min_value: 0.1
+    
+    priority: CRITICAL
+    immediate: true
+    log_event: true
+    notify: [risk_manager, portfolio_manager, introspection_panel]
+  
+  low_training_stability:
+    trigger_condition:
+      metric: training_stability
+      operator: "<"
+      threshold: 0.3
+    actions:
+      - module: reward_tuner
+        action: decrease_reward_scaling_factor
+        delta: -0.1
+        min_value: 0.5
+      
+      - module: rl_controller
+        action: reduce_update_frequency
+        delta: -2
+        min_value: 1
+    
+    priority: MEDIUM
+    immediate: false
+    log_event: true
+    notify: rl_controller
+  
+  high_consensus_disagreement:
+    trigger_condition:
+      metric: consensus_strength
+      operator: "<"
+      threshold: 0.5
+    actions:
+      - module: decision_engine
+        action: increase_consensus_threshold
+        delta: +0.05
+        max_value: 1.0
+      
+      - module: vote_engine
+        action: reweight_agents
+        based_on: recent_hit_rate
+    
+    priority: MEDIUM
+    immediate: false
+    log_event: true
+    notify: decision_engine
+
+# Time-based triggers
+time_triggers:
+  every_trade:
+    frequency: per_trade
+    frequency_count: 1
+    actions:
+      - module: execution_engine
+        action: update_parameters
+        parameters: [execution_delay, slippage_tolerance]
+      
+      - module: portfolio_manager
+        action: publish_base_reward
+      
+      - module: reward_tuner
+        action: transform_reward
+    
+    priority: NORMAL
+    log_event: false
+  
+  every_20_trades:
+    frequency: per_trade_batch
+    frequency_count: 20
+    actions:
+      - module: rl_controller
+        action: update_parameter
+        parameter: reward_scaling_factor
+        based_on_signal: training_stability
+      
+      - module: strategy_engine
+        action: update_parameter
+        parameter: signal_threshold
+        based_on_signal: trade_success_rate
+    
+    priority: NORMAL
+    log_event: true
+    notify: strategic_memory_engine
+  
+  every_epoch:
+    frequency: per_epoch
+    frequency_count: 1
+    epoch_definition: 100_trades_or_24_hours
+    actions:
+      - module: rl_controller
+        action: update_parameters
+        parameters:
+          - volatility_penalty_weight: based_on reward_consistency
+          - min_samples: based_on feedback_consistency
+          - update_frequency: based_on reward_volatility
+      
+      - module: strategy_engine
+        action: update_parameter
+        parameter: indicator_weighting
+        based_on_signal: cumulative_reward
+      
+      - module: risk_manager
+        action: update_parameter
+        parameter: max_drawdown
+        based_on_signal: portfolio_stability
+      
+      - module: decision_engine
+        action: update_parameter
+        parameter: memory_weighting
+        based_on_signal: historical_alignment
+      
+      - module: vote_engine
+        action: update_parameter
+        parameter: agent_vote_weight
+        based_on_signal: agent_hit_rate
+    
+    priority: NORMAL
+    log_event: true
+    notify: [strategic_memory_engine, introspection_panel]
+  
+  every_50_rewards:
+    frequency: per_reward_batch
+    frequency_count: 50
+    actions:
+      - module: reward_tuner
+        action: update_parameter
+        parameter: overfitting_detector_threshold
+        based_on_signal: generalization_score
+      
+      - module: meta_agent_evolution_engine
+        action: analyze_evolution_patterns
+    
+    priority: NORMAL
+    log_event: true
+    notify: strategic_memory_engine
+  
+  every_10_decisions:
+    frequency: per_decision_batch
+    frequency_count: 10
+    actions:
+      - module: meta_agent_evolution_engine
+        action: update_parameter
+        parameter: evolution_threshold
+        based_on_signal: agent_performance_gain
+      
+      - module: risk_manager
+        action: update_parameter
+        parameter: risk_tolerance
+        based_on_signal: drawdown_avoidance
+    
+    priority: NORMAL
+    log_event: true
+    notify: strategic_memory_engine
+  
+  every_5_decisions:
+    frequency: per_decision_batch
+    frequency_count: 5
+    actions:
+      - module: rl_controller
+        action: update_parameter
+        parameter: agent_entropy_threshold
+        based_on_signal: decision_diversity
+    
+    priority: NORMAL
+    log_event: false
+  
+  every_50_decisions:
+    frequency: per_decision_batch
+    frequency_count: 50
+    actions:
+      - module: decision_engine
+        action: update_parameter
+        parameter: consensus_threshold
+        based_on_signal: decision_accuracy
+    
+    priority: NORMAL
+    log_event: true
+    notify: strategic_memory_engine
+
+# Condition-based triggers
+condition_triggers:
+  reward_consistency_low:
+    condition:
+      metric: reward_consistency
+      operator: "<"
+      threshold: 0.5
+    check_frequency: every_epoch
+    actions:
+      - module: reward_tuner
+        action: increase_volatility_penalty_weight
+        delta: +0.05
+        max_value: 1.0
+    
+    priority: MEDIUM
+    log_event: true
+  
+  generalization_score_low:
+    condition:
+      metric: generalization_score
+      operator: "<"
+      threshold: 0.6
+    check_frequency: every_50_rewards
+    actions:
+      - module: reward_tuner
+        action: decrease_overfitting_detector_threshold
+        delta: -0.02
+        min_value: 0.05
+      
+      - module: meta_agent_evolution_engine
+        action: increase_evolution_threshold
+        delta: +0.02
+        max_value: 0.5
+    
+    priority: MEDIUM
+    log_event: true
+  
+  agent_hit_rate_low:
+    condition:
+      metric: agent_hit_rate
+      operator: "<"
+      threshold: 0.4
+      per_agent: true
+    check_frequency: every_epoch
+    actions:
+      - module: vote_engine
+        action: decrease_agent_vote_weight
+        target: low_performing_agents
+        delta: -0.1
+        min_value: 0.1
+    
+    priority: MEDIUM
+    log_event: true
+  
+  trade_success_rate_high:
+    condition:
+      metric: trade_success_rate
+      operator: ">"
+      threshold: 0.7
+    check_frequency: every_20_trades
+    actions:
+      - module: strategy_engine
+        action: decrease_signal_threshold
+        delta: -0.02
+        min_value: 0.1
+        reason: allow_more_trades_when_successful
+    
+    priority: LOW
+    log_event: true
+  
+  trade_success_rate_low:
+    condition:
+      metric: trade_success_rate
+      operator: "<"
+      threshold: 0.4
+    check_frequency: every_20_trades
+    actions:
+      - module: strategy_engine
+        action: increase_signal_threshold
+        delta: +0.02
+        max_value: 0.9
+        reason: be_more_selective_when_failing
+    
+    priority: MEDIUM
+    log_event: true
+
+# Composite triggers (multiple conditions)
+composite_triggers:
+  unstable_training_with_high_volatility:
+    conditions:
+      - metric: training_stability
+        operator: "<"
+        threshold: 0.4
+      - metric: volatility_ratio
+        operator: ">"
+        threshold: 1.8
+    logic: AND
+    check_frequency: every_epoch
+    actions:
+      - module: reward_tuner
+        action: emergency_stabilization
+        actions:
+          - set_reward_scaling_factor: 0.7
+          - set_volatility_penalty_weight: 0.5
+      
+      - module: rl_controller
+        action: reduce_learning_rate
+        factor: 0.5
+    
+    priority: HIGH
+    immediate: true
+    log_event: true
+  
+  poor_performance_across_board:
+    conditions:
+      - metric: trade_success_rate
+        operator: "<"
+        threshold: 0.3
+      - metric: agent_performance_gain
+        operator: "<"
+        threshold: -0.1
+      - metric: portfolio_stability
+        operator: "<"
+        threshold: 0.5
+    logic: AND
+    check_frequency: every_epoch
+    actions:
+      - module: meta_agent_evolution_engine
+        action: full_system_analysis
+        generate_evolution_suggestions: true
+      
+      - module: risk_manager
+        action: conservative_mode
+        new_risk_tolerance: 0.05
+        new_max_drawdown: 0.1
+    
+    priority: CRITICAL
+    immediate: true
+    log_event: true
+    notify: [introspection_panel, strategic_memory_engine]
+  
+  high_performance_with_stability:
+    conditions:
+      - metric: trade_success_rate
+        operator: ">"
+        threshold: 0.7
+      - metric: training_stability
+        operator: ">"
+        threshold: 0.8
+      - metric: portfolio_stability
+        operator: ">"
+        threshold: 0.8
+    logic: AND
+    check_frequency: every_epoch
+    actions:
+      - module: risk_manager
+        action: gradual_risk_increase
+        delta: +0.01
+        max_value: 0.3
+      
+      - module: strategy_engine
+        action: explore_more_opportunities
+        decrease_signal_threshold: true
+        delta: -0.03
+    
+    priority: LOW
+    log_event: true
+
+# Manual triggers (triggered via introspection panel or API)
+manual_triggers:
+  reset_all_parameters:
+    description: Reset alla parametrar till default värden
+    requires_confirmation: true
+    actions:
+      - module: all_modules
+        action: reset_to_defaults
+        parameters: all_adaptive_parameters
+    
+    priority: CRITICAL
+    log_event: true
+    notify: all_modules
+  
+  force_evolution:
+    description: Tvinga agent evolution även utan trigger
+    requires_confirmation: true
+    parameters:
+      target_agent: required
+      evolution_reason: required
+    actions:
+      - module: meta_agent_evolution_engine
+        action: force_evolution
+        target: $target_agent
+        reason: $evolution_reason
+    
+    priority: HIGH
+    log_event: true
+    notify: meta_agent_evolution_engine
+  
+  emergency_stop:
+    description: Stoppa all trading och RL-träning
+    requires_confirmation: true
+    actions:
+      - module: execution_engine
+        action: stop_all_trading
+      
+      - module: rl_controller
+        action: pause_training
+      
+      - module: portfolio_manager
+        action: liquidate_positions
+        optional: true
+    
+    priority: CRITICAL
+    immediate: true
+    log_event: true
+    notify: all_modules
+  
+  override_parameter:
+    description: Manuell override av en specifik parameter
+    requires_confirmation: false
+    parameters:
+      module: required
+      parameter: required
+      new_value: required
+    actions:
+      - module: $module
+        action: override_parameter
+        parameter: $parameter
+        value: $new_value
+    
+    priority: MEDIUM
+    log_event: true
+    notify: [$module, strategic_memory_engine]
+
+# Trigger scheduling och prioritering
+trigger_scheduling:
+  priority_levels:
+    CRITICAL:
+      execution: immediate
+      can_interrupt: true
+      max_concurrent: 5
+      timeout: 1_second
+    
+    HIGH:
+      execution: within_1_second
+      can_interrupt: false
+      max_concurrent: 10
+      timeout: 5_seconds
+    
+    MEDIUM:
+      execution: within_5_seconds
+      can_interrupt: false
+      max_concurrent: 20
+      timeout: 10_seconds
+    
+    NORMAL:
+      execution: within_10_seconds
+      can_interrupt: false
+      max_concurrent: 50
+      timeout: 30_seconds
+    
+    LOW:
+      execution: when_idle
+      can_interrupt: false
+      max_concurrent: 100
+      timeout: 60_seconds
+  
+  conflict_resolution:
+    same_parameter_multiple_triggers:
+      strategy: highest_priority_wins
+      combine_deltas: false
+      log_conflict: true
+    
+    opposing_actions:
+      strategy: cancel_both
+      log_conflict: true
+      notify: introspection_panel
+    
+    rapid_fire_triggers:
+      strategy: debounce
+      debounce_time: 1_second
+      aggregate_similar: true
+
+# Trigger monitoring och metrics
+trigger_monitoring:
+  metrics_tracked:
+    - trigger_count_by_type
+    - trigger_execution_time
+    - trigger_success_rate
+    - trigger_impact_on_performance
+    - trigger_conflicts_detected
+    - trigger_priority_distribution
+  
+  logging:
+    log_all_triggers: true
+    log_level_by_priority:
+      CRITICAL: ERROR
+      HIGH: WARNING
+      MEDIUM: INFO
+      NORMAL: DEBUG
+      LOW: DEBUG
+    
+    log_format: |
+      [{timestamp}] [{priority}] [{trigger_type}] {trigger_name}
+      Condition: {condition}
+      Actions: {actions}
+      Result: {result}
+      Impact: {impact_metrics}
+  
+  alerts:
+    too_many_critical_triggers:
+      condition: critical_triggers_per_minute > 5
+      action: alert_admin
+      message: "Systemet triggar för många kritiska events"
+    
+    trigger_execution_failures:
+      condition: trigger_failure_rate > 0.1
+      action: alert_admin
+      message: "Hög andel trigger execution failures"
+    
+    no_triggers_for_extended_period:
+      condition: minutes_since_last_trigger > 60
+      action: health_check
+      message: "Inga triggers på 60 minuter - systemet kanske inte fungerar"
+
+# Integration med testing
+test_integration:
+  trigger_testing:
+    mock_triggers:
+      - Create mock events för alla trigger conditions
+      - Verify triggers fire correctly
+      - Validate actions execute as expected
+      - Check priority handling
+    
+    trigger_scenarios:
+      - high_volatility_scenario:
+          setup: Set volatility_ratio = 2.5
+          expected_triggers: [high_volatility_detected]
+          expected_actions: [increase_volatility_penalty_weight, decrease_reward_scaling_factor]
+      
+      - overfitting_scenario:
+          setup: Set overfitting_score = 0.3
+          expected_triggers: [overfitting_detected]
+          expected_actions: [apply_overfitting_penalty, trigger_evolution]
+      
+      - composite_crisis_scenario:
+          setup: |
+            Set training_stability = 0.3
+            Set volatility_ratio = 2.0
+          expected_triggers: [unstable_training_with_high_volatility]
+          expected_actions: [emergency_stabilization, reduce_learning_rate]
+  
+  ci_integration:
+    test_triggers_on_every_commit: true
+    verify_trigger_configurations: true
+    validate_priority_levels: true
+    check_action_validity: true

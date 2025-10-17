@@ -1,0 +1,536 @@
+# CI Matrix Configuration
+# Test matrix för att verifiera RL/PPO system i olika konfigurationer
+
+ci_matrix:
+  name: NextGen AI Trader CI Test Matrix
+  version: 2.0
+  description: |
+    Test matrix för att verifiera systemet fungerar korrekt med olika
+    kombinationer av parametrar, konfigurationer och scenarier.
+
+# Test dimensions
+test_dimensions:
+  python_versions:
+    versions:
+      - "3.10"
+      - "3.11"
+      - "3.12"
+    primary: "3.12"
+  
+  operating_systems:
+    systems:
+      - ubuntu-20.04
+      - ubuntu-22.04
+      - ubuntu-latest
+    primary: ubuntu-latest
+  
+  dependency_versions:
+    versions:
+      - minimal: requirements.txt (minimal versions)
+      - latest: requirements.txt (latest versions)
+      - pinned: requirements.txt (exact versions from lockfile)
+    primary: pinned
+
+# Reward transformation scenarios
+reward_transformation_scenarios:
+  low_volatility:
+    description: Låg reward volatility, stabil portfolio
+    setup:
+      base_rewards: [1.0, 1.1, 0.9, 1.0, 1.05, 0.95, 1.02, 0.98]
+      volatility_penalty_weight: 0.3
+      reward_scaling_factor: 1.0
+    expected:
+      volatility_ratio:_max: 1.2
+      volatility_penalty_applied: false
+      transformation_ratio: ~1.0
+      tuned_rewards_count: 8
+    
+  high_volatility:
+    description: Hög reward volatility, volatil portfolio
+    setup:
+      base_rewards: [1.0, 5.0, -3.0, 2.0, -1.0, 4.0, -2.0, 3.0]
+      volatility_penalty_weight: 0.3
+      reward_scaling_factor: 1.0
+    expected:
+      volatility_ratio_min: 2.0
+      volatility_penalty_applied: true
+      transformation_ratio_max: 0.8
+      tuned_rewards_count: 8
+    
+  overfitting_detected:
+    description: Agent performance drop, overfitting scenario
+    setup:
+      agent_performance_recent: [0.5, 0.52, 0.48, 0.51]
+      agent_performance_longterm: [0.8, 0.82, 0.79, 0.81]
+      overfitting_detector_threshold: 0.2
+    expected:
+      overfitting_score:_min: 0.2
+      overfitting_penalty_applied: true
+      tuned_reward_reduction: ~50%
+      evolution_triggered: true
+    
+  stable_performance:
+    description: Stabil agent performance, no overfitting
+    setup:
+      agent_performance_recent: [0.75, 0.76, 0.74, 0.75]
+      agent_performance_longterm: [0.73, 0.74, 0.72, 0.73]
+      overfitting_detector_threshold: 0.2
+    expected:
+      overfitting_score:_max: 0.2
+      overfitting_penalty_applied: false
+      transformation_ratio: ~1.0
+      evolution_triggered: false
+    
+  combined_penalties:
+    description: Both volatility and overfitting penalties
+    setup:
+      base_rewards: [1.0, 5.0, -3.0, 2.0]
+      agent_performance_recent: [0.5, 0.52]
+      agent_performance_longterm: [0.8, 0.81]
+      volatility_penalty_weight: 0.3
+      overfitting_detector_threshold: 0.2
+    expected:
+      volatility_penalty_applied: true
+      overfitting_penalty_applied: true
+      transformation_ratio:_max: 0.4
+      tuned_reward_reduction:_min: 60%
+
+# Parameter adjustment scenarios
+parameter_adjustment_scenarios:
+  all_parameters_default:
+    description: Alla parametrar på default värden
+    setup:
+      reward_scaling_factor: 1.0
+      volatility_penalty_weight: 0.3
+      overfitting_detector_threshold: 0.2
+      evolution_threshold: 0.25
+      min_samples: 20
+      update_frequency: 10
+      agent_entropy_threshold: 0.3
+      signal_threshold: 0.5
+      indicator_weighting: 0.33
+      risk_tolerance: 0.1
+      max_drawdown: 0.15
+      consensus_threshold: 0.75
+      memory_weighting: 0.4
+      agent_vote_weight: 1.0
+      execution_delay: 0
+      slippage_tolerance: 0.01
+    expected:
+      all_parameters_in_bounds: true
+      system_operates_normally: true
+    
+  conservative_configuration:
+    description: Konservativa parametervärden
+    setup:
+      reward_scaling_factor: 0.7
+      volatility_penalty_weight: 0.5
+      risk_tolerance: 0.05
+      max_drawdown: 0.1
+      consensus_threshold: 0.9
+      signal_threshold: 0.7
+    expected:
+      fewer_trades: true
+      lower_risk: true
+      higher_consensus_required: true
+    
+  aggressive_configuration:
+    description: Aggressiva parametervärden
+    setup:
+      reward_scaling_factor: 1.5
+      volatility_penalty_weight: 0.1
+      risk_tolerance: 0.3
+      max_drawdown: 0.25
+      consensus_threshold: 0.6
+      signal_threshold: 0.3
+    expected:
+      more_trades: true
+      higher_risk: true
+      lower_consensus_required: true
+    
+  bounds_testing:
+    description: Testa parametrar vid bounds
+    test_cases:
+      - parameter: reward_scaling_factor
+        values: [0.5, 1.0, 2.0]
+        expected: all_within_bounds
+      
+      - parameter: volatility_penalty_weight
+        values: [0.0, 0.5, 1.0]
+        expected: all_within_bounds
+      
+      - parameter: signal_threshold
+        values: [0.1, 0.5, 0.9]
+        expected: all_within_bounds
+      
+      - parameter: risk_tolerance
+        values: [0.01, 0.1, 0.5]
+        expected: all_within_bounds
+    
+    expected:
+      all_values_accepted: true
+      no_out_of_bounds_errors: true
+  
+  parameter_drift_monitoring:
+    description: Monitorera parameter drift över tid
+    setup:
+      initial_values: defaults
+      episodes: 100
+      allow_adjustments: true
+    expected:
+      parameters_converge: true
+      convergence_time_max: 50 episodes
+      drift_from_default_max: 50%
+      no_parameter_oscillation: true
+
+# Integration flow scenarios
+integration_flow_scenarios:
+  full_reward_flow:
+    description: Complete reward flow från portfolio till RL
+    steps:
+      - portfolio_manager generates base_reward
+      - reward_tuner receives base_reward
+      - reward_tuner transforms to tuned_reward
+      - rl_controller receives tuned_reward
+      - rl_controller trains agents
+      - agents publish status
+      - reward_tuner monitors performance
+    expected:
+      base_reward_count: N
+      tuned_reward_count: N
+      ratio: 1.0
+      all_agents_updated: true
+    
+  full_parameter_flow:
+    description: Complete parameter adjustment flow
+    steps:
+      - rl_controller collects reward signals
+      - MetaParameterAgent calculates adjustments
+      - parameter_adjustment events published
+      - all modules receive adjustments
+      - parameters updated in all modules
+      - strategic_memory logs changes
+    expected:
+      all_modules_updated: true
+      parameters_in_sync: true
+      history_logged: true
+    
+  voting_consensus_flow:
+    description: Complete voting and consensus flow
+    steps:
+      - strategy_engine generates proposals
+      - decision_engines vote on proposals
+      - vote_engine collects votes
+      - consensus_engine makes decision
+      - execution_engine executes decision
+      - portfolio_manager generates reward
+      - reward_tuner adjusts reward
+      - rl_controller updates agents
+    expected:
+      votes_collected: true
+      consensus_reached: true
+      decision_executed: true
+      reward_generated: true
+    
+  evolution_flow:
+    description: Agent evolution flow
+    steps:
+      - agents perform trades
+      - performance tracked
+      - degradation detected
+      - meta_agent_evolution_engine triggered
+      - evolution suggestions generated
+      - agent_manager creates new version
+      - new agent deployed
+    expected:
+      degradation_detected: true
+      evolution_triggered: true
+      new_version_created: true
+    
+  feedback_loop_flow:
+    description: Complete feedback loop
+    steps:
+      - execution_engine generates feedback
+      - feedback_router routes feedback
+      - feedback_analyzer identifies patterns
+      - insights published
+      - modules adjust based on insights
+    expected:
+      feedback_routed: true
+      patterns_detected: true
+      insights_generated: true
+      modules_adjusted: true
+
+# Error handling scenarios
+error_handling_scenarios:
+  missing_base_reward:
+    description: RewardTuner inte får base_reward
+    setup:
+      portfolio_manager: stopped
+    expected:
+      reward_tuner: graceful_degradation
+      fallback: use_last_known_reward
+      error_logged: true
+    
+  invalid_parameter_value:
+    description: Parameter adjustment med ogiltigt värde
+    setup:
+      parameter_value: -1.0  # Outside bounds
+    expected:
+      value_rejected: true
+      parameter_unchanged: true
+      error_logged: true
+    
+  message_bus_failure:
+    description: Message bus går ner
+    setup:
+      message_bus: simulated_failure
+    expected:
+      modules: attempt_reconnect
+      graceful_degradation: true
+      error_logged: true
+    
+  agent_training_failure:
+    description: RL agent träning misslyckas
+    setup:
+      agent_update: raise_exception
+    expected:
+      exception_caught: true
+      agent_not_updated: true
+      previous_version_retained: true
+      error_logged: true
+    
+  memory_overflow:
+    description: History buffers blir för stora
+    setup:
+      reward_history_size: 100000
+    expected:
+      old_data_pruned: true
+      memory_usage_controlled: true
+      essential_data_retained: true
+
+# Performance scenarios
+performance_scenarios:
+  low_load:
+    description: Låg belastning - 10 trades/minut
+    setup:
+      trade_frequency: 10_per_minute
+      duration: 5_minutes
+    expected:
+      latency:_max: 10ms
+      throughput: handles_all_trades
+      cpu_usage:_max: 30%
+      memory_usage:_max: 200MB
+    
+  medium_load:
+    description: Medium belastning - 100 trades/minut
+    setup:
+      trade_frequency: 100_per_minute
+      duration: 5_minutes
+    expected:
+      latency:_max: 50ms
+      throughput: handles_all_trades
+      cpu_usage:_max: 60%
+      memory_usage:_max: 400MB
+    
+  high_load:
+    description: Hög belastning - 1000 trades/minut
+    setup:
+      trade_frequency: 1000_per_minute
+      duration: 5_minutes
+    expected:
+      latency:_max: 100ms
+      throughput: handles_all_trades
+      cpu_usage:_max: 90%
+      memory_usage:_max: 500MB
+    
+  burst_load:
+    description: Burst av trades
+    setup:
+      normal_frequency: 10_per_minute
+      burst_frequency: 500_per_minute
+      burst_duration: 30_seconds
+    expected:
+      handles_burst: true
+      recovers_after_burst: true
+      no_messages_dropped: true
+
+# Configuration combinations to test
+configuration_matrix:
+  # Kombinera olika dimensioner
+  combinations:
+    - name: Standard Configuration
+      python: "3.12"
+      os: ubuntu-latest
+      dependencies: pinned
+      scenarios:
+        - low_volatility
+        - stable_performance
+        - all_parameters_default
+        - full_reward_flow
+      
+    - name: Conservative Trading
+      python: "3.12"
+      os: ubuntu-latest
+      dependencies: pinned
+      scenarios:
+        - conservative_configuration
+        - low_volatility
+        - stable_performance
+      
+    - name: Aggressive Trading
+      python: "3.12"
+      os: ubuntu-latest
+      dependencies: pinned
+      scenarios:
+        - aggressive_configuration
+        - high_volatility
+        - overfitting_detected
+      
+    - name: Error Handling
+      python: "3.12"
+      os: ubuntu-latest
+      dependencies: pinned
+      scenarios:
+        - missing_base_reward
+        - invalid_parameter_value
+        - agent_training_failure
+      
+    - name: Performance Testing
+      python: "3.12"
+      os: ubuntu-latest
+      dependencies: pinned
+      scenarios:
+        - medium_load
+        - high_load
+        - burst_load
+      
+    - name: Cross-Platform
+      python: ["3.10", "3.11", "3.12"]
+      os: [ubuntu-20.04, ubuntu-22.04]
+      dependencies: latest
+      scenarios:
+        - low_volatility
+        - all_parameters_default
+      
+    - name: Dependency Compatibility
+      python: "3.12"
+      os: ubuntu-latest
+      dependencies: [minimal, latest, pinned]
+      scenarios:
+        - full_reward_flow
+        - full_parameter_flow
+
+# Test execution matrix
+execution_matrix:
+  quick_validation:
+    description: Snabb validering för varje commit
+    duration:_max: 5 minutes
+    includes:
+      - Standard Configuration
+    test_count: ~50 tests
+  
+  comprehensive_validation:
+    description: Fullständig validering för PR
+    duration:_max: 15 minutes
+    includes:
+      - Standard Configuration
+      - Conservative Trading
+      - Aggressive Trading
+      - Error Handling
+    test_count: ~120 tests
+  
+  full_matrix:
+    description: Komplett matrix för release
+    duration:_max: 60 minutes
+    includes:
+      - All configurations
+    test_count: ~300 tests
+  
+  nightly_build:
+    description: Nattlig build med alla scenarier
+    duration:_max: 120 minutes
+    includes:
+      - All configurations
+      - Performance Testing
+      - Cross-Platform
+      - Dependency Compatibility
+    test_count: ~500 tests
+
+# Success criteria per scenario
+success_criteria:
+  reward_transformation:
+    - base_reward_count == tuned_reward_count
+    - transformation_ratio inom expected range
+    - penalties appliceras korrekt
+    - bounds enforcement fungerar
+  
+  parameter_adjustment:
+    - alla parametrar inom bounds
+    - adjustments propageras till moduler
+    - history loggas
+    - convergence inom reasonable time
+  
+  integration_flows:
+    - alla steg i flow exekveras
+    - data flödar korrekt mellan moduler
+    - no data loss
+    - timing inom acceptable range
+  
+  error_handling:
+    - exceptions caught gracefully
+    - system continues operating
+    - errors logged appropriately
+    - fallback mechanisms work
+  
+  performance:
+    - latency inom expected range
+    - throughput meets requirements
+    - resource usage acceptable
+    - no memory leaks
+
+# Reporting
+reporting:
+  test_results:
+    format: JUnit XML
+    include:
+      - test_name
+      - status (pass/fail/skip)
+      - duration
+      - error_message
+      - scenario_details
+  
+  matrix_coverage:
+    format: HTML Dashboard
+    include:
+      - scenarios_covered
+      - configurations_tested
+      - pass_rate_per_scenario
+      - pass_rate_per_configuration
+  
+  trend_analysis:
+    format: Time Series Graph
+    metrics:
+      - pass_rate_over_time
+      - average_duration_over_time
+      - failure_rate_by_scenario
+      - performance_metrics_trend
+
+# Integration med CI Pipeline
+ci_pipeline_integration:
+  on_pull_request:
+    run: quick_validation
+    required_pass_rate: 100%
+  
+  on_merge_to_main:
+    run: comprehensive_validation
+    required_pass_rate: 97%
+  
+  on_release:
+    run: full_matrix
+    required_pass_rate: 95%
+  
+  nightly:
+    run: nightly_build
+    required_pass_rate: 90%
+    notify_on_failure: true
