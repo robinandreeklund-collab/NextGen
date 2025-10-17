@@ -716,7 +716,7 @@ class AnalyzerDebugDashboard:
             try:
                 parts = v.split('.')
                 version_numbers.append(float(f"{parts[0]}.{parts[1]}"))
-            except:
+            except (ValueError, IndexError, AttributeError):
                 version_numbers.append(1.0)
         
         fig = go.Figure(data=[
@@ -725,7 +725,7 @@ class AnalyzerDebugDashboard:
         ])
         
         fig.update_layout(
-            title="Agent Versions",
+            title="Agent Metrics",
             xaxis_title="Agent",
             yaxis_title="Version",
             height=400

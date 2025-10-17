@@ -18,6 +18,7 @@ Användning:
 
 import sys
 import time
+import traceback
 from analyzer_debug import AnalyzerDebugDashboard
 
 
@@ -65,7 +66,6 @@ def test_simulation_iteration(dashboard):
         print(f"  📊 Iteration count: {dashboard.iteration_count}")
     except Exception as e:
         print(f"  ❌ Simulation failed: {e}")
-        import traceback
         traceback.print_exc()
         sys.exit(1)
 
