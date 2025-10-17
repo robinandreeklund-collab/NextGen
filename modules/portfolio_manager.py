@@ -169,6 +169,10 @@ class PortfolioManager:
             'fee': fee,
             'portfolio_value_after': self.get_portfolio_value(self.current_prices)
         })
+        
+        # Limit trade history to prevent memory leak (keep last 10000)
+        if len(self.trade_history) > 10000:
+            self.trade_history = self.trade_history[-10000:]
     
     def get_portfolio_value(self, current_prices: Dict[str, float] = None) -> float:
         """

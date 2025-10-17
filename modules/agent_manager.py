@@ -121,6 +121,10 @@ class AgentManager:
                 'changes': 'Initial version',
                 'status': 'active'
             })
+            
+            # Limit version history per agent to prevent memory leak (keep last 100)
+            if len(self.agent_versions[agent_id]) > 100:
+                self.agent_versions[agent_id] = self.agent_versions[agent_id][-100:]
     
     def _on_agent_update(self, update: Dict[str, Any]) -> None:
         """
@@ -236,6 +240,11 @@ class AgentManager:
                 if agent_id not in self.agent_versions:
                     self.agent_versions[agent_id] = []
                 self.agent_versions[agent_id].append(version_entry)
+                
+                # Limit version history per agent to prevent memory leak (keep last 100)
+                if len(self.agent_versions[agent_id]) > 100:
+                    self.agent_versions[agent_id] = self.agent_versions[agent_id][-100:]
+                
                 self.active_agents[agent_id] = new_version
                 
                 # Publicera uppdaterad profile
@@ -278,6 +287,11 @@ class AgentManager:
         if agent_id not in self.agent_versions:
             self.agent_versions[agent_id] = []
         self.agent_versions[agent_id].append(version_entry)
+        
+        # Limit version history per agent to prevent memory leak (keep last 100)
+        if len(self.agent_versions[agent_id]) > 100:
+            self.agent_versions[agent_id] = self.agent_versions[agent_id][-100:]
+        
         self.active_agents[agent_id] = new_version
         
         self._publish_agent_profile(agent_id)
@@ -341,6 +355,10 @@ class AgentManager:
             'logged_at': time.strftime('%Y-%m-%d %H:%M:%S')
         }
         self.parameter_history.append(param_entry)
+        
+        # Limit history to prevent memory leak (keep last 1000)
+        if len(self.parameter_history) > 1000:
+            self.parameter_history = self.parameter_history[-1000:]
     
     def get_agent_profile(self, agent_id: str) -> Dict[str, Any]:
         """
@@ -413,6 +431,11 @@ class AgentManager:
         }
         
         self.agent_versions[agent_id].append(rollback_entry)
+        
+        # Limit version history per agent to prevent memory leak (keep last 100)
+        if len(self.agent_versions[agent_id]) > 100:
+            self.agent_versions[agent_id] = self.agent_versions[agent_id][-100:]
+        
         self.active_agents[agent_id] = version
         self.agent_profiles[agent_id]['version'] = version
         

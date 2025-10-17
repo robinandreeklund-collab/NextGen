@@ -65,6 +65,10 @@ class DecisionSimulator:
             'result': simulation_result,
             'timestamp': datetime.now().isoformat()
         })
+        
+        # Limit history to prevent memory leak (keep last 1000)
+        if len(self.simulation_history) > 1000:
+            self.simulation_history = self.simulation_history[-1000:]
     
     def simulate_decision(self, proposal: Dict[str, Any]) -> Dict[str, Any]:
         """

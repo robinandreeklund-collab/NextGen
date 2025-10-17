@@ -156,6 +156,9 @@ class IntrospectionPanel:
             metrics: Reward transformation metrics
         """
         self.reward_metrics_history.append(metrics)
+        # Limit history to prevent memory leak (keep last 100)
+        if len(self.reward_metrics_history) > 100:
+            self.reward_metrics_history = self.reward_metrics_history[-100:]
     
     def _on_resource_allocation(self, allocation: Dict[str, Any]) -> None:
         """
@@ -180,9 +183,6 @@ class IntrospectionPanel:
         # Behåll senaste 100
         if len(self.team_metrics_history) > 100:
             self.team_metrics_history = self.team_metrics_history[-100:]
-        # Behåll senaste 100
-        if len(self.reward_metrics_history) > 100:
-            self.reward_metrics_history = self.reward_metrics_history[-100:]
     
     def render_dashboard(self) -> Dict[str, Any]:
         """
