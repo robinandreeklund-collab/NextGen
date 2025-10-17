@@ -277,23 +277,27 @@ class AnalyzerDebugDashboard:
         )
         def update_simulation_status(start_clicks, stop_clicks, live_clicks):
             """Startar/stoppar simulation eller live data."""
-            # Determine which button was clicked last
-            if live_clicks > 0 and live_clicks > start_clicks and live_clicks > stop_clicks:
+            # Use Dash callback context to determine which button was clicked
+            ctx = dash.callback_context
+            if not ctx.triggered:
+                return "⚪ Ready"
+            button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+            if button_id == 'live-btn':
                 if not self.live_mode:
                     self.start_live_data()
-                    return "🔴 Live Data Running (Finnhub)"
-            elif start_clicks > stop_clicks and start_clicks > live_clicks and not self.running:
+                return "🔴 Live Data Running (Finnhub)"
+            elif button_id == 'start-btn':
                 if self.live_mode:
                     self.stop_live_data()
-                self.start_simulation()
+                if not self.running:
+                    self.start_simulation()
                 return "🟢 Simulation Running"
-            elif stop_clicks > 0 and (self.running or self.live_mode):
+            elif button_id == 'stop-btn':
                 if self.live_mode:
                     self.stop_live_data()
                 if self.running:
                     self.stop_simulation()
                 return "🔴 Stopped"
-            
             return "⚪ Ready"
         
         @self.app.callback(
