@@ -516,11 +516,14 @@ class AnalyzerDebugDashboard:
         """Skapar modulstatus graf."""
         system_health = self.system_monitor.get_system_health()
         
-        modules = list(system_health['active_modules'])
-        status = ['Active' if m in system_health['active_modules'] else 'Stale' for m in modules]
+        # Get both active and stale modules, build union
+        active_modules = set(system_health.get('active_modules', []))
+        stale_modules = set(system_health.get('stale_modules', []))
+        all_modules = list(active_modules | stale_modules)
+        status = ['Active' if m in active_modules else 'Stale' for m in all_modules]
         
         fig = go.Figure(data=[
-            go.Bar(x=modules, y=[1]*len(modules), 
+            go.Bar(x=all_modules, y=[1]*len(all_modules), 
                    marker_color=['green' if s == 'Active' else 'red' for s in status])
         ])
         
