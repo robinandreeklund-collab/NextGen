@@ -1,0 +1,148 @@
+sprint: 8
+name: DQN, GAN, GNN – Hybridiserad RL & Temporal Intelligence
+goal: Integrera DQN parallellt med PPO, använd GAN för agentevolution och GNN för temporal analys
+
+modules:
+  - dqn_controller
+  - gan_evolution_engine
+  - gnn_timespan_analyzer
+  - rl_controller (uppdaterad)
+  - meta_agent_evolution_engine (uppdaterad)
+  - timespan_tracker (uppdaterad)
+  - strategic_memory_engine (uppdaterad)
+  - feedback_analyzer (uppdaterad)
+  - introspection_panel (uppdaterad)
+
+architecture:
+  hybrid_rl:
+    description: PPO och DQN körs parallellt för att fatta beslut
+    components:
+      - ppo_agent: Fortsätter från Sprint 2-7
+      - dqn_agent: Ny implementering med experience replay och target network
+      - hybrid_coordinator: Väljer eller kombinerar PPO/DQN output
+    
+  gan_evolution:
+    description: GAN genererar nya agentkandidater baserat på befintliga
+    generator: Skapar nya agentparametrar
+    discriminator: Bedömer kvalitet mot historisk performance
+    integration: Meta-agent evolution engine använder GAN-kandidater
+    
+  gnn_temporal:
+    description: GNN analyserar temporala mönster i beslut och indikatorer
+    graph_structure: Beslut och indikatorer som noder, relationer som edges
+    temporal_analysis: Identifierar sekvenser och mönster över tid
+    integration: Timespan tracker använder GNN för djupare insikter
+
+features:
+  hybrid_reward:
+    description: Belöningssystem som hanterar PPO och DQN samtidigt
+    base_reward: Från portfolio_manager
+    tuned_reward: Från reward_tuner (Sprint 4.4)
+    ppo_reward: Policy gradient-optimerad
+    dqn_reward: Q-value-optimerad
+    
+  conflict_detection:
+    description: Upptäck och hantera konflikter mellan PPO och DQN
+    parameter_conflicts: När PPO och DQN vill justera samma parameter olika
+    decision_conflicts: När PPO och DQN ger olika handelsbeslut
+    resolution: Viktad kombinering eller konsensus via vote_engine
+    
+  evolution_drift:
+    description: GAN-driven evolution med drift-detektion
+    gan_candidates: Generera nya agentversioner
+    discriminator_score: Bedöm kandidater mot historik
+    drift_detection: Upptäck när agenter avviker från baseline
+    rollback: Återställ till tidigare version vid för stor drift
+
+adaptive_parameters:
+  dqn_specific:
+    - learning_rate: [0.0001, 0.01]
+    - discount_factor: [0.9, 0.999]
+    - epsilon: [0.01, 1.0]
+    - epsilon_decay: [0.99, 0.9999]
+    - replay_buffer_size: [1000, 100000]
+    - batch_size: [16, 256]
+    - target_update_frequency: [10, 1000]
+    
+  gan_specific:
+    - generator_lr: [0.0001, 0.01]
+    - discriminator_lr: [0.0001, 0.01]
+    - latent_dim: [16, 256]
+    - evolution_threshold: [0.6, 0.95]
+    
+  gnn_specific:
+    - num_layers: [2, 5]
+    - hidden_dim: [32, 256]
+    - attention_heads: [1, 8]
+    - temporal_window: [10, 100]
+
+test_requirements:
+  unit_tests:
+    - test_dqn_controller: Testa Q-learning, replay buffer, target network
+    - test_gan_evolution_engine: Testa generator, discriminator, evolution
+    - test_gnn_timespan_analyzer: Testa graph construction, temporal analysis
+    
+  integration_tests:
+    - test_hybrid_rl: PPO vs DQN jämförelse och samarbete
+    - test_hybrid_reward: Belöningsflöde genom båda systemen
+    - test_conflict_detection: Parameter och beslutskonflikter
+    - test_gan_integration: GAN-kandidater till meta-agent evolution
+    - test_gnn_integration: GNN-insikter till timespan tracker
+    
+  performance_tests:
+    - test_parallel_execution: PPO och DQN samtidigt utan deadlock
+    - test_memory_usage: GNN och replay buffer minneshantering
+    - test_training_convergence: Hybrid RL konvergerar stabilt
+
+ci_pipeline:
+  stages:
+    - lint: Kodkvalitet och stil
+    - unit_tests: Individuella modultester
+    - integration_tests: Sprint 8 integrationer
+    - regression_tests: Sprint 1-7 fortfarande fungerar
+    - performance_tests: Prestanda och minnesanvändning
+    
+  metrics:
+    - test_coverage: 85%+
+    - test_pass_rate: 100%
+    - performance_overhead: <20% vs Sprint 7
+    
+dashboard_requirements:
+  new_sections:
+    - Hybrid RL Comparison: PPO vs DQN prestanda
+    - GAN Evolution: Kandidatgenerering och discriminator score
+    - GNN Temporal Analysis: Graph-baserade insikter
+    - Conflict Resolution: Parameter- och beslutskonflikter
+    
+  updated_sections:
+    - RL Analysis: Inkludera DQN metrics
+    - Agent Development: GAN-genererade versioner
+    - Debug & Logging: Hybrid RL events
+    
+validation:
+  functional:
+    - DQN tränar och förbättras över tid
+    - GAN genererar giltiga agentkandidater
+    - GNN identifierar temporala mönster
+    - Hybrid RL fattar beslut utan konflikter
+    
+  integration:
+    - PPO och DQN delar feedback-system
+    - GAN-kandidater integreras i evolution
+    - GNN-insikter når timespan tracker
+    - Alla Sprint 1-7 funktioner fungerar fortfarande
+    
+  performance:
+    - System svarar inom 2 sekunder
+    - Minnesanvändning <2GB
+    - CPU-användning <80% under träning
+    - Inga minneläckor efter 1000 iterationer
+
+success_criteria:
+  - Alla tester passerar (unit + integration)
+  - Dashboard visar alla nya komponenter
+  - CI pipeline kör utan fel
+  - README uppdaterad med Sprint 8 status
+  - Hybrid RL visas fungera i practice
+  - GAN genererar meningsfulla kandidater
+  - GNN ger nya temporala insikter
