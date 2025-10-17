@@ -188,7 +188,8 @@ class NextGenDashboard:
         self.system_monitor = SystemMonitor(self.message_bus)
         
         # Sprint 8 modules
-        self.dqn_controller = DQNController(self.message_bus, state_dim=10, action_dim=3)
+        # state_dim=4: matches sim_test.py state representation
+        self.dqn_controller = DQNController(self.message_bus, state_dim=4, action_dim=3)
         self.gan_evolution = GANEvolutionEngine(self.message_bus, latent_dim=64, param_dim=16)
         self.gnn_analyzer = GNNTimespanAnalyzer(self.message_bus, input_dim=32, temporal_window=20)
         
