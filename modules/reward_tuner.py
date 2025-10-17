@@ -100,7 +100,12 @@ class RewardTunerAgent:
         Delegates to the private _on_base_reward method.
         
         Args:
-            reward_data: Dict with base_reward and context
+            reward_data: Dict with base_reward and context, expected keys:
+                - 'reward': float - The base reward value
+                - 'source': str - Source of the reward (e.g., 'portfolio_manager')
+                - 'portfolio_value': float - Current portfolio value
+                - 'num_trades': int - Number of trades executed
+                - 'timestamp': float - Unix timestamp (optional)
         """
         self._on_base_reward(reward_data)
     
