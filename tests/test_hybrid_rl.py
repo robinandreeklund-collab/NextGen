@@ -165,7 +165,8 @@ class TestConflictDetection:
         
         # Combine based on weights
         combined_score = weight_dqn * np.max(dqn_q_values)
-        assert combined_score >= 0 or combined_score < 0
+        expected_score = weight_dqn * np.max(dqn_q_values)
+        assert np.isclose(combined_score, expected_score), f"Combined score {combined_score} does not match expected {expected_score}"
         
     def test_conflict_logging(self):
         """Test that conflicts are logged"""
