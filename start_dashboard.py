@@ -506,7 +506,12 @@ class NextGenDashboard:
         total_value = self.portfolio_manager.get_portfolio_value(self.current_prices)
         cash = self.portfolio_manager.cash
         holdings_value = total_value - cash
-        roi = ((total_value - self.portfolio_manager.start_capital) / self.portfolio_manager.start_capital) * 100
+        
+        # Calculate ROI with safety check
+        if self.portfolio_manager.start_capital > 0:
+            roi = ((total_value - self.portfolio_manager.start_capital) / self.portfolio_manager.start_capital) * 100
+        else:
+            roi = 0.0
         
         return html.Div([
             html.H2("Portfolio Overview", 
