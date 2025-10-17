@@ -164,7 +164,7 @@ class WebSocketTester:
         # Sprint 5: Prenumerera på simulation_result
         self.message_bus.subscribe('simulation_result', self._on_simulation_result)
         
-        print("✅ Alla moduler initialiserade (inkl. RewardTunerAgent från Sprint 4.4 och Sprint 5 moduler)")
+        print("✅ Alla moduler initialiserade (inkl. RewardTunerAgent från Sprint 4.4 och Sprint 5-moduler)")
     
     def _on_parameter_adjustment(self, adjustment: Dict[str, Any]) -> None:
         """

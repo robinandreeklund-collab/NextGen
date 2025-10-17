@@ -153,7 +153,7 @@ class SimulatedTester:
         # Sprint 5: Prenumerera på simulation_result för logging
         self.message_bus.subscribe('simulation_result', self._on_simulation_result)
         
-        print("✅ Alla moduler initialiserade (inkl. RewardTunerAgent från Sprint 4.4 och Sprint 5 moduler)")
+        print("✅ Alla moduler initialiserade (inkl. RewardTunerAgent från Sprint 4.4 och Sprint 5-moduler)")
     
     def _on_parameter_adjustment(self, adjustment: Dict[str, Any]) -> None:
         """
@@ -757,11 +757,11 @@ class SimulatedTester:
         
         print(f"\n💡 Sprint 5 Status:")
         if sim_stats['total_simulations'] > 0 or consensus_stats['total_decisions'] > 0:
-            print(f"   ✅ Sprint 5 moduler aktiva och fungerar")
+            print(f"   ✅ Sprint 5-moduler aktiva och fungerar")
             print(f"   ✅ Simulering av alternativa beslut implementerad")
             print(f"   ✅ Röstmatris och konsensusmodell implementerad")
         else:
-            print(f"   ℹ️  Sprint 5 moduler laddade men inte aktiverade än")
+            print(f"   ℹ️  Sprint 5-moduler laddade men inte aktiverade än")
             print(f"   ℹ️  Simulering och konsensus triggas vid beslutspunkter")
         
         # Sprint 4.3: Parameter Evolution Summary
