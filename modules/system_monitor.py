@@ -56,6 +56,13 @@ class SystemMonitor:
         self.message_bus.subscribe('vote_matrix', self._on_vote_activity)
         self.message_bus.subscribe('tuned_reward', self._on_reward_tuner_activity)
         
+        # Sprint 8: Subscribe to DQN, GAN, GNN activities
+        self.message_bus.subscribe('dqn_metrics', self._on_dqn_activity)
+        self.message_bus.subscribe('dqn_action_response', self._on_dqn_activity)
+        self.message_bus.subscribe('gan_metrics', self._on_gan_activity)
+        self.message_bus.subscribe('gan_candidates', self._on_gan_activity)
+        self.message_bus.subscribe('gnn_analysis_response', self._on_gnn_activity)
+        
         # Initialize system metrics
         self._initialize_metrics()
     
@@ -72,6 +79,28 @@ class SystemMonitor:
             'portfolio_value': 1000.0,  # Initial capital
             'last_update': time.time()
         }
+        
+        # Initialize expected modules so they show up in dashboard
+        # Sprint 1-7 modules
+        expected_modules = [
+            'strategy_engine', 'portfolio_manager', 'rl_controller',
+            'reward_tuner', 'decision_engine', 'consensus_engine',
+            'vote_engine', 'execution_engine', 'timespan_tracker',
+            'action_chain_engine'
+        ]
+        # Sprint 8 modules
+        expected_modules.extend(['dqn_controller', 'gan_evolution', 'gnn_analyzer'])
+        
+        # Initialize all expected modules with a placeholder
+        current_time = time.time()
+        for module_name in expected_modules:
+            if module_name not in self.module_status:
+                self.module_status[module_name] = {
+                    'first_seen': current_time,
+                    'last_update': current_time,
+                    'update_count': 0,
+                    'initialized': True
+                }
     
     def _on_dashboard_data(self, data: Dict[str, Any]):
         """Handle dashboard data from various modules."""
@@ -169,6 +198,21 @@ class SystemMonitor:
     def _on_reward_tuner_activity(self, data: Dict[str, Any]):
         """Track reward_tuner activity."""
         self._track_module_activity('reward_tuner')
+    
+    def _on_dqn_activity(self, data: Dict[str, Any]):
+        """Track DQN controller activity (Sprint 8)."""
+        self._track_module_activity('dqn_controller')
+        self.system_metrics['last_update'] = time.time()
+    
+    def _on_gan_activity(self, data: Dict[str, Any]):
+        """Track GAN evolution engine activity (Sprint 8)."""
+        self._track_module_activity('gan_evolution')
+        self.system_metrics['last_update'] = time.time()
+    
+    def _on_gnn_activity(self, data: Dict[str, Any]):
+        """Track GNN timespan analyzer activity (Sprint 8)."""
+        self._track_module_activity('gnn_analyzer')
+        self.system_metrics['last_update'] = time.time()
     
     def get_system_view(self) -> Dict[str, Any]:
         """

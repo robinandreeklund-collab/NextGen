@@ -516,7 +516,7 @@ class SimulatedTester:
                 # Simple state representation: [price_change, rsi, macd, portfolio_value_norm]
                 indicators = self.strategy_engine.current_indicators.get(symbol, {})
                 current_state = [
-                    (new_price - self.current_prices.get(symbol, new_price)) / new_price,
+                    (price - self.current_prices.get(symbol, price)) / price,
                     indicators.get('technical', {}).get('RSI', 50) / 100.0,
                     indicators.get('technical', {}).get('MACD', {}).get('histogram', 0) / 10.0,
                     portfolio_value / 1000.0
