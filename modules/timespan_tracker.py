@@ -10,8 +10,9 @@ Roll:
     - Publicerar timeline_insight
 
 Inputs:
-    - decision_event: Dict - Beslutshändelser
+    - decision_vote: Dict - Beslutshändelser från decision_engine
     - indicator_data: Dict - Indikatordata över tid
+    - final_decision: Dict - Slutgiltiga beslut
 
 Outputs:
     - timeline_insight: Dict - Tidssynkroniserade insights
@@ -19,9 +20,10 @@ Outputs:
 Publicerar till message_bus:
     - timeline_insight
 
-Prenumererar på (från functions.yaml):
-    - decision_event
-    - indicator_data
+Prenumererar på:
+    - decision_vote (from decision_engine)
+    - indicator_data (from indicator_registry)
+    - final_decision (from consensus_engine)
 
 Använder RL: Nej
 Tar emot feedback: Nej
@@ -43,7 +45,7 @@ class TimespanTracker:
         self.indicator_history: Dict[str, list] = {}
         
         # Subscribe to relevant topics
-        self.message_bus.subscribe('decision_event', self._on_decision_event)
+        self.message_bus.subscribe('decision_vote', self._on_decision_event)  # decision_vote from decision_engine
         self.message_bus.subscribe('indicator_data', self._on_indicator_data)
         self.message_bus.subscribe('final_decision', self._on_final_decision)
     

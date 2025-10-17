@@ -29,7 +29,7 @@ class TestTimespanTracker:
             'confidence': 0.8
         }
         
-        self.message_bus.publish('decision_event', decision_data)
+        self.message_bus.publish('decision_vote', decision_data)  # Changed from decision_event
         time.sleep(0.01)  # Allow callback to process
         
         assert len(self.tracker.timeline) > 0
@@ -77,7 +77,7 @@ class TestTimespanTracker:
         
         # Generate multiple decision events
         for i in range(3):
-            self.message_bus.publish('decision_event', {'id': i})
+            self.message_bus.publish('decision_vote', {'id': i})  # Changed from decision_event
             time.sleep(0.01)
         
         # Should have generated timeline insights
@@ -89,7 +89,7 @@ class TestTimespanTracker:
     def test_timeline_summary(self):
         """Test getting timeline summary."""
         # Add some events
-        self.message_bus.publish('decision_event', {'test': 1})
+        self.message_bus.publish('decision_vote', {'test': 1})  # Changed from decision_event
         self.message_bus.publish('final_decision', {'test': 2})
         self.message_bus.publish('indicator_data', {'symbol': 'AAPL', 'rsi': 50})
         time.sleep(0.01)
@@ -103,7 +103,7 @@ class TestTimespanTracker:
     def test_get_decision_timeline_with_window(self):
         """Test getting decisions within time window."""
         # Add decision
-        self.message_bus.publish('decision_event', {'action': 'BUY'})
+        self.message_bus.publish('decision_vote', {'action': 'BUY'})  # Changed from decision_event
         time.sleep(0.01)
         
         # Get recent decisions (5 minute window)

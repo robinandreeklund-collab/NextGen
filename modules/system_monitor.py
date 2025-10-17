@@ -48,6 +48,14 @@ class SystemMonitor:
         self.message_bus.subscribe('timeline_insight', self._on_timeline_insight)
         self.message_bus.subscribe('chain_execution', self._on_chain_execution)
         
+        # Subscribe to other module activities to track them
+        self.message_bus.subscribe('decision_vote', self._on_decision_activity)
+        self.message_bus.subscribe('final_decision', self._on_final_decision_activity)
+        self.message_bus.subscribe('execution_result', self._on_execution_activity)
+        self.message_bus.subscribe('decision_proposal', self._on_strategy_activity)
+        self.message_bus.subscribe('vote_matrix', self._on_vote_activity)
+        self.message_bus.subscribe('tuned_reward', self._on_reward_tuner_activity)
+        
         # Initialize system metrics
         self._initialize_metrics()
     
@@ -85,6 +93,9 @@ class SystemMonitor:
         """Handle agent status updates."""
         self.system_metrics['agent_updates'] += 1
         
+        # Track rl_controller as active module
+        self._track_module_activity('rl_controller')
+        
         # Track agent performance
         if 'performance' in data:
             perf_entry = {
@@ -97,6 +108,9 @@ class SystemMonitor:
     
     def _on_portfolio_status(self, data: Dict[str, Any]):
         """Handle portfolio status updates."""
+        # Track portfolio_manager as active module
+        self._track_module_activity('portfolio_manager')
+        
         if 'portfolio_value' in data:
             self.system_metrics['portfolio_value'] = data['portfolio_value']
             
@@ -111,11 +125,50 @@ class SystemMonitor:
     def _on_timeline_insight(self, data: Dict[str, Any]):
         """Handle timeline insights."""
         self.system_metrics['timeline_events'] += 1
+        # Track timespan_tracker as active module
+        self._track_module_activity('timespan_tracker')
     
     def _on_chain_execution(self, data: Dict[str, Any]):
         """Handle chain execution events."""
         self.system_metrics['chain_executions'] += 1
         self.system_metrics['total_executions'] += 1
+        # Track action_chain_engine as active module
+        self._track_module_activity('action_chain_engine')
+    
+    def _track_module_activity(self, module_name: str):
+        """Track that a module is active."""
+        if module_name not in self.module_status:
+            self.module_status[module_name] = {
+                'first_seen': time.time(),
+                'update_count': 0
+            }
+        
+        self.module_status[module_name]['last_update'] = time.time()
+        self.module_status[module_name]['update_count'] += 1
+    
+    def _on_decision_activity(self, data: Dict[str, Any]):
+        """Track decision_engine activity via decision_vote."""
+        self._track_module_activity('decision_engine')
+    
+    def _on_final_decision_activity(self, data: Dict[str, Any]):
+        """Track final decision from consensus_engine."""
+        self._track_module_activity('consensus_engine')
+    
+    def _on_execution_activity(self, data: Dict[str, Any]):
+        """Track execution_engine activity."""
+        self._track_module_activity('execution_engine')
+    
+    def _on_strategy_activity(self, data: Dict[str, Any]):
+        """Track strategy_engine activity."""
+        self._track_module_activity('strategy_engine')
+    
+    def _on_vote_activity(self, data: Dict[str, Any]):
+        """Track vote_engine activity."""
+        self._track_module_activity('vote_engine')
+    
+    def _on_reward_tuner_activity(self, data: Dict[str, Any]):
+        """Track reward_tuner activity."""
+        self._track_module_activity('reward_tuner')
     
     def get_system_view(self) -> Dict[str, Any]:
         """
