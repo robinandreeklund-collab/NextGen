@@ -21,7 +21,7 @@ event_triggers:
         delta: +0.05
         max_value: 1.0
       
-      - module: rl_controller
+      - module: reward_tuner
         action: decrease_reward_scaling_factor
         delta: -0.1
         min_value: 0.5
