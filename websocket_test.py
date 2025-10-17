@@ -52,6 +52,9 @@ from modules.consensus_engine import ConsensusEngine  # Sprint 5
 from modules.timespan_tracker import TimespanTracker  # Sprint 6
 from modules.action_chain_engine import ActionChainEngine  # Sprint 6
 from modules.system_monitor import SystemMonitor  # Sprint 6
+from modules.dqn_controller import DQNController  # Sprint 8
+from modules.gan_evolution_engine import GANEvolutionEngine  # Sprint 8
+from modules.gnn_timespan_analyzer import GNNTimespanAnalyzer  # Sprint 8
 
 
 class WebSocketTester:
@@ -116,6 +119,11 @@ class WebSocketTester:
         
         # Sprint 5: Spåra simuleringar och konsensus
         self.simulation_results = []
+        
+        # Sprint 8: Spåra DQN, GAN och GNN aktivitet
+        self.dqn_metrics_history = []
+        self.gan_candidates_history = []
+        self.gnn_patterns_history = []
     
     def setup_modules(self) -> None:
         """Initialiserar alla Sprint 1-6 moduler."""
@@ -166,13 +174,23 @@ class WebSocketTester:
         self.action_chain_engine = ActionChainEngine(self.message_bus)
         self.system_monitor = SystemMonitor(self.message_bus)
         
+        # Sprint 8 moduler
+        self.dqn_controller = DQNController(self.message_bus, state_dim=10, action_dim=3)
+        self.gan_evolution = GANEvolutionEngine(self.message_bus, latent_dim=64, param_dim=16)
+        self.gnn_analyzer = GNNTimespanAnalyzer(self.message_bus, input_dim=32, temporal_window=20)
+        
         # Sprint 4.2: Prenumerera på parameter_adjustment för debug-visning
         self.message_bus.subscribe('parameter_adjustment', self._on_parameter_adjustment)
         
         # Sprint 5: Prenumerera på simulation_result
         self.message_bus.subscribe('simulation_result', self._on_simulation_result)
         
-        print("✅ Alla moduler initialiserade (inkl. Sprint 6: timespan_tracker, action_chain_engine, system_monitor)")
+        # Sprint 8: Prenumerera på DQN, GAN och GNN events
+        self.message_bus.subscribe('dqn_metrics', self._on_dqn_metrics)
+        self.message_bus.subscribe('gan_candidates', self._on_gan_candidates)
+        self.message_bus.subscribe('gnn_analysis_response', self._on_gnn_analysis)
+        
+        print("✅ Alla moduler initialiserade (inkl. Sprint 8: DQN, GAN, GNN)")
     
     def _on_parameter_adjustment(self, adjustment: Dict[str, Any]) -> None:
         """
@@ -234,6 +252,52 @@ class WebSocketTester:
         # Behåll senaste 50
         if len(self.simulation_results) > 50:
             self.simulation_results = self.simulation_results[-50:]
+    
+    def _on_dqn_metrics(self, metrics: Dict[str, Any]) -> None:
+        """
+        Callback för DQN metrics (Sprint 8).
+        Loggar DQN träningsmetriker.
+        """
+        self.dqn_metrics_history.append({
+            'timestamp': time.time(),
+            'metrics': metrics
+        })
+        
+        # Behåll senaste 100
+        if len(self.dqn_metrics_history) > 100:
+            self.dqn_metrics_history = self.dqn_metrics_history[-100:]
+    
+    def _on_gan_candidates(self, data: Dict[str, Any]) -> None:
+        """
+        Callback för GAN-kandidater (Sprint 8).
+        Loggar genererade agentkandidater.
+        """
+        self.gan_candidates_history.append({
+            'timestamp': time.time(),
+            'candidates': data.get('candidates', []),
+            'num_generated': data.get('num_generated', 0),
+            'acceptance_rate': data.get('acceptance_rate', 0.0)
+        })
+        
+        # Behåll senaste 50
+        if len(self.gan_candidates_history) > 50:
+            self.gan_candidates_history = self.gan_candidates_history[-50:]
+    
+    def _on_gnn_analysis(self, response: Dict[str, Any]) -> None:
+        """
+        Callback för GNN-analys (Sprint 8).
+        Loggar temporala mönster från GNN.
+        """
+        self.gnn_patterns_history.append({
+            'timestamp': time.time(),
+            'patterns': response.get('patterns', {}),
+            'insights': response.get('insights', {}),
+            'graph_size': response.get('graph_size', 0)
+        })
+        
+        # Behåll senaste 50
+        if len(self.gnn_patterns_history) > 50:
+            self.gnn_patterns_history = self.gnn_patterns_history[-50:]
     
     def on_message(self, ws, message: str) -> None:
         """
@@ -434,6 +498,11 @@ class WebSocketTester:
             # Portfolio manager uppdaterar
             self.portfolio_manager.update_portfolio(execution_result)
             
+            # Publish portfolio status and calculate reward to keep system_monitor updated
+            # and trigger reward_tuner
+            # See issue #TODO: Add issue/PR/ticket number for context on why this is needed.
+            self.portfolio_manager.calculate_and_publish_reward()
+            
             if self.debug_mode and self.stats['decisions_made'] < 10:
                 portfolio = self.portfolio_manager.get_status(self.current_prices)
                 print(f"   💰 Portfolio: ${portfolio.get('cash', 0):.2f} cash, "
@@ -497,6 +566,10 @@ class WebSocketTester:
         
         # Portfolio status med current prices
         portfolio_status = self.portfolio_manager.get_status(self.current_prices if hasattr(self, 'current_prices') else None)
+        
+        # Publish portfolio status for monitoring
+        self.portfolio_manager.publish_status()
+        
         print(f"\n💰 Portfolio:")
         print(f"   Kapital: ${portfolio_status.get('cash', 0):.2f}")
         print(f"   Värde: ${portfolio_status.get('total_value', 0):.2f}")

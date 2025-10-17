@@ -105,6 +105,10 @@ class MetaAgentEvolutionEngine:
         }
         self.agent_performance_history[agent_id].append(status_entry)
         
+        # Limit history per agent to prevent memory leak (keep last 1000)
+        if len(self.agent_performance_history[agent_id]) > 1000:
+            self.agent_performance_history[agent_id] = self.agent_performance_history[agent_id][-1000:]
+        
         # Analysera om evolution behövs
         if len(self.agent_performance_history[agent_id]) >= self.min_samples_for_evolution:
             self._analyze_agent_evolution_need(agent_id)
@@ -155,6 +159,10 @@ class MetaAgentEvolutionEngine:
             }
         }
         self.parameter_history.append(param_entry)
+        
+        # Limit history to prevent memory leak (keep last 1000)
+        if len(self.parameter_history) > 1000:
+            self.parameter_history = self.parameter_history[-1000:]
     
     def _analyze_agent_evolution_need(self, agent_id: str) -> None:
         """
@@ -282,6 +290,10 @@ class MetaAgentEvolutionEngine:
         
         # Logga evolution suggestion
         self.evolution_history.append(evolution_suggestion)
+        
+        # Limit history to prevent memory leak (keep last 1000)
+        if len(self.evolution_history) > 1000:
+            self.evolution_history = self.evolution_history[-1000:]
         
         # Skapa agent_update för agent_manager
         agent_update = {

@@ -238,6 +238,10 @@ class MetaParameterAgent:
         total_reward = sum(reward_signals.values()) / len(reward_signals) if reward_signals else 0.0
         self.reward_history.append(total_reward)
         
+        # Limit reward history to prevent memory leak (keep last 1000)
+        if len(self.reward_history) > 1000:
+            self.reward_history = self.reward_history[-1000:]
+        
         adjustments = {}
         
         # Justera varje parameter baserat på relevanta reward signals
@@ -275,6 +279,10 @@ class MetaParameterAgent:
             
             # Spåra performance för denna parameter
             self.parameter_performance[param_name].append(reward)
+            
+            # Limit parameter performance history to prevent memory leak
+            if len(self.parameter_performance[param_name]) > 1000:
+                self.parameter_performance[param_name] = self.parameter_performance[param_name][-1000:]
         
         return adjustments
     
@@ -506,6 +514,11 @@ class RLController:
         
         reward_value = reward_data.get('value', 0.0)
         self.reward_history.append(reward_value)
+        
+        # Limit reward history to prevent memory leak
+        if len(self.reward_history) > 1000:
+            self.reward_history = self.reward_history[-1000:]
+        
         self.update_counter += 1
         self.parameter_update_counter += 1
         
@@ -538,6 +551,11 @@ class RLController:
         # Använd samma logik som _on_reward men med tuned reward
         reward_value = reward_data.get('reward', 0.0)
         self.reward_history.append(reward_value)
+        
+        # Limit reward history to prevent memory leak
+        if len(self.reward_history) > 1000:
+            self.reward_history = self.reward_history[-1000:]
+        
         self.update_counter += 1
         self.parameter_update_counter += 1
         

@@ -1,0 +1,201 @@
+adaptive_parameters_sprint8:
+  version: 1.0
+  date: 2025-10-17
+  
+  dqn_parameters:
+    learning_rate:
+      range: [0.0001, 0.01]
+      default: 0.001
+      description: Learning rate för DQN Q-network optimizer
+      
+    discount_factor:
+      range: [0.9, 0.999]
+      default: 0.99
+      description: Discount factor (gamma) för framtida rewards
+      
+    epsilon:
+      range: [0.01, 1.0]
+      default: 1.0
+      description: Epsilon för epsilon-greedy exploration
+      
+    epsilon_decay:
+      range: [0.99, 0.9999]
+      default: 0.995
+      description: Decay rate för epsilon per training step
+      
+    epsilon_min:
+      range: [0.01, 0.1]
+      default: 0.01
+      description: Minimum epsilon värde
+      
+    replay_buffer_size:
+      range: [1000, 100000]
+      default: 10000
+      description: Storlek på experience replay buffer
+      
+    batch_size:
+      range: [16, 256]
+      default: 32
+      description: Batch size för training
+      
+    target_update_frequency:
+      range: [10, 1000]
+      default: 100
+      description: Antal steps mellan target network updates
+      
+  gan_parameters:
+    generator_lr:
+      range: [0.0001, 0.01]
+      default: 0.0002
+      description: Learning rate för GAN generator
+      
+    discriminator_lr:
+      range: [0.0001, 0.01]
+      default: 0.0002
+      description: Learning rate för GAN discriminator
+      
+    latent_dim:
+      range: [16, 256]
+      default: 64
+      description: Dimensionalitet för latent space
+      
+    evolution_threshold:
+      range: [0.6, 0.95]
+      default: 0.7
+      description: Threshold för att acceptera GAN-kandidater
+      
+    param_dim:
+      range: [8, 32]
+      default: 16
+      description: Dimensionalitet för agentparametrar
+      
+  gnn_parameters:
+    num_layers:
+      range: [2, 5]
+      default: 3
+      description: Antal GNN-lager
+      
+    hidden_dim:
+      range: [32, 256]
+      default: 64
+      description: Hidden dimension för GNN
+      
+    attention_heads:
+      range: [1, 8]
+      default: 4
+      description: Antal attention heads
+      
+    temporal_window:
+      range: [10, 100]
+      default: 20
+      description: Temporal window size för analys
+      
+    input_dim:
+      range: [16, 64]
+      default: 32
+      description: Input dimension för node features
+      
+  hybrid_rl_parameters:
+    ppo_weight:
+      range: [0.0, 1.0]
+      default: 0.5
+      description: Vikt för PPO i hybrid decisions
+      
+    dqn_weight:
+      range: [0.0, 1.0]
+      default: 0.5
+      description: Vikt för DQN i hybrid decisions
+      
+    conflict_resolution_strategy:
+      options: [weighted, consensus, best_performer, random]
+      default: weighted
+      description: Strategi för att lösa PPO/DQN konflikter
+      
+    reward_split_strategy:
+      options: [equal, performance_based, adaptive]
+      default: equal
+      description: Hur rewards fördelas mellan PPO och DQN
+
+parameter_groups:
+  reinforcement_learning:
+    - dqn_parameters.learning_rate
+    - dqn_parameters.discount_factor
+    - dqn_parameters.epsilon
+    - dqn_parameters.epsilon_decay
+    
+  generative_models:
+    - gan_parameters.generator_lr
+    - gan_parameters.discriminator_lr
+    - gan_parameters.latent_dim
+    - gan_parameters.evolution_threshold
+    
+  graph_networks:
+    - gnn_parameters.num_layers
+    - gnn_parameters.hidden_dim
+    - gnn_parameters.attention_heads
+    - gnn_parameters.temporal_window
+    
+  hybrid_control:
+    - hybrid_rl_parameters.ppo_weight
+    - hybrid_rl_parameters.dqn_weight
+    - hybrid_rl_parameters.conflict_resolution_strategy
+
+adaptation_strategy:
+  method: PPO-based (extends Sprint 4.2)
+  update_frequency: 100 steps
+  evaluation_window: 1000 steps
+  performance_metrics:
+    - training_loss
+    - reward_variance
+    - decision_quality
+    - convergence_speed
+    
+  constraints:
+    - epsilon >= epsilon_min
+    - ppo_weight + dqn_weight = 1.0
+    - replay_buffer_size > batch_size * 10
+    - temporal_window >= num_decision_lookback
+    
+integration_points:
+  with_reward_tuner:
+    - DQN receives tuned_reward from reward_tuner
+    - GAN uses performance data influenced by reward_tuner
+    
+  with_meta_agent_evolution:
+    - GAN candidates feed into meta_agent_evolution_engine
+    - Evolution engine selects best GAN candidates
+    
+  with_timespan_tracker:
+    - GNN integrates with timespan_tracker for temporal analysis
+    - Timeline data feeds GNN graph construction
+    
+  with_consensus_engine:
+    - Hybrid RL conflicts resolved via consensus_engine
+    - Vote engine handles PPO vs DQN disagreements
+
+monitoring:
+  dqn_metrics:
+    - training_steps
+    - epsilon
+    - avg_loss
+    - buffer_size
+    - q_value_trends
+    
+  gan_metrics:
+    - g_loss
+    - d_loss
+    - candidates_generated
+    - acceptance_rate
+    - real_data_size
+    
+  gnn_metrics:
+    - patterns_detected
+    - pattern_confidence
+    - temporal_coverage
+    - graph_size
+    
+  hybrid_metrics:
+    - ppo_dqn_agreement_rate
+    - conflict_frequency
+    - combined_performance
+    - individual_contributions

@@ -1,0 +1,228 @@
+test_suite: Sprint 8 - DQN, GAN, GNN & Hybrid RL
+version: 1.0
+date: 2025-10-17
+
+test_categories:
+  unit_tests:
+    dqn_controller:
+      - test_dqn_initialization
+      - test_q_network_forward_pass
+      - test_experience_replay_buffer
+      - test_target_network_update
+      - test_epsilon_greedy_action
+      - test_q_learning_update
+      - test_batch_training
+      - test_loss_calculation
+      
+    gan_evolution_engine:
+      - test_gan_initialization
+      - test_generator_forward_pass
+      - test_discriminator_forward_pass
+      - test_generate_candidate
+      - test_discriminator_score
+      - test_adversarial_training
+      - test_candidate_validation
+      - test_evolution_threshold
+      
+    gnn_timespan_analyzer:
+      - test_gnn_initialization
+      - test_graph_construction
+      - test_node_features
+      - test_edge_connections
+      - test_temporal_attention
+      - test_pattern_detection
+      - test_graph_forward_pass
+      - test_temporal_insights
+      
+  integration_tests:
+    hybrid_rl:
+      - test_ppo_dqn_parallel_execution
+      - test_hybrid_reward_distribution
+      - test_hybrid_decision_making
+      - test_ppo_dqn_comparison
+      - test_coordinator_selection
+      - test_weighted_combination
+      - test_hybrid_training_loop
+      
+    hybrid_reward:
+      - test_base_reward_split
+      - test_tuned_reward_split
+      - test_ppo_reward_flow
+      - test_dqn_reward_flow
+      - test_reward_normalization
+      - test_reward_scaling
+      
+    conflict_detection:
+      - test_parameter_conflict_detection
+      - test_decision_conflict_detection
+      - test_conflict_resolution_weighted
+      - test_conflict_resolution_consensus
+      - test_conflict_logging
+      - test_conflict_metrics
+      
+    gan_integration:
+      - test_gan_to_meta_agent
+      - test_candidate_selection
+      - test_candidate_deployment
+      - test_discriminator_feedback
+      - test_evolution_cycle
+      
+    gnn_integration:
+      - test_gnn_to_timespan_tracker
+      - test_temporal_graph_update
+      - test_pattern_insights
+      - test_decision_sequence_analysis
+      
+  regression_tests:
+    sprint_1_7_compatibility:
+      - test_ppo_still_works
+      - test_reward_tuner_still_works
+      - test_consensus_engine_still_works
+      - test_timespan_tracker_still_works
+      - test_introspection_panel_still_works
+      - test_all_sprint7_tests_pass
+      
+  performance_tests:
+    parallel_execution:
+      - test_no_deadlocks
+      - test_no_race_conditions
+      - test_thread_safety
+      - test_concurrent_updates
+      
+    memory_management:
+      - test_replay_buffer_memory
+      - test_gnn_graph_memory
+      - test_gan_model_memory
+      - test_no_memory_leaks
+      
+    training_performance:
+      - test_dqn_convergence_speed
+      - test_gan_training_stability
+      - test_gnn_inference_speed
+      - test_hybrid_overhead
+
+test_data:
+  mock_data:
+    market_data:
+      - symbol: AAPL
+        prices: [150, 151, 152, 151, 153]
+        volumes: [1000000, 1100000, 950000, 1050000, 1200000]
+      - symbol: GOOGL
+        prices: [2800, 2820, 2790, 2810, 2830]
+        volumes: [500000, 520000, 480000, 510000, 530000]
+        
+    indicators:
+      - RSI: [45, 50, 55, 52, 58]
+      - MACD: [0.5, 0.7, 0.9, 0.8, 1.0]
+      - ATR: [2.5, 2.6, 2.7, 2.6, 2.8]
+      
+    decisions:
+      - action: BUY
+        confidence: 0.8
+        price: 151
+        volume: 10
+      - action: HOLD
+        confidence: 0.6
+        price: 152
+        volume: 0
+      - action: SELL
+        confidence: 0.75
+        price: 153
+        volume: 10
+        
+  historical_data:
+    num_episodes: 100
+    steps_per_episode: 50
+    reward_range: [-1.0, 1.0]
+
+test_configurations:
+  dqn_config:
+    learning_rate: 0.001
+    discount_factor: 0.99
+    epsilon: 0.1
+    replay_buffer_size: 10000
+    batch_size: 32
+    target_update_frequency: 100
+    
+  gan_config:
+    generator_lr: 0.0002
+    discriminator_lr: 0.0002
+    latent_dim: 64
+    evolution_threshold: 0.7
+    
+  gnn_config:
+    num_layers: 3
+    hidden_dim: 64
+    attention_heads: 4
+    temporal_window: 20
+
+expected_results:
+  dqn_controller:
+    - epsilon decays over time
+    - q_values improve with training
+    - loss decreases over episodes
+    - action selection becomes more greedy
+    
+  gan_evolution_engine:
+    - generator loss stabilizes
+    - discriminator achieves ~0.5 accuracy
+    - candidates pass validation
+    - evolution threshold respected
+    
+  gnn_timespan_analyzer:
+    - graph constructed correctly
+    - temporal patterns detected
+    - attention weights meaningful
+    - insights actionable
+    
+  hybrid_rl:
+    - both agents train successfully
+    - no conflicts or deadlocks
+    - combined performance >= individual
+    - decision quality improves
+
+metrics:
+  coverage:
+    target: 85%
+    minimum: 75%
+    
+  pass_rate:
+    target: 100%
+    minimum: 95%
+    
+  performance:
+    max_test_time: 180s
+    max_memory: 2GB
+    
+  quality:
+    code_complexity: low
+    documentation: complete
+    type_hints: 100%
+
+ci_integration:
+  trigger: on_push
+  parallel: true
+  timeout: 300s
+  
+  stages:
+    - stage: lint
+      command: flake8 modules/dqn_controller.py modules/gan_evolution_engine.py modules/gnn_timespan_analyzer.py
+      
+    - stage: unit_tests
+      command: pytest tests/test_dqn_controller.py tests/test_gan_evolution_engine.py tests/test_gnn_timespan_analyzer.py -v
+      
+    - stage: integration_tests
+      command: pytest tests/test_hybrid_rl.py tests/test_sprint8_integration.py -v
+      
+    - stage: regression_tests
+      command: pytest tests/ -v -k "not sprint8"
+      
+    - stage: performance_tests
+      command: pytest tests/test_sprint8_integration.py -v -m performance
+
+notifications:
+  on_failure:
+    - email: dev@nextgen.ai
+    - slack: #ci-alerts
+  on_success:
+    - dashboard_update: true

@@ -61,6 +61,11 @@ class MessageBus:
             'message': message
         })
         
+        # Limit message log to prevent memory leak (keep last 10000)
+        # With websocket: 100+ messages/sec → log grows to 360k/hour without limit
+        if len(self.message_log) > 10000:
+            self.message_log = self.message_log[-10000:]
+        
         # Distribuera till alla prenumeranter
         for callback in self.subscribers.get(topic, []):
             callback(message)

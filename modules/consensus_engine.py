@@ -120,6 +120,10 @@ class ConsensusEngine:
             'timestamp': datetime.now().isoformat()
         })
         
+        # Limit history to prevent memory leak (keep last 1000)
+        if len(self.consensus_history) > 1000:
+            self.consensus_history = self.consensus_history[-1000:]
+        
         return decision
     
     def _create_hold_decision(self) -> Dict[str, Any]:

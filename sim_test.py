@@ -48,6 +48,9 @@ from modules.consensus_engine import ConsensusEngine  # Sprint 5
 from modules.timespan_tracker import TimespanTracker  # Sprint 6
 from modules.action_chain_engine import ActionChainEngine  # Sprint 6
 from modules.system_monitor import SystemMonitor  # Sprint 6
+from modules.dqn_controller import DQNController  # Sprint 8
+from modules.gan_evolution_engine import GANEvolutionEngine  # Sprint 8
+from modules.gnn_timespan_analyzer import GNNTimespanAnalyzer  # Sprint 8
 
 
 class SimulatedTester:
@@ -107,6 +110,11 @@ class SimulatedTester:
         # Sprint 6: Spåra timeline och action chains
         self.timeline_insights = []
         self.chain_executions = []
+        
+        # Sprint 8: Spåra DQN, GAN och GNN aktivitet
+        self.dqn_metrics_history = []
+        self.gan_candidates_history = []
+        self.gnn_patterns_history = []
     
     def setup_modules(self) -> None:
         """Initialiserar alla Sprint 1-6 moduler."""
@@ -159,6 +167,11 @@ class SimulatedTester:
         self.action_chain_engine = ActionChainEngine(self.message_bus)
         self.system_monitor = SystemMonitor(self.message_bus)
         
+        # Sprint 8 moduler
+        self.dqn_controller = DQNController(self.message_bus, state_dim=10, action_dim=3)
+        self.gan_evolution = GANEvolutionEngine(self.message_bus, latent_dim=64, param_dim=16)
+        self.gnn_analyzer = GNNTimespanAnalyzer(self.message_bus, input_dim=32, temporal_window=20)
+        
         # Sprint 4.3: Prenumerera på parameter_adjustment
         self.message_bus.subscribe('parameter_adjustment', self._on_parameter_adjustment)
         
@@ -169,7 +182,12 @@ class SimulatedTester:
         self.message_bus.subscribe('timeline_insight', self._on_timeline_insight)
         self.message_bus.subscribe('chain_execution', self._on_chain_execution)
         
-        print("✅ Alla moduler initialiserade (inkl. Sprint 6: timespan_tracker, action_chain_engine, system_monitor)")
+        # Sprint 8: Prenumerera på DQN, GAN och GNN events
+        self.message_bus.subscribe('dqn_metrics', self._on_dqn_metrics)
+        self.message_bus.subscribe('gan_candidates', self._on_gan_candidates)
+        self.message_bus.subscribe('gnn_analysis_response', self._on_gnn_analysis)
+        
+        print("✅ Alla moduler initialiserade (inkl. Sprint 8: DQN, GAN, GNN)")
     
     def _on_parameter_adjustment(self, adjustment: Dict[str, Any]) -> None:
         """
@@ -231,6 +249,52 @@ class SimulatedTester:
         # Behåll senaste 50
         if len(self.chain_executions) > 50:
             self.chain_executions = self.chain_executions[-50:]
+    
+    def _on_dqn_metrics(self, metrics: Dict[str, Any]) -> None:
+        """
+        Callback för DQN metrics (Sprint 8).
+        Loggar DQN träningsmetriker.
+        """
+        self.dqn_metrics_history.append({
+            'timestamp': time.time(),
+            'metrics': metrics
+        })
+        
+        # Behåll senaste 100
+        if len(self.dqn_metrics_history) > 100:
+            self.dqn_metrics_history = self.dqn_metrics_history[-100:]
+    
+    def _on_gan_candidates(self, data: Dict[str, Any]) -> None:
+        """
+        Callback för GAN-kandidater (Sprint 8).
+        Loggar genererade agentkandidater.
+        """
+        self.gan_candidates_history.append({
+            'timestamp': time.time(),
+            'candidates': data.get('candidates', []),
+            'num_generated': data.get('num_generated', 0),
+            'acceptance_rate': data.get('acceptance_rate', 0.0)
+        })
+        
+        # Behåll senaste 50
+        if len(self.gan_candidates_history) > 50:
+            self.gan_candidates_history = self.gan_candidates_history[-50:]
+    
+    def _on_gnn_analysis(self, response: Dict[str, Any]) -> None:
+        """
+        Callback för GNN-analys (Sprint 8).
+        Loggar temporala mönster från GNN.
+        """
+        self.gnn_patterns_history.append({
+            'timestamp': time.time(),
+            'patterns': response.get('patterns', {}),
+            'insights': response.get('insights', {}),
+            'graph_size': response.get('graph_size', 0)
+        })
+        
+        # Behåll senaste 50
+        if len(self.gnn_patterns_history) > 50:
+            self.gnn_patterns_history = self.gnn_patterns_history[-50:]
     
     def generate_aggressive_price_movement(self, symbol: str) -> float:
         """
@@ -427,6 +491,11 @@ class SimulatedTester:
             # Portfolio manager uppdaterar
             self.portfolio_manager.update_portfolio(execution_result)
             
+            # Publish portfolio status and calculate reward to keep system_monitor updated
+            # and trigger reward_tuner
+            self.portfolio_manager.publish_status()
+            self.portfolio_manager.calculate_and_publish_reward()
+            
             # Logga till strategic memory
             self.strategic_memory.log_decision({
                 'symbol': symbol,
@@ -446,6 +515,60 @@ class SimulatedTester:
                 'portfolio_value': portfolio_value,
                 'timestamp': time.time()
             })
+            
+            # Sprint 8: Träna DQN med states och rewards
+            if hasattr(self, 'last_state'):
+                # Simple state representation: [price_change, rsi, macd, portfolio_value_norm]
+                indicators = self.strategy_engine.current_indicators.get(symbol, {})
+                current_state = [
+                    (price - self.current_prices.get(symbol, price)) / (price if price != 0 else 1e-8),
+                    indicators.get('technical', {}).get('RSI', 50) / 100.0,
+                    indicators.get('technical', {}).get('MACD', {}).get('histogram', 0) / 10.0,
+                    portfolio_value / 1000.0
+                ]
+                
+                # Map action to index: BUY=0, SELL=1, HOLD=2
+                action_map = {'BUY': 0, 'SELL': 1, 'HOLD': 2}
+                action_idx = action_map.get(decision.get('action', 'HOLD'), 2)
+                
+                # Store transition in DQN
+                self.dqn_controller.store_transition(
+                    self.last_state,
+                    action_idx,
+                    reward_value,
+                    current_state,
+                    False  # Not done
+                )
+                
+                # Train DQN if buffer is ready
+                if len(self.dqn_controller.replay_buffer) >= self.dqn_controller.batch_size:
+                    self.dqn_controller.train_step()
+                
+                self.last_state = current_state
+            else:
+                # Initialize state
+                indicators = self.strategy_engine.current_indicators.get(symbol, {})
+                self.last_state = [
+                    0.0,
+                    indicators.get('technical', {}).get('RSI', 50) / 100.0,
+                    indicators.get('technical', {}).get('MACD', {}).get('histogram', 0) / 10.0,
+                    portfolio_value / 1000.0
+                ]
+            
+            # Sprint 8: Feed agent performance to GAN every 10 iterations
+            if self.stats['iterations'] % 10 == 0:
+                # Create synthetic agent performance for GAN training
+                agent_params = [random.gauss(0, 1) for _ in range(16)]
+                performance = 0.5 + reward_value * 0.3  # Scale reward to performance
+                
+                self.message_bus.publish('agent_performance', {
+                    'parameters': agent_params,
+                    'performance': min(1.0, max(0.0, performance))
+                })
+                
+                # Train GAN
+                if len(self.gan_evolution.real_agent_data) >= 32:
+                    self.gan_evolution.train_step(batch_size=32)
         else:
             # HOLD beslut
             self.stats['hold_decisions'] += 1
@@ -755,6 +878,67 @@ class SimulatedTester:
         if system_health['stale_modules']:
             print(f"   ⚠️  Stale moduler: {', '.join(system_health['stale_modules'])}")
         print(f"   Uptime: {system_health['uptime']:.1f}s")
+        
+        print(f"{'='*90}\n")
+        
+        # Sprint 8: DQN, GAN, GNN Metrics
+        print(f"\n{'='*90}")
+        print(f"🤖 SPRINT 8 - DQN, GAN, GNN & Hybrid RL")
+        print(f"{'='*90}")
+        
+        # DQN Controller stats
+        dqn_metrics = self.dqn_controller.get_metrics()
+        print(f"\n🎯 DQN Controller:")
+        print(f"   Training steps: {dqn_metrics['training_steps']}")
+        print(f"   Epsilon (exploration): {dqn_metrics['epsilon']:.4f}")
+        print(f"   Replay buffer size: {dqn_metrics['buffer_size']}/{self.dqn_controller.replay_buffer.buffer.maxlen}")
+        print(f"   Avg loss (recent): {dqn_metrics['avg_loss']:.4f}")
+        if len(self.dqn_metrics_history) > 0:
+            latest_dqn = self.dqn_metrics_history[-1]['metrics']
+            print(f"   Latest metrics:")
+            print(f"      Loss: {latest_dqn.get('loss', 0):.4f}")
+            print(f"      Buffer usage: {latest_dqn.get('buffer_size', 0)}")
+        
+        # GAN Evolution Engine stats
+        gan_metrics = self.gan_evolution.get_metrics()
+        print(f"\n🧬 GAN Evolution Engine:")
+        print(f"   Generator loss: {gan_metrics['g_loss']:.4f}")
+        print(f"   Discriminator loss: {gan_metrics['d_loss']:.4f}")
+        print(f"   Candidates generated: {gan_metrics['candidates_generated']}")
+        print(f"   Candidates accepted: {gan_metrics['candidates_accepted']}")
+        print(f"   Acceptance rate: {gan_metrics['acceptance_rate']:.2%}")
+        print(f"   Real agent data: {gan_metrics['real_data_size']} samples")
+        if len(self.gan_candidates_history) > 0:
+            latest_gan = self.gan_candidates_history[-1]
+            print(f"   Latest generation:")
+            print(f"      Candidates: {latest_gan['num_generated']}")
+            print(f"      Acceptance: {latest_gan['acceptance_rate']:.2%}")
+        
+        # GNN Timespan Analyzer stats
+        gnn_metrics = self.gnn_analyzer.get_metrics()
+        print(f"\n📊 GNN Timespan Analyzer:")
+        print(f"   Decision history: {gnn_metrics['decision_history_size']}")
+        print(f"   Indicator history: {gnn_metrics['indicator_history_size']}")
+        print(f"   Outcome history: {gnn_metrics['outcome_history_size']}")
+        print(f"   Temporal window: {gnn_metrics['temporal_window']}")
+        print(f"   Patterns detected: {gnn_metrics['patterns_detected']}")
+        
+        if len(self.gnn_patterns_history) > 0:
+            latest_gnn = self.gnn_patterns_history[-1]
+            patterns = latest_gnn.get('patterns', {})
+            if patterns and patterns.get('patterns'):
+                print(f"   Latest patterns:")
+                for pattern in patterns['patterns'][:3]:
+                    print(f"      {pattern['type']}: {pattern['confidence']:.2%}")
+        
+        # Hybrid RL comparison
+        print(f"\n⚖️  Hybrid RL (PPO + DQN):")
+        ppo_metrics = self.rl_controller.get_metrics() if hasattr(self.rl_controller, 'get_metrics') else {}
+        print(f"   PPO active: ✅")
+        print(f"   DQN active: ✅")
+        print(f"   DQN training steps: {dqn_metrics['training_steps']}")
+        print(f"   DQN epsilon: {dqn_metrics['epsilon']:.4f}")
+        print(f"   Parallel execution: Active")
         
         print(f"{'='*90}\n")
     
