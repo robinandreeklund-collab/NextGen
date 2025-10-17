@@ -134,7 +134,7 @@ test_result_matrix_sprint8:
     branch_coverage: 82%
     
   performance_metrics:
-    total_test_time: 5.76s
+    total_test_time: 5.55s
     avg_test_time: 0.018s
     slowest_tests:
       - test_adversarial_training_cycle: 0.4s
