@@ -693,9 +693,9 @@ test_execution_plan:
     duration: 5-10 minuter
     total_tests: 44 (33 implemented + 11 new)
     implemented: 33
-    passing: 32
-    failing: 1 (minor vote weighting calculation)
-    pass_rate: 97%
+    passing: 33
+    failing: 0
+    pass_rate: 100%
     command: pytest tests/ -v --tb=short
 
 # Success criteria för PR
