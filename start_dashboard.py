@@ -199,15 +199,15 @@ class NextGenDashboard:
         """Create comprehensive dashboard layout."""
         
         self.app.layout = html.Div([
-            # Top Header
+            # Top Header (fixed at top)
             self.create_top_header(),
             
-            # Main container
+            # Main container (flex layout)
             html.Div([
-                # Sidebar
+                # Sidebar (fixed on left, below header)
                 self.create_sidebar(),
                 
-                # Main content area
+                # Main content area (with margin for sidebar and header)
                 html.Div([
                     # Control panel
                     self.create_control_panel(),
@@ -249,8 +249,13 @@ class NextGenDashboard:
                     # Tab content
                     html.Div(id='tab-content', style={'padding': '20px'}),
                     
-                ], style={'flex': '1', 'marginLeft': '250px', 'padding': '0'}),
-            ], style={'display': 'flex'}),
+                ], style={
+                    'marginLeft': '180px',  # Sidebar width
+                    'marginTop': '50px',    # Header height
+                    'padding': '0',
+                    'minHeight': 'calc(100vh - 50px)',
+                }),
+            ]),
             
             # Auto-refresh interval
             dcc.Interval(id='interval-component', interval=2000, n_intervals=0),
@@ -263,87 +268,185 @@ class NextGenDashboard:
         })
     
     def create_top_header(self) -> html.Div:
-        """Create top header with branding and system status."""
+        """Create top header with branding and system status (matches mockup)."""
         return html.Div([
+            # Left: Dashboard title
             html.Div([
-                html.H1("🚀 NextGen AI Trader", 
-                       style={'margin': '0', 'fontSize': '24px', 'fontWeight': 'bold'}),
-                html.Span("Full-Scale Dashboard", 
-                         style={'color': THEME_COLORS['text_secondary'], 'fontSize': '14px'}),
-            ], style={'display': 'inline-block'}),
+                html.H1("Nextgen-dashboard", 
+                       style={'margin': '0', 'fontSize': '18px', 'fontWeight': '600',
+                             'color': THEME_COLORS['text']}),
+            ], style={'flex': '0 0 auto'}),
             
+            # Center/Right: System status indicators
             html.Div([
-                html.Span(id='header-system-status', children='System: Ready',
-                         style={'marginRight': '20px', 'fontSize': '14px'}),
-                html.Span(id='header-mode-status', 
-                         children=f"Mode: {'Live' if self.live_mode else 'Demo'}",
-                         style={'marginRight': '20px', 'fontSize': '14px',
-                               'color': THEME_COLORS['primary'] if self.live_mode else THEME_COLORS['warning']}),
-                html.Span(id='header-time', children=datetime.now().strftime('%H:%M:%S'),
-                         style={'fontSize': '14px', 'color': THEME_COLORS['text_secondary']}),
-            ], style={'float': 'right'}),
+                # System Status
+                html.Div([
+                    html.Span('●', style={'color': THEME_COLORS['success'], 'marginRight': '5px'}),
+                    html.Span('System Status', style={'fontSize': '12px', 'marginRight': '5px'}),
+                    html.Span('OK', style={'fontSize': '12px', 'fontWeight': 'bold', 
+                                          'color': THEME_COLORS['success']}),
+                ], style={'display': 'inline-flex', 'alignItems': 'center', 
+                         'backgroundColor': THEME_COLORS['surface_light'],
+                         'padding': '6px 12px', 'borderRadius': '4px', 'marginRight': '10px'}),
+                
+                # RL Agents
+                html.Div([
+                    html.Span('●', style={'color': THEME_COLORS['primary'], 'marginRight': '5px'}),
+                    html.Span('RL Agents', style={'fontSize': '12px', 'marginRight': '5px'}),
+                    html.Span('OK', style={'fontSize': '12px', 'fontWeight': 'bold',
+                                          'color': THEME_COLORS['primary']}),
+                ], style={'display': 'inline-flex', 'alignItems': 'center',
+                         'backgroundColor': THEME_COLORS['surface_light'],
+                         'padding': '6px 12px', 'borderRadius': '4px', 'marginRight': '10px'}),
+                
+                # Reward Trend
+                html.Div([
+                    html.Span('●', style={'color': THEME_COLORS['primary'], 'marginRight': '5px'}),
+                    html.Span('Reward Trend', style={'fontSize': '12px', 'marginRight': '5px'}),
+                    html.Span('OK', style={'fontSize': '12px', 'fontWeight': 'bold',
+                                          'color': THEME_COLORS['primary']}),
+                ], style={'display': 'inline-flex', 'alignItems': 'center',
+                         'backgroundColor': THEME_COLORS['surface_light'],
+                         'padding': '6px 12px', 'borderRadius': '4px', 'marginRight': '10px'}),
+                
+                # Test Status
+                html.Div([
+                    html.Span('■', style={'color': THEME_COLORS['text_secondary'], 'marginRight': '5px'}),
+                    html.Span('Test Status', style={'fontSize': '12px', 'marginRight': '5px'}),
+                    html.Span('Stable', style={'fontSize': '12px', 'fontWeight': 'bold',
+                                               'color': THEME_COLORS['text']}),
+                ], style={'display': 'inline-flex', 'alignItems': 'center',
+                         'backgroundColor': THEME_COLORS['surface_light'],
+                         'padding': '6px 12px', 'borderRadius': '4px', 'marginRight': '10px'}),
+                
+                # Drift Indicator
+                html.Div([
+                    html.Span('■', style={'color': THEME_COLORS['text_secondary'], 'marginRight': '5px'}),
+                    html.Span('Drift Indicator', style={'fontSize': '12px', 'marginRight': '5px'}),
+                    html.Span('Stable', style={'fontSize': '12px', 'fontWeight': 'bold',
+                                               'color': THEME_COLORS['text']}),
+                ], style={'display': 'inline-flex', 'alignItems': 'center',
+                         'backgroundColor': THEME_COLORS['surface_light'],
+                         'padding': '6px 12px', 'borderRadius': '4px', 'marginRight': '15px'}),
+                
+                # Dark Mode Toggle button (right side)
+                html.Button('Dark Mode Toggle',
+                           style={'backgroundColor': THEME_COLORS['surface_light'],
+                                 'color': THEME_COLORS['text'],
+                                 'border': f'1px solid {THEME_COLORS["border"]}',
+                                 'padding': '8px 16px',
+                                 'borderRadius': '4px',
+                                 'fontSize': '12px',
+                                 'cursor': 'pointer'}),
+            ], style={'display': 'flex', 'alignItems': 'center', 'flex': '1', 
+                     'justifyContent': 'flex-end'}),
+            
         ], style={
             'backgroundColor': THEME_COLORS['surface'],
-            'padding': '15px 30px',
-            'borderBottom': f'2px solid {THEME_COLORS["border"]}',
+            'padding': '12px 20px',
+            'borderBottom': f'1px solid {THEME_COLORS["border"]}',
             'display': 'flex',
             'justifyContent': 'space-between',
             'alignItems': 'center',
+            'position': 'fixed',
+            'top': '0',
+            'left': '0',
+            'right': '0',
+            'zIndex': '1000',
+            'height': '50px',
         })
     
     def create_sidebar(self) -> html.Div:
-        """Create sidebar navigation."""
+        """Create sidebar navigation (matches mockup)."""
         return html.Div([
-            html.H3("Navigation", style={'textAlign': 'center', 'marginBottom': '30px',
-                                        'color': THEME_COLORS['primary']}),
-            html.Hr(style={'borderColor': THEME_COLORS['border']}),
-            
-            # Quick stats
+            # Header: "Modules"
             html.Div([
-                html.H4("Quick Stats", style={'fontSize': '14px', 'marginBottom': '15px'}),
-                html.Div(id='sidebar-portfolio-value', children='Portfolio: $0',
-                        style={'fontSize': '12px', 'marginBottom': '8px'}),
-                html.Div(id='sidebar-active-agents', children='Active Agents: 0',
-                        style={'fontSize': '12px', 'marginBottom': '8px'}),
-                html.Div(id='sidebar-decisions', children='Decisions: 0',
-                        style={'fontSize': '12px', 'marginBottom': '8px'}),
-                html.Div(id='sidebar-conflicts', children='Conflicts: 0',
-                        style={'fontSize': '12px', 'marginBottom': '8px'}),
-            ], style={'marginBottom': '30px'}),
+                html.H3("Modules", style={'margin': '0', 'fontSize': '16px', 'fontWeight': '600',
+                                         'color': THEME_COLORS['text']}),
+            ], style={'marginBottom': '20px', 'paddingBottom': '15px', 
+                     'borderBottom': f'1px solid {THEME_COLORS["border"]}'}),
             
-            html.Hr(style={'borderColor': THEME_COLORS['border']}),
-            
-            # Module status
+            # Navigation menu items
             html.Div([
-                html.H4("Module Status", style={'fontSize': '14px', 'marginBottom': '15px'}),
-                html.Div(id='sidebar-modules', children=[
-                    self.create_module_status_item('Portfolio', 'active'),
-                    self.create_module_status_item('RL Controller', 'active'),
-                    self.create_module_status_item('DQN', 'active'),
-                    self.create_module_status_item('GAN', 'active'),
-                    self.create_module_status_item('GNN', 'active'),
+                self.create_sidebar_menu_item('📊', 'Dashboard', True),
+                self.create_sidebar_menu_item('🤖', 'Agents', False),
+                self.create_sidebar_menu_item('🎁', 'Rewards', False),
+                self.create_sidebar_menu_item('🧪', 'Testing', False),
+                self.create_sidebar_menu_item('📈', 'Drift', False),
+                self.create_sidebar_menu_item('⚠️', 'Conflicts', False),
+                self.create_sidebar_menu_item('📅', 'Events', False),
+                self.create_sidebar_menu_item('📝', 'Logs', False),
+                self.create_sidebar_menu_item('⚙️', 'Settings', False),
+            ], style={'marginBottom': 'auto'}),
+            
+            # Bottom: Parameter Slider Sync toggle
+            html.Div([
+                html.Div([
+                    html.Span('Parameter', style={'fontSize': '13px', 'fontWeight': '500'}),
+                    html.Br(),
+                    html.Span('Slider Sync', style={'fontSize': '13px', 'fontWeight': '500'}),
+                ], style={'flex': '1'}),
+                html.Div([
+                    # Toggle switch
+                    html.Label([
+                        html.Input(type='checkbox', style={'display': 'none'}),
+                        html.Span(style={
+                            'position': 'relative',
+                            'display': 'inline-block',
+                            'width': '40px',
+                            'height': '20px',
+                            'backgroundColor': THEME_COLORS['primary'],
+                            'borderRadius': '10px',
+                            'cursor': 'pointer',
+                        }),
+                    ]),
                 ]),
-            ]),
+            ], style={
+                'display': 'flex',
+                'alignItems': 'center',
+                'justifyContent': 'space-between',
+                'backgroundColor': THEME_COLORS['primary'],
+                'padding': '12px 15px',
+                'borderRadius': '6px',
+                'marginTop': '20px',
+                'color': 'white',
+            }),
             
         ], style={
             'position': 'fixed',
             'left': '0',
-            'top': '63px',
-            'width': '250px',
-            'height': 'calc(100vh - 63px)',
+            'top': '50px',  # Below header
+            'width': '180px',
+            'height': 'calc(100vh - 50px)',
             'backgroundColor': THEME_COLORS['surface'],
-            'padding': '20px',
-            'borderRight': f'2px solid {THEME_COLORS["border"]}',
+            'padding': '20px 15px',
+            'borderRight': f'1px solid {THEME_COLORS["border"]}',
             'overflowY': 'auto',
+            'display': 'flex',
+            'flexDirection': 'column',
+            'zIndex': '999',
         })
     
-    def create_module_status_item(self, name: str, status: str) -> html.Div:
-        """Create a module status indicator."""
-        color = THEME_COLORS['success'] if status == 'active' else THEME_COLORS['text_secondary']
+    def create_sidebar_menu_item(self, icon: str, label: str, active: bool = False) -> html.Div:
+        """Create a sidebar menu item."""
+        bg_color = THEME_COLORS['primary'] if active else 'transparent'
+        text_color = 'white' if active else THEME_COLORS['text']
+        
         return html.Div([
-            html.Span('●', style={'color': color, 'marginRight': '8px'}),
-            html.Span(name, style={'fontSize': '12px'}),
-        ], style={'marginBottom': '8px'})
+            html.Span(icon, style={'marginRight': '10px', 'fontSize': '16px'}),
+            html.Span(label, style={'fontSize': '14px', 'fontWeight': '500' if active else '400'}),
+        ], style={
+            'padding': '10px 12px',
+            'marginBottom': '4px',
+            'backgroundColor': bg_color,
+            'color': text_color,
+            'borderRadius': '6px',
+            'cursor': 'pointer',
+            'display': 'flex',
+            'alignItems': 'center',
+            'transition': 'background-color 0.2s',
+        })
+    
     
     def create_control_panel(self) -> html.Div:
         """Create control panel with start/stop buttons."""
@@ -469,35 +572,6 @@ class NextGenDashboard:
             
             return f'Status: {"Running" if self.running else "Stopped"}'
         
-        # Update header time
-        @self.app.callback(
-            Output('header-time', 'children'),
-            Input('interval-component', 'n_intervals')
-        )
-        def update_time(n):
-            return datetime.now().strftime('%H:%M:%S')
-        
-        # Update sidebar stats
-        @self.app.callback(
-            [Output('sidebar-portfolio-value', 'children'),
-             Output('sidebar-active-agents', 'children'),
-             Output('sidebar-decisions', 'children'),
-             Output('sidebar-conflicts', 'children')],
-            Input('interval-component', 'n_intervals')
-        )
-        def update_sidebar(n):
-            total_value = self.portfolio_manager.get_portfolio_value(self.current_prices)
-            
-            num_agents = len(self.agent_manager.get_all_profiles())
-            num_decisions = len(self.decision_history)
-            num_conflicts = len(self.conflict_history)
-            
-            return (
-                f'Portfolio: ${total_value:.2f}',
-                f'Active Agents: {num_agents}',
-                f'Decisions: {num_decisions}',
-                f'Conflicts: {num_conflicts}'
-            )
     
     # Panel creation methods
     
