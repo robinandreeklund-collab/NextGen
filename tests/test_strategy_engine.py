@@ -56,11 +56,11 @@ def test_strategy_engine_macd_signals():
     bus = MessageBus()
     strategy = StrategyEngine(bus)
     
-    # Simulera stark MACD köpsignal
+    # Simulera stark MACD köpsignal med översåld RSI för tillräcklig signalstyrka
     indicators = {
         'symbol': 'TEST',
         'technical': {
-            'RSI': 35.0,
+            'RSI': 28.0,  # Översåld för att ge tillräcklig signalstyrka tillsammans med MACD
             'MACD': {'histogram': 0.8},  # Stark positiv MACD
             'ATR': 2.0
         },
