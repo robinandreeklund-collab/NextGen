@@ -59,6 +59,7 @@ Används i Sprint: 1, 2, 3
 """
 
 from typing import Dict, Any, List
+import time
 
 
 class PortfolioManager:
@@ -249,7 +250,7 @@ class PortfolioManager:
         self.previous_portfolio_value = current_value
         
         # Sprint 4.4: Publicera base_reward till reward_tuner (istället för direkt till rl_controller)
-        # Debug: Print first 3 rewards to verify this code path is executed
+        # Debug: Print EVERY reward publication to verify this code path is executed
         if len(self.trade_history) <= 3:
             print(f"[PortfolioManager] Publishing base_reward #{len(self.trade_history)}: {reward:.4f}")
         
@@ -257,7 +258,8 @@ class PortfolioManager:
             'reward': reward,
             'source': 'portfolio_manager',
             'portfolio_value': current_value,
-            'num_trades': len(self.trade_history)
+            'num_trades': len(self.trade_history),
+            'timestamp': time.time()  # Add timestamp for debugging
         })
     
     def generate_feedback(self, execution_result: Dict[str, Any]) -> None:

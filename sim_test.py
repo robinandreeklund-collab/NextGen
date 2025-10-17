@@ -112,6 +112,14 @@ class SimulatedTester:
         # Sprint 2 moduler
         self.rl_controller = RLController(self.message_bus)
         
+        # Sprint 4.4 modul - RewardTunerAgent (MUST be created BEFORE portfolio_manager)
+        self.reward_tuner = RewardTunerAgent(
+            message_bus=self.message_bus,
+            reward_scaling_factor=1.0,
+            volatility_penalty_weight=0.3,
+            overfitting_detector_threshold=0.2
+        )
+        
         # Sprint 1 moduler (utan API key för simulering)
         self.strategy_engine = StrategyEngine(self.message_bus)
         self.risk_manager = RiskManager(self.message_bus)
@@ -125,14 +133,6 @@ class SimulatedTester:
         
         # Sprint 4.3 modul
         self.vote_engine = VoteEngine(self.message_bus)
-        
-        # Sprint 4.4 modul - RewardTunerAgent
-        self.reward_tuner = RewardTunerAgent(
-            message_bus=self.message_bus,
-            reward_scaling_factor=1.0,
-            volatility_penalty_weight=0.3,
-            overfitting_detector_threshold=0.2
-        )
         
         # Sprint 4.3: Prenumerera på parameter_adjustment
         self.message_bus.subscribe('parameter_adjustment', self._on_parameter_adjustment)

@@ -126,6 +126,14 @@ class WebSocketTester:
         # Sprint 2 moduler
         self.rl_controller = RLController(self.message_bus)
         
+        # Sprint 4.4 modul - RewardTunerAgent (MUST be created BEFORE portfolio_manager)
+        self.reward_tuner = RewardTunerAgent(
+            message_bus=self.message_bus,
+            reward_scaling_factor=1.0,
+            volatility_penalty_weight=0.3,
+            overfitting_detector_threshold=0.2
+        )
+        
         # Sprint 1 moduler
         self.indicator_registry = IndicatorRegistry(self.api_key, self.message_bus)
         self.strategy_engine = StrategyEngine(self.message_bus)
@@ -136,14 +144,6 @@ class WebSocketTester:
             message_bus=self.message_bus,
             start_capital=1000.0,
             transaction_fee=0.0025
-        )
-        
-        # Sprint 4.4 modul - RewardTunerAgent
-        self.reward_tuner = RewardTunerAgent(
-            message_bus=self.message_bus,
-            reward_scaling_factor=1.0,
-            volatility_penalty_weight=0.3,
-            overfitting_detector_threshold=0.2
         )
         
         # Sprint 4.2: Prenumerera på parameter_adjustment för debug-visning
