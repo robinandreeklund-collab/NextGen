@@ -134,6 +134,10 @@ class SystemMonitor:
                 'performance': data['performance']
             }
             self.performance_history.append(perf_entry)
+            
+            # Limit performance history to prevent memory leak (keep last 1000)
+            if len(self.performance_history) > 1000:
+                self.performance_history = self.performance_history[-1000:]
     
     def _on_portfolio_status(self, data: Dict[str, Any]):
         """Handle portfolio status updates."""
@@ -150,6 +154,10 @@ class SystemMonitor:
                 'pnl': data.get('pnl', 0)
             }
             self.performance_history.append(perf_entry)
+            
+            # Limit performance history to prevent memory leak (keep last 1000)
+            if len(self.performance_history) > 1000:
+                self.performance_history = self.performance_history[-1000:]
     
     def _on_timeline_insight(self, data: Dict[str, Any]):
         """Handle timeline insights."""

@@ -197,6 +197,10 @@ class DQNController:
         self.training_steps += 1
         self.losses.append(loss.item())
         
+        # Limit loss history to prevent memory leak (keep last 1000)
+        if len(self.losses) > 1000:
+            self.losses = self.losses[-1000:]
+        
         # Update target network
         if self.training_steps % self.target_update_frequency == 0:
             self.target_network.load_state_dict(self.q_network.state_dict())

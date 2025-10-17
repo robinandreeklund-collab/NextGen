@@ -220,6 +220,12 @@ class GANEvolutionEngine:
         self.training_history['g_losses'].append(g_loss.item())
         self.training_history['d_losses'].append(d_loss.item())
         
+        # Limit loss history to prevent memory leak (keep last 1000)
+        if len(self.training_history['g_losses']) > 1000:
+            self.training_history['g_losses'] = self.training_history['g_losses'][-1000:]
+        if len(self.training_history['d_losses']) > 1000:
+            self.training_history['d_losses'] = self.training_history['d_losses'][-1000:]
+        
         # Publish metrics
         self.message_bus.publish('gan_metrics', {
             'g_loss': g_loss.item(),
