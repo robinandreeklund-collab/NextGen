@@ -179,8 +179,8 @@ parameter_adjustment_scenarios:
       allow_adjustments: true
     expected:
       parameters_converge: true
-      convergence_time:_max: 50 episodes
-      drift_from_default:_max: 50%
+      convergence_time_max: 50 episodes
+      drift_from_default_max: 50%
       no_parameter_oscillation: true
 
 # Integration flow scenarios
