@@ -118,7 +118,9 @@ class VoteEngine:
                 'num_voters': 0,
                 'timestamp': datetime.now().isoformat(),
                 'agent_vote_weight': self.agent_vote_weight,
-                'vote_summary': {}
+                'vote_summary': {},
+                'consensus_strength': 0.0,
+                'total_weight': 0.0
             }
         
         # Sprint 4.3: Applicera agent_vote_weight på röster
