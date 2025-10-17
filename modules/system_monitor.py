@@ -232,8 +232,10 @@ class SystemMonitor:
         uptime = time.time() - self.system_metrics['start_time']
         
         # Calculate health score
+        # Increased timeout from 60s to 300s (5 minutes) to handle event-driven modules
+        # that only activate when there's trading activity or market data
         active_modules = len([m for m in self.module_status.values() 
-                             if time.time() - m.get('last_update', 0) < 60])
+                             if time.time() - m.get('last_update', 0) < 300])
         total_modules = len(self.module_status)
         health_score = (active_modules / total_modules) if total_modules > 0 else 0
         

@@ -491,6 +491,11 @@ class SimulatedTester:
             # Portfolio manager uppdaterar
             self.portfolio_manager.update_portfolio(execution_result)
             
+            # Publish portfolio status and calculate reward to keep system_monitor updated
+            # and trigger reward_tuner
+            self.portfolio_manager.publish_status()
+            self.portfolio_manager.calculate_and_publish_reward()
+            
             # Logga till strategic memory
             self.strategic_memory.log_decision({
                 'symbol': symbol,

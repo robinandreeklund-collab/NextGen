@@ -498,6 +498,11 @@ class WebSocketTester:
             # Portfolio manager uppdaterar
             self.portfolio_manager.update_portfolio(execution_result)
             
+            # Publish portfolio status and calculate reward to keep system_monitor updated
+            # and trigger reward_tuner
+            self.portfolio_manager.publish_status()
+            self.portfolio_manager.calculate_and_publish_reward()
+            
             if self.debug_mode and self.stats['decisions_made'] < 10:
                 portfolio = self.portfolio_manager.get_status(self.current_prices)
                 print(f"   💰 Portfolio: ${portfolio.get('cash', 0):.2f} cash, "
@@ -561,6 +566,10 @@ class WebSocketTester:
         
         # Portfolio status med current prices
         portfolio_status = self.portfolio_manager.get_status(self.current_prices if hasattr(self, 'current_prices') else None)
+        
+        # Publish portfolio status for monitoring
+        self.portfolio_manager.publish_status()
+        
         print(f"\n💰 Portfolio:")
         print(f"   Kapital: ${portfolio_status.get('cash', 0):.2f}")
         print(f"   Värde: ${portfolio_status.get('total_value', 0):.2f}")
