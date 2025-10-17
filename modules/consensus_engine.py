@@ -349,7 +349,9 @@ class ConsensusEngine:
                 'total_decisions': 0,
                 'action_distribution': {},
                 'average_confidence': 0.0,
-                'average_robustness': 0.0
+                'average_robustness': 0.0,
+                'consensus_model': self.consensus_model,
+                'threshold': self.threshold
             }
         
         action_dist = {}

@@ -115,7 +115,7 @@ sprints:
       - Röstmatris
       - Konsensusmodell
       - Simuleringsutfall
-    status: 🔜 nästa
+    status: ✅ klar
 
   - sprint: 6
     name: Tidsanalys och action chains

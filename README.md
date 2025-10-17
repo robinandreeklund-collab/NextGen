@@ -13,6 +13,7 @@ Ett självreflekterande, modulärt och RL-drivet handelssystem byggt för transp
 **Sprint 4.2 färdig ✅** – Adaptiv parameterstyrning via RL/PPO komplett
 **Sprint 4.3 färdig ✅** – Full adaptiv parameterstyrning i alla moduler
 **Sprint 4.4 färdig ✅** – Meta-belöningsjustering via RewardTunerAgent komplett
+**Sprint 5 färdig ✅** – Simulering och konsensus komplett
 
 ### Sprint 4.4: Meta-belöningsjustering via RewardTunerAgent ✅
 
@@ -131,6 +132,133 @@ reward_tuner
 - Strategic_memory loggar både base och tuned för korrelation
 - Introspection_panel visar reward transformation charts
 - Backward compatibility bevarad för existerande tester
+
+### Sprint 5: Simulering och konsensus ✅
+
+**Mål:** Testa alternativa beslut och hantera röstflöden för robust beslutsfattande.
+
+**Motivation:**
+Enkel majoritetsröstning är inte alltid tillräcklig för komplexa handelsbeslut. Sprint 5 introducerar beslutssimuleringar där olika scenarier testas innan exekvering, röstmatris för att samla och vikta flera agenters åsikter, och flera konsensusmodeller för att fatta robusta beslut baserat på röstning. Detta möjliggör mer genomtänkta och säkra handelsbeslut med transparent beslutsfattande.
+
+**Moduler i fokus:**
+- `decision_simulator` - Simulerar alternativa beslut och beräknar expected value
+- `vote_engine` - Skapar röstmatris med viktning och meritbaserad röstning
+- `consensus_engine` - Fattar konsensusbeslut baserat på olika konsensusmodeller
+
+**Implementerat:**
+- ✅ DecisionSimulator för simulering av beslut i sandbox
+- ✅ Scenarier: best_case, expected_case, worst_case, no_action
+- ✅ Expected value-beräkning baserat på confidence
+- ✅ Rekommendationer: proceed, caution, reject
+- ✅ VoteEngine med viktning baserat på agent_vote_weight (Sprint 4.3)
+- ✅ Röstmatris med aggregering per action
+- ✅ Consensus strength-beräkning
+- ✅ ConsensusEngine med 4 konsensusmodeller
+- ✅ Majority: Enkel majoritet (flest röster vinner)
+- ✅ Weighted: Viktad baserat på confidence och agent performance
+- ✅ Unanimous: Kräver 100% enighet
+- ✅ Threshold: Kräver minst X% enighet (konfigurerbar)
+- ✅ Robusthet-beräkning baserat på röstfördelning
+- ✅ 38 tester för Sprint 5 moduler (alla passerar)
+
+**Testresultat:**
+- ✅ Decision Simulator simulerar 4 scenarier per beslut
+- ✅ Expected value beräknas korrekt från scenarios
+- ✅ Rekommendationer baseras på EV och confidence
+- ✅ Vote Engine viktar röster med agent_vote_weight
+- ✅ Röstmatris aggregerar röster per action
+- ✅ Consensus strength beräknas från röstfördelning
+- ✅ Majority consensus väljer flest röster
+- ✅ Weighted consensus kombinerar röster och confidence
+- ✅ Unanimous consensus kräver 100% enighet
+- ✅ Threshold consensus kontrollerar tröskelvärde
+- ✅ Robusthet beräknas från consensus strength och antal röster
+- ✅ 38/38 tester passerar (12 simulator, 12 vote, 14 consensus)
+
+**Benefits:**
+- Risk-medvetet beslutsfattande genom simulering
+- Transparent expected value för varje beslut
+- Meritbaserad röstning viktar agenter efter performance
+- Flera konsensusmodeller för olika situationer
+- Robust beslutsfattande med konfidensberäkning
+- Flexibel threshold för olika riskaptiter
+- Full integration med adaptiva parametrar (Sprint 4.3)
+
+**Beslutssimulering Flow:**
+```
+strategy_engine
+      │ decision_proposal
+      ▼
+decision_simulator
+      │ • Best case scenario (+5%)
+      │ • Expected case (confidence-based)
+      │ • Worst case scenario (-3%)
+      │ • No action (0%)
+      │ • Calculate expected value
+      │ • Make recommendation
+      ▼ simulation_result
+strategic_memory
+      │ Log simulation for analysis
+```
+
+**Röstning och Konsensus Flow:**
+```
+decision_engine (agent 1)
+decision_engine (agent 2)  │ decision_vote (multiple agents)
+decision_engine (agent 3)  │
+      ▼
+vote_engine
+      │ • Collect votes
+      │ • Apply agent_vote_weight (Sprint 4.3)
+      │ • Weight by confidence
+      │ • Aggregate per action
+      │ • Calculate consensus strength
+      ▼ vote_matrix
+consensus_engine
+      │ • Choose consensus model
+      │ • Majority / Weighted / Unanimous / Threshold
+      │ • Calculate robustness
+      │ • Make final decision
+      ▼ final_decision
+execution_engine
+      │ Execute trade
+```
+
+**Konsensusmodeller:**
+1. **Majority** - Enkel majoritet (flest röster vinner)
+   - Användning: Snabba beslut där majoritet räcker
+   
+2. **Weighted** - Viktad baserat på confidence och agent performance
+   - Användning: Normal trading (default)
+   - Kombinerar röstantal med confidence
+   
+3. **Unanimous** - Kräver 100% enighet
+   - Användning: Högrisk beslut, stora positioner
+   - Endast om alla agenter är överens
+   
+4. **Threshold** - Kräver minst X% enighet (default 60%)
+   - Användning: Konfigurerbar säkerhetsnivå
+   - Flexibel threshold mellan 0-100%
+
+**Simuleringsscenarier:**
+- **Best case**: Prisrörelse i rätt riktning (±5%)
+- **Expected case**: Confidence-baserad prisrörelse
+- **Worst case**: Prisrörelse mot oss (-3%)
+- **No action**: HOLD (0% ändring)
+
+**Metrics Tracked:**
+- Simuleringar: total, proceed, caution, reject
+- Expected value per simulation
+- Röster: total, per agent, per action
+- Consensus confidence och robusthet
+- Action distribution från konsensus
+
+**Integration med existerande system:**
+- DecisionSimulator tar emot decision_proposal från strategy_engine
+- VoteEngine använder agent_vote_weight från adaptive parameters (Sprint 4.3)
+- ConsensusEngine skickar final_decision till execution_engine
+- Strategic memory loggar både simuleringar och konsensusbeslut
+- RewardTunerAgent (Sprint 4.4) påverkar reward för voting quality
 
 ### Sprint 4.3: Full adaptiv parameterstyrning via RL/PPO ✅
 
@@ -765,8 +893,8 @@ Projektet är uppdelat i 7 sprintar. Se `sprint_plan.yaml` för detaljer.
 | 1      | Kärnsystem och demoportfölj          | ✅ Färdig|
 | 2      | RL och belöningsflöde                | ✅ Färdig|
 | 3      | Feedbackloopar och introspektion     | ✅ Färdig|
-| 4      | Strategiskt minne och agentutveckling| 🔄 Pågår|
-| 5      | Simulering och konsensus             | ⏳ Planerad|
+| 4      | Strategiskt minne och agentutveckling| ✅ Färdig|
+| 5      | Simulering och konsensus             | ✅ Färdig|
 | 6      | Tidsanalys och action chains         | ⏳ Planerad|
 | 7      | Indikatorvisualisering och översikt  | ⏳ Planerad|
 

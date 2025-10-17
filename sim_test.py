@@ -43,6 +43,8 @@ from modules.portfolio_manager import PortfolioManager
 from modules.rl_controller import RLController
 from modules.vote_engine import VoteEngine
 from modules.reward_tuner import RewardTunerAgent  # Sprint 4.4
+from modules.decision_simulator import DecisionSimulator  # Sprint 5
+from modules.consensus_engine import ConsensusEngine  # Sprint 5
 
 
 class SimulatedTester:
@@ -94,6 +96,10 @@ class SimulatedTester:
         # Sprint 4.3: Spåra alla adaptiva parametrar
         self.parameter_history = []
         self.sprint43_params_history = []
+        
+        # Sprint 5: Spåra simuleringar och konsensus
+        self.simulation_results = []
+        self.consensus_decisions = []
     
     def setup_modules(self) -> None:
         """Initialiserar alla Sprint 1-4.3 moduler."""
@@ -137,10 +143,17 @@ class SimulatedTester:
         # Sprint 4.3 modul
         self.vote_engine = VoteEngine(self.message_bus)
         
+        # Sprint 5 moduler
+        self.decision_simulator = DecisionSimulator(self.message_bus)
+        self.consensus_engine = ConsensusEngine(self.message_bus, consensus_model='weighted')
+        
         # Sprint 4.3: Prenumerera på parameter_adjustment
         self.message_bus.subscribe('parameter_adjustment', self._on_parameter_adjustment)
         
-        print("✅ Alla moduler initialiserade (inkl. RewardTunerAgent från Sprint 4.4)")
+        # Sprint 5: Prenumerera på simulation_result för logging
+        self.message_bus.subscribe('simulation_result', self._on_simulation_result)
+        
+        print("✅ Alla moduler initialiserade (inkl. RewardTunerAgent från Sprint 4.4 och Sprint 5 moduler)")
     
     def _on_parameter_adjustment(self, adjustment: Dict[str, Any]) -> None:
         """
@@ -160,6 +173,20 @@ class SimulatedTester:
         # Behåll senaste 100
         if len(self.parameter_history) > 100:
             self.parameter_history = self.parameter_history[-100:]
+    
+    def _on_simulation_result(self, result: Dict[str, Any]) -> None:
+        """
+        Callback för simulation results (Sprint 5).
+        Loggar simuleringsresultat för analys.
+        """
+        self.simulation_results.append({
+            'timestamp': time.time(),
+            'result': result
+        })
+        
+        # Behåll senaste 50
+        if len(self.simulation_results) > 50:
+            self.simulation_results = self.simulation_results[-50:]
     
     def generate_aggressive_price_movement(self, symbol: str) -> float:
         """
@@ -573,6 +600,49 @@ class SimulatedTester:
             print(f"   • Koden uppdaterades under körning - starta om sim_test.py för nya features")
         
         print(f"{'='*90}\n")
+        
+        # Sprint 5: Simulering och Konsensus
+        print(f"\n{'='*90}")
+        print(f"🎲 SPRINT 5 - Simulering och Konsensus")
+        print(f"{'='*90}")
+        
+        # Decision Simulator stats
+        sim_stats = self.decision_simulator.get_simulation_statistics()
+        print(f"\n🎲 Decision Simulator:")
+        print(f"   Totalt simuleringar: {sim_stats['total_simulations']}")
+        if sim_stats['total_simulations'] > 0:
+            print(f"   Rekommendationer:")
+            print(f"      ✅ Proceed: {sim_stats['proceed_recommendations']}")
+            print(f"      ⚠️  Caution: {sim_stats['caution_recommendations']}")
+            print(f"      ❌ Reject:  {sim_stats['reject_recommendations']}")
+            print(f"   Genomsnittlig expected value: ${sim_stats['average_expected_value']:.2f}")
+        
+        # Vote Engine stats
+        vote_stats = self.vote_engine.get_voting_statistics()
+        print(f"\n🗳️  Vote Engine:")
+        print(f"   Totalt röster: {vote_stats['total_votes']}")
+        if vote_stats['total_votes'] > 0:
+            print(f"   Unika röstare: {vote_stats['unique_voters']}")
+            print(f"   Genomsnittlig confidence: {vote_stats['average_confidence']:.2f}")
+            if vote_stats['action_distribution']:
+                print(f"   Röstfördelning:")
+                for action, count in vote_stats['action_distribution'].items():
+                    print(f"      {action}: {count} röster")
+        
+        # Consensus Engine stats
+        consensus_stats = self.consensus_engine.get_consensus_statistics()
+        print(f"\n⚖️  Consensus Engine:")
+        print(f"   Totalt konsensusbeslut: {consensus_stats['total_decisions']}")
+        print(f"   Konsensusmodell: {consensus_stats['consensus_model']}")
+        if consensus_stats['total_decisions'] > 0:
+            print(f"   Genomsnittlig confidence: {consensus_stats['average_confidence']:.2f}")
+            print(f"   Genomsnittlig robusthet: {consensus_stats['average_robustness']:.2f}")
+            if consensus_stats['action_distribution']:
+                print(f"   Beslutsfördelning:")
+                for action, count in consensus_stats['action_distribution'].items():
+                    print(f"      {action}: {count} beslut")
+        
+        print(f"{'='*90}\n")
     
     def print_final_summary(self) -> None:
         """Skriver ut slutlig sammanfattning."""
@@ -629,6 +699,70 @@ class SimulatedTester:
         print(f"   Executions: {insights['total_executions']}")
         if insights['total_executions'] > 0:
             print(f"   Success rate: {insights['success_rate']*100:.1f}%")
+        
+        # Sprint 5: Simulering och Konsensus Sammanfattning
+        print(f"\n{'='*90}")
+        print(f"🎲 SPRINT 5 - SIMULERING OCH KONSENSUS SAMMANFATTNING")
+        print(f"{'='*90}")
+        
+        sim_stats = self.decision_simulator.get_simulation_statistics()
+        print(f"\n🎲 Decision Simulator:")
+        print(f"   Totalt simuleringar: {sim_stats['total_simulations']}")
+        if sim_stats['total_simulations'] > 0:
+            proceed_pct = (sim_stats['proceed_recommendations'] / sim_stats['total_simulations']) * 100
+            caution_pct = (sim_stats['caution_recommendations'] / sim_stats['total_simulations']) * 100
+            reject_pct = (sim_stats['reject_recommendations'] / sim_stats['total_simulations']) * 100
+            
+            print(f"   Rekommendationsfördelning:")
+            print(f"      ✅ Proceed: {sim_stats['proceed_recommendations']} ({proceed_pct:.1f}%)")
+            print(f"      ⚠️  Caution: {sim_stats['caution_recommendations']} ({caution_pct:.1f}%)")
+            print(f"      ❌ Reject:  {sim_stats['reject_recommendations']} ({reject_pct:.1f}%)")
+            print(f"   Genomsnittlig expected value: ${sim_stats['average_expected_value']:.2f}")
+            
+            # Visa några senaste simuleringar
+            if len(self.simulation_results) > 0:
+                print(f"\n   📊 Senaste 5 simuleringar:")
+                for sim_entry in list(self.simulation_results)[-5:]:
+                    result = sim_entry['result']
+                    print(f"      {result['symbol']} {result['original_action']}: "
+                          f"EV ${result['expected_value']:.2f}, "
+                          f"Rekommendation: {result['recommendation']}")
+        
+        vote_stats = self.vote_engine.get_voting_statistics()
+        print(f"\n🗳️  Vote Engine:")
+        print(f"   Totalt röster: {vote_stats['total_votes']}")
+        if vote_stats['total_votes'] > 0:
+            print(f"   Unika röstare: {vote_stats['unique_voters']}")
+            print(f"   Genomsnittlig confidence: {vote_stats['average_confidence']:.2f}")
+            if vote_stats['action_distribution']:
+                print(f"   Röstfördelning:")
+                total_votes = sum(vote_stats['action_distribution'].values())
+                for action, count in vote_stats['action_distribution'].items():
+                    pct = (count / total_votes) * 100
+                    print(f"      {action}: {count} röster ({pct:.1f}%)")
+        
+        consensus_stats = self.consensus_engine.get_consensus_statistics()
+        print(f"\n⚖️  Consensus Engine:")
+        print(f"   Totalt konsensusbeslut: {consensus_stats['total_decisions']}")
+        print(f"   Konsensusmodell: {consensus_stats['consensus_model']}")
+        if consensus_stats['total_decisions'] > 0:
+            print(f"   Genomsnittlig confidence: {consensus_stats['average_confidence']:.2f}")
+            print(f"   Genomsnittlig robusthet: {consensus_stats['average_robustness']:.2f}")
+            if consensus_stats['action_distribution']:
+                print(f"   Beslutsfördelning:")
+                total_decisions = sum(consensus_stats['action_distribution'].values())
+                for action, count in consensus_stats['action_distribution'].items():
+                    pct = (count / total_decisions) * 100
+                    print(f"      {action}: {count} beslut ({pct:.1f}%)")
+        
+        print(f"\n💡 Sprint 5 Status:")
+        if sim_stats['total_simulations'] > 0 or consensus_stats['total_decisions'] > 0:
+            print(f"   ✅ Sprint 5 moduler aktiva och fungerar")
+            print(f"   ✅ Simulering av alternativa beslut implementerad")
+            print(f"   ✅ Röstmatris och konsensusmodell implementerad")
+        else:
+            print(f"   ℹ️  Sprint 5 moduler laddade men inte aktiverade än")
+            print(f"   ℹ️  Simulering och konsensus triggas vid beslutspunkter")
         
         # Sprint 4.3: Parameter Evolution Summary
         print(f"\n{'='*90}")
