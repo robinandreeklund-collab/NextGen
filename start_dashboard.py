@@ -487,7 +487,7 @@ class NextGenDashboard:
         def update_sidebar(n):
             total_value = self.portfolio_manager.get_portfolio_value(self.current_prices)
             
-            num_agents = len(self.agent_manager.get_all_agents())
+            num_agents = len(self.agent_manager.get_all_profiles())
             num_decisions = len(self.decision_history)
             num_conflicts = len(self.conflict_history)
             
