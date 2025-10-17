@@ -1,0 +1,598 @@
+# Sprint 6 Flowchart - Tidsanalys och Action Chains
+# Visar hur timespan_tracker, action_chain_engine och system_monitor integreras
+
+sprint6_flowchart:
+  name: Sprint 6 - Tidsanalys och Action Chains
+  version: 1.0
+  description: |
+    Arkitektur för Sprint 6-moduler som hanterar tidsbaserad analys,
+    återanvändbara beslutskedjor och systemövervakning.
+
+# Timeline Tracking Flow
+timeline_tracking_flow:
+  description: Hur beslut och events spåras över tid
+  flow:
+    - step: 1
+      module: decision_engine
+      action: Fattar beslut
+      output: decision_event
+      
+    - step: 2
+      module: timespan_tracker
+      action: Tar emot decision_event
+      processing:
+        - Add timestamp
+        - Store in timeline
+        - Track decision count
+        - Analyze time patterns
+      output: timeline_insight
+      
+    - step: 3
+      module: indicator_registry
+      action: Publicerar indikatordata
+      output: indicator_data
+      
+    - step: 4
+      module: timespan_tracker
+      action: Tar emot indicator_data
+      processing:
+        - Store by symbol
+        - Maintain history (100 per symbol)
+        - Track temporal patterns
+      
+    - step: 5
+      module: timespan_tracker
+      action: Genererar timeline_insight
+      metrics:
+        - total_events
+        - decision_count
+        - avg_time_between_decisions
+        - time_window
+      output: timeline_insight → strategic_memory, introspection_panel
+      
+    - step: 6
+      module: execution_engine
+      action: Exekverar beslut
+      output: final_decision
+      
+    - step: 7
+      module: timespan_tracker
+      action: Tar emot final_decision
+      processing:
+        - Add to timeline
+        - Correlate with decision_events
+        - Calculate decision-to-execution latency
+
+# Action Chain Flow
+action_chain_flow:
+  description: Hur action chains definieras och körs
+  flow:
+    - step: 1
+      module: action_chain_engine
+      action: Initialiserar standard templates
+      templates:
+        - standard_trade
+        - risk_averse
+        - aggressive
+        - analysis_only
+      
+    - step: 2
+      module: strategy_engine / external
+      action: Begär chain execution
+      input:
+        chain_name: standard_trade
+        context:
+          symbol: AAPL
+          action: BUY
+          confidence: 0.85
+      output: execute_chain message
+      
+    - step: 3
+      module: action_chain_engine
+      action: Tar emot execute_chain
+      processing:
+        - Lookup chain (template or custom)
+        - Start execution timer
+        - Execute chain steps
+        - Track execution
+      output: chain_execution event
+      
+    - step: 4
+      module: action_chain_engine
+      action: Kör chain steps
+      example_standard_trade:
+        - indicator_analysis
+        - risk_assessment
+        - strategy_decision
+        - consensus_vote
+        - execution
+      
+    - step: 5
+      module: action_chain_engine
+      action: Loggar execution
+      metrics:
+        - chain_name
+        - started_at
+        - completed_at
+        - duration
+        - status
+        - context
+      output: chain_execution → strategic_memory
+      
+    - step: 6
+      module: strategic_memory_engine
+      action: Tar emot chain_execution
+      processing:
+        - Store chain history
+        - Correlate with decisions
+        - Analyze chain performance
+
+# System Monitor Flow
+system_monitor_flow:
+  description: Hur systemhälsa övervakas
+  flow:
+    - step: 1
+      modules: [strategy_engine, risk_manager, decision_engine, execution_engine, portfolio_manager]
+      action: Publicerar dashboard_data
+      output: dashboard_data with source
+      
+    - step: 2
+      module: system_monitor
+      action: Tar emot dashboard_data
+      processing:
+        - Track module by source
+        - Update last_update timestamp
+        - Increment update_count
+        - Store latest_data
+      
+    - step: 3
+      module: rl_controller
+      action: Publicerar agent_status
+      output: agent_status with performance
+      
+    - step: 4
+      module: system_monitor
+      action: Tar emot agent_status
+      processing:
+        - Increment agent_updates counter
+        - Store performance history
+        - Track agent performance trends
+      
+    - step: 5
+      module: portfolio_manager
+      action: Publicerar portfolio_status
+      output: portfolio_status with portfolio_value
+      
+    - step: 6
+      module: system_monitor
+      action: Tar emot portfolio_status
+      processing:
+        - Update portfolio_value metric
+        - Store performance history
+        - Track P&L trends
+      
+    - step: 7
+      module: timespan_tracker
+      action: Publicerar timeline_insight
+      output: timeline_insight
+      
+    - step: 8
+      module: system_monitor
+      action: Tar emot timeline_insight
+      processing:
+        - Increment timeline_events counter
+        - Track timeline activity
+      
+    - step: 9
+      module: action_chain_engine
+      action: Publicerar chain_execution
+      output: chain_execution
+      
+    - step: 10
+      module: system_monitor
+      action: Tar emot chain_execution
+      processing:
+        - Increment chain_executions counter
+        - Increment total_executions counter
+        - Track chain activity
+      
+    - step: 11
+      module: system_monitor
+      action: Beräknar health score
+      calculation:
+        - Count active modules (updated < 60s ago)
+        - Count total modules
+        - health_score = active / total
+        - status = healthy (>0.8), warning (>0.5), critical (<=0.5)
+      
+    - step: 12
+      module: introspection_panel / debugging
+      action: Begär system_view
+      method: system_monitor.get_system_view()
+      output:
+        system_status: operational / degraded
+        health_score: 0.0 - 1.0
+        uptime_seconds: float
+        metrics: system_metrics dict
+        active_modules: count
+        total_modules: count
+        module_status: dict per module
+        performance_snapshot: latest 10 entries
+
+# Integration med Existing System
+integration_flow:
+  description: Hur Sprint 6 integreras med befintliga moduler
+  
+  timeline_integration:
+    - Strategic Memory loggar timeline events
+    - Introspection Panel visualiserar timeline insights
+    - Decision Engine publicerar decision_event
+    - Execution Engine publicerar final_decision
+    - Indicator Registry publicerar indicator_data
+    
+  action_chain_integration:
+    - Strategy Engine kan trigga chains
+    - Decision Engine kan använda chains för standardflöden
+    - Strategic Memory loggar chain executions
+    - Chains koordinerar flera moduler i sekvens
+    
+  system_monitor_integration:
+    - Alla moduler publicerar dashboard_data
+    - RL Controller publicerar agent_status
+    - Portfolio Manager publicerar portfolio_status
+    - Timespan Tracker publicerar timeline_insight
+    - Action Chain Engine publicerar chain_execution
+    - Introspection Panel använder system_view för debugging
+
+# Comprehensive Sprint 6 Flow
+comprehensive_sprint6_flow:
+  description: Komplett flöde som kombinerar alla Sprint 6-moduler
+  scenario: Trading decision med timeline tracking, action chain och system monitoring
+  
+  flow:
+    - step: 1
+      description: Strategy Engine föreslår trade
+      module: strategy_engine
+      output: decision_proposal
+      
+    - step: 2
+      description: System Monitor tar emot dashboard update
+      module: system_monitor
+      input: dashboard_data from strategy_engine
+      processing: Track module status
+      
+    - step: 3
+      description: Action Chain körs för standardiserat flöde
+      module: action_chain_engine
+      input: execute_chain (standard_trade)
+      chain_steps:
+        - indicator_analysis
+        - risk_assessment
+        - strategy_decision
+        - consensus_vote
+        - execution
+      output: chain_execution
+      
+    - step: 4
+      description: Decision Engine fattar beslut
+      module: decision_engine
+      input: decision_proposal
+      output: decision_event
+      
+    - step: 5
+      description: Timespan Tracker loggar beslut
+      module: timespan_tracker
+      input: decision_event
+      processing:
+        - Add to timeline
+        - Calculate time since last decision
+        - Analyze patterns
+      output: timeline_insight
+      
+    - step: 6
+      description: Vote Engine samlar röster
+      module: vote_engine
+      input: decision_vote
+      output: vote_matrix
+      
+    - step: 7
+      description: Consensus Engine fattar konsensusbeslut
+      module: consensus_engine
+      input: vote_matrix
+      output: final_decision
+      
+    - step: 8
+      description: Timespan Tracker loggar final decision
+      module: timespan_tracker
+      input: final_decision
+      processing: Correlate with decision_event
+      
+    - step: 9
+      description: Execution Engine exekverar trade
+      module: execution_engine
+      input: final_decision
+      output: execution_result
+      
+    - step: 10
+      description: Portfolio Manager uppdaterar portfolio
+      module: portfolio_manager
+      input: execution_result
+      output: portfolio_status, base_reward
+      
+    - step: 11
+      description: System Monitor uppdaterar metrics
+      module: system_monitor
+      input: portfolio_status
+      processing:
+        - Update portfolio_value
+        - Track performance
+        - Calculate health score
+      
+    - step: 12
+      description: Strategic Memory loggar allt
+      module: strategic_memory_engine
+      inputs:
+        - decision_event
+        - final_decision
+        - execution_result
+        - chain_execution
+        - timeline_insight
+      processing:
+        - Store decision history
+        - Correlate timeline with outcomes
+        - Track chain performance
+      
+    - step: 13
+      description: Introspection Panel visualiserar
+      module: introspection_panel
+      data_sources:
+        - system_monitor.get_system_view()
+        - timespan_tracker.get_timeline_summary()
+        - action_chain_engine.get_chain_statistics()
+        - strategic_memory.get_insights()
+      output: Dashboard with Sprint 6 metrics
+
+# Visual Representations
+visual_representations:
+  
+  timeline_architecture:
+    diagram: |
+      ┌─────────────────────────────────────────────────────────┐
+      │                   TIMELINE TRACKING                      │
+      └─────────────────────────────────────────────────────────┘
+      
+      decision_engine ──┐
+      execution_engine ─┤ decision_event, final_decision
+      indicator_registry┘
+            │
+            ▼
+      ┌──────────────────┐
+      │ timespan_tracker │
+      │ • Timeline        │
+      │ • Indicator hist  │
+      │ • Time analysis   │
+      └────────┬─────────┘
+               │ timeline_insight
+               ├──▶ strategic_memory
+               └──▶ introspection_panel
+  
+  action_chain_architecture:
+    diagram: |
+      ┌─────────────────────────────────────────────────────────┐
+      │                   ACTION CHAINS                          │
+      └─────────────────────────────────────────────────────────┘
+      
+      strategy_engine ──▶ execute_chain request
+            │
+            ▼
+      ┌───────────────────┐
+      │action_chain_engine│
+      │ Templates:        │
+      │ • standard_trade  │
+      │ • risk_averse     │
+      │ • aggressive      │
+      │ • analysis_only   │
+      │ • custom chains   │
+      └────────┬──────────┘
+               │ chain_execution
+               ├──▶ strategic_memory
+               └──▶ system_monitor
+  
+  system_monitor_architecture:
+    diagram: |
+      ┌─────────────────────────────────────────────────────────┐
+      │                  SYSTEM MONITORING                       │
+      └─────────────────────────────────────────────────────────┘
+      
+      all_modules ──┐ dashboard_data
+      rl_controller ┤ agent_status
+      portfolio_mgr ┤ portfolio_status
+      timespan_tr   ┤ timeline_insight
+      action_chain  ┘ chain_execution
+            │
+            ▼
+      ┌──────────────────┐
+      │  system_monitor  │
+      │ • Module status  │
+      │ • Health score   │
+      │ • Performance    │
+      │ • Stale detect   │
+      └────────┬─────────┘
+               │ system_view
+               └──▶ introspection_panel
+
+# Metrics and Monitoring
+metrics:
+  timespan_tracker:
+    metrics:
+      - total_events: Total timeline events
+      - decision_events: Decision events count
+      - final_decisions: Final decision count
+      - symbols_tracked: Number of symbols
+      - time_span: Duration of timeline (seconds)
+      - avg_time_between_decisions: Average seconds between decisions
+    
+    queries:
+      - get_timeline_summary(): Overall summary
+      - get_decision_timeline(time_window): Decisions in window
+      - get_indicator_timeline(symbol, time_window): Indicators in window
+  
+  action_chain_engine:
+    metrics:
+      - total_chains_defined: Custom chains
+      - total_templates: Standard templates (4)
+      - total_executions: All executions
+      - template_executions: Template-based
+      - custom_executions: Custom chain executions
+      - avg_execution_duration: Average duration (seconds)
+    
+    queries:
+      - get_chain_statistics(): Overall statistics
+      - get_chain_history(limit): Recent executions
+  
+  system_monitor:
+    metrics:
+      - start_time: System start timestamp
+      - total_decisions: Decision count
+      - total_executions: Execution count
+      - total_rewards: Reward count
+      - agent_updates: Agent update count
+      - chain_executions: Chain execution count
+      - timeline_events: Timeline event count
+      - portfolio_value: Current portfolio value
+      - health_score: 0.0 - 1.0
+      - uptime: Seconds since start
+    
+    queries:
+      - get_system_view(): Complete system overview
+      - get_module_status(module): Specific module status
+      - get_performance_metrics(time_window): Performance in window
+      - get_system_health(): Health metrics
+
+# Use Cases
+use_cases:
+  
+  use_case_1:
+    name: Temporal Pattern Analysis
+    description: Identifiera mönster i beslut över tid
+    steps:
+      - Timespan Tracker loggar alla beslut med timestamps
+      - Beräknar average time between decisions
+      - Identifierar perioder med hög/låg aktivitet
+      - Strategic Memory korrelerar timing med outcomes
+      - Introspection Panel visualiserar temporala mönster
+    benefit: Förstå när systemet är mest/minst aktivt och effektivt
+  
+  use_case_2:
+    name: Standardized Trading Workflows
+    description: Återanvändning av beprövade beslutsflöden
+    steps:
+      - Action Chain Engine har 4 standard templates
+      - Strategy Engine väljer lämplig chain baserat på situation
+      - Risk-averse chain för osäkra marknader
+      - Aggressive chain för starka signaler
+      - Analysis-only chain för learning utan execution
+    benefit: Konsistenta och förutsägbara beslutsflöden
+  
+  use_case_3:
+    name: System Health Monitoring
+    description: Real-time övervakning av systemhälsa
+    steps:
+      - Alla moduler publicerar dashboard_data
+      - System Monitor aggregerar status från alla moduler
+      - Beräknar health score baserat på aktiva moduler
+      - Detekterar stale modules (>60s sedan update)
+      - Introspection Panel visar health metrics
+    benefit: Snabb identifiering av problem och flaskhalsar
+  
+  use_case_4:
+    name: Debugging and Diagnostics
+    description: Troubleshooting med timeline och chain data
+    steps:
+      - Timeline Tracker visar exakt decision timeline
+      - Action Chain Engine visar vilka chains som körts
+      - System Monitor visar modulstatus och health
+      - Strategic Memory korrelerar allt för analys
+      - Kan spåra exakt vad som hände vid specifik tidpunkt
+    benefit: Enklare debugging och root cause analysis
+
+# Testing Strategy
+testing_strategy:
+  timespan_tracker_tests:
+    - test_initialization: Verify initialization
+    - test_decision_event_tracking: Events tracked correctly
+    - test_indicator_data_tracking: Indicators per symbol
+    - test_final_decision_tracking: Final decisions logged
+    - test_timeline_analysis: Insights generated
+    - test_timeline_summary: Summary calculation
+    - test_get_decision_timeline_with_window: Time window queries
+    - test_get_indicator_timeline: Symbol queries
+    - test_timeline_size_management: Max 500 entries
+    - test_indicator_history_size_management: Max 100 per symbol
+    - test_multiple_symbols_tracking: Multiple symbols
+  
+  action_chain_engine_tests:
+    - test_initialization: Verify 4 templates initialized
+    - test_standard_chain_templates_exist: All templates present
+    - test_define_custom_chain: Custom chain definition
+    - test_define_chain_validation: Input validation
+    - test_execute_template_chain: Template execution
+    - test_execute_custom_chain: Custom execution
+    - test_execute_nonexistent_chain_falls_back: Error handling
+    - test_chain_definition_via_message_bus: Message bus integration
+    - test_execute_chain_via_message_bus: Execute via messages
+    - test_get_chain_statistics: Statistics calculation
+    - test_get_chain_history: History retrieval
+    - test_chain_execution_tracking: Execution tracking
+    - test_chain_execution_history_size_limit: Max 100 entries
+    - test_different_chain_templates: All templates work
+    - test_chain_context_preservation: Context preserved
+  
+  system_monitor_tests:
+    - test_initialization: Verify initialization
+    - test_dashboard_data_tracking: Module tracking
+    - test_agent_status_tracking: Agent updates
+    - test_portfolio_status_tracking: Portfolio tracking
+    - test_timeline_insight_tracking: Timeline events
+    - test_chain_execution_tracking: Chain events
+    - test_get_system_view: System view generation
+    - test_health_score_calculation: Health calculation
+    - test_get_module_status_specific: Module queries
+    - test_get_module_status_all: All modules query
+    - test_get_performance_metrics: Performance metrics
+    - test_get_system_health: Health metrics
+    - test_stale_module_detection: Stale detection
+    - test_multiple_module_tracking: Multiple modules
+    - test_performance_history_accumulation: History tracking
+    - test_system_metrics_update: Metric updates
+
+# Performance Considerations
+performance:
+  timespan_tracker:
+    - Timeline limited to 500 entries (prevents unbounded growth)
+    - Indicator history limited to 100 per symbol
+    - Time window queries efficient with timestamp filtering
+    - Analysis triggered only on decision events
+  
+  action_chain_engine:
+    - Chain execution history limited to 100 entries
+    - Template lookup O(1) with dict
+    - Execution tracking minimal overhead
+    - No blocking operations during execution
+  
+  system_monitor:
+    - Dashboard data aggregation O(n) where n = number of modules
+    - Health score calculation O(1) with cached counts
+    - Performance history unlimited but rarely queried
+    - Module status lookups O(1) with dict
+
+# Future Enhancements
+future_enhancements:
+  - Timeline visualization in Dash dashboard
+  - Chain dependency graphs
+  - Predictive timeline analysis (ML-based)
+  - Automatic chain generation based on success patterns
+  - System health alerts and notifications
+  - Historical health trends and anomaly detection
+  - Chain A/B testing framework
+  - Timeline playback for debugging

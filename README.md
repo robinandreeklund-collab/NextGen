@@ -14,6 +14,7 @@ Ett självreflekterande, modulärt och RL-drivet handelssystem byggt för transp
 **Sprint 4.3 färdig ✅** – Full adaptiv parameterstyrning i alla moduler
 **Sprint 4.4 färdig ✅** – Meta-belöningsjustering via RewardTunerAgent komplett
 **Sprint 5 färdig ✅** – Simulering och konsensus komplett
+**Sprint 6 pågående 🔄** – Tidsanalys och action chains
 
 ### Sprint 4.4: Meta-belöningsjustering via RewardTunerAgent ✅
 
@@ -159,7 +160,124 @@ reward_tuner
 - Introspection_panel visar reward transformation charts
 - Backward compatibility bevarad för existerande tester
 
-### Sprint 5: Simulering och konsensus ✅
+### Sprint 6: Tidsanalys och action chains 🔄
+
+**Mål:** Synkronisera beslut över tid och skapa återanvändbara flöden.
+
+**Motivation:**
+Beslut fattas i realtid men behöver koordineras över olika tidsspann och mönster. Sprint 6 introducerar tidsbaserad spårning av beslut och events, återanvändbara action chains för standardiserade beslutsflöden, och systemövervakning för hälsokontroll. Detta möjliggör bättre koordinering av beslut över tid, identifiering av temporala mönster, och transparent systemhälsa.
+
+**Moduler i fokus:**
+- `timespan_tracker` - Spårar beslut och events över tid
+- `action_chain_engine` - Definierar återanvändbara beslutskedjor
+- `system_monitor` - Övervakar systemhälsa och modulstatus
+
+**Implementerat:**
+- ✅ TimespanTracker för tidslinje-analys
+- ✅ Decision event tracking över tid
+- ✅ Indicator history per symbol
+- ✅ Time window queries för decisions och indicators
+- ✅ Timeline insights med genomsnittlig tid mellan beslut
+- ✅ ActionChainEngine med standardmallar
+- ✅ 4 chain templates: standard_trade, risk_averse, aggressive, analysis_only
+- ✅ Custom chain definition support
+- ✅ Chain execution tracking och statistik
+- ✅ SystemMonitor för aggregerad systemstatus
+- ✅ Module health tracking och staleness detection
+- ✅ Performance history accumulation
+- ✅ Health score calculation
+- ✅ 42 tester för Sprint 6 moduler (alla passerar)
+
+**Testresultat:**
+- ✅ TimespanTracker spårar timeline events korrekt
+- ✅ Decision events och final decisions loggas
+- ✅ Indicator history per symbol fungerar
+- ✅ Time window queries returnerar korrekt data
+- ✅ Timeline size management håller historik hanterbar
+- ✅ ActionChainEngine initialiserar 4 standard templates
+- ✅ Custom chains kan definieras och köras
+- ✅ Chain executions spåras med duration metrics
+- ✅ SystemMonitor aggregerar status från alla moduler
+- ✅ Health score beräknas baserat på aktiva moduler
+- ✅ Stale modules detekteras korrekt
+- ✅ 185/185 totala tester passerar (100% pass rate)
+
+**Benefits:**
+- Temporala mönster i beslut identifieras
+- Koordinering av beslut över olika tidsspann
+- Standardiserade beslutsflöden via action chains
+- Transparent systemhälsa och modulstatus
+- Enklare debugging med timeline-analys
+- Återanvändning av beslutsmönster via chains
+
+**Action Chain Templates:**
+```
+standard_trade:
+  indicator_analysis → risk_assessment → strategy_decision → 
+  consensus_vote → execution
+
+risk_averse (extra risk checks):
+  indicator_analysis → risk_assessment → secondary_risk_check →
+  strategy_decision → consensus_vote → final_risk_verification → execution
+
+aggressive (faster path):
+  indicator_analysis → strategy_decision → execution
+
+analysis_only (no execution):
+  indicator_analysis → risk_assessment → strategy_decision →
+  simulation → memory_storage
+```
+
+**Timeline Tracking Flow:**
+```
+decision_engine
+      │ decision_event
+      ▼
+timespan_tracker
+      │ • Track event timestamp
+      │ • Add to timeline
+      │ • Analyze time patterns
+      │ • Calculate avg time between decisions
+      ▼ timeline_insight
+strategic_memory / introspection_panel
+      │ Log and visualize temporal patterns
+```
+
+**System Monitor Flow:**
+```
+all_modules
+      │ dashboard_data, agent_status, portfolio_status
+      ▼
+system_monitor
+      │ • Aggregate module status
+      │ • Track module freshness
+      │ • Calculate health score
+      │ • Detect stale modules
+      │ • Track performance history
+      ▼ system_view
+introspection_panel / debugging tools
+      │ Display system health and metrics
+```
+
+**Metrics Tracked:**
+- Timeline events (decision, final_decision, indicator)
+- Average time between decisions
+- Symbols tracked över tid
+- Chain executions (template vs custom)
+- Avg chain execution duration
+- Module health scores
+- Active vs stale modules
+- System uptime
+
+**Integration med existerande system:**
+- TimespanTracker prenumererar på decision_event, indicator_data, final_decision
+- ActionChainEngine tar emot chain_definition och execute_chain
+- SystemMonitor aggregerar dashboard_data från alla moduler
+- Strategic memory loggar timeline events
+- Introspection panel visualiserar timeline insights och chain statistics
+- sim_test.py och websocket_test.py inkluderar Sprint 6 debug flows
+
+**Implementerat:**
 
 **Mål:** Testa alternativa beslut och hantera röstflöden för robust beslutsfattande.
 
@@ -927,10 +1045,10 @@ Systemet består av fristående moduler som kommunicerar via en central `message
 | `vote_engine.py`          | Genomför röstning mellan agenter                                     |
 | `consensus_engine.py`     | Väljer konsensusmodell och löser konflikter                           |
 | `decision_simulator.py`   | Testar alternativa beslut i sandbox                                   |
-| `timespan_tracker.py`     | Synkroniserar beslut över tid                                         |
-| `action_chain_engine.py`  | Definierar återanvändbara beslutskedjor                               |
+| `timespan_tracker.py`     | Synkroniserar beslut över tid och spårar timeline events              |
+| `action_chain_engine.py`  | Definierar återanvändbara beslutskedjor och templates                 |
 | `introspection_panel.py`  | Visualiserar modulstatus och RL-performance                           |
-| `system_monitor.py`       | Visar systemöversikt, indikatortrender och agentrespons               |
+| `system_monitor.py`       | Visar systemöversikt, modulhälsa och systemstatus                     |
 
 ---
 
@@ -959,7 +1077,7 @@ Projektet är uppdelat i 7 sprintar. Se `sprint_plan.yaml` för detaljer.
 | 3      | Feedbackloopar och introspektion     | ✅ Färdig|
 | 4      | Strategiskt minne och agentutveckling| ✅ Färdig|
 | 5      | Simulering och konsensus             | ✅ Färdig|
-| 6      | Tidsanalys och action chains         | ⏳ Planerad|
+| 6      | Tidsanalys och action chains         | 🔄 Pågående|
 | 7      | Indikatorvisualisering och översikt  | ⏳ Planerad|
 
 Se `README_sprints.md` för detaljerad beskrivning av varje sprint.

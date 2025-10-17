@@ -45,6 +45,9 @@ from modules.vote_engine import VoteEngine
 from modules.reward_tuner import RewardTunerAgent  # Sprint 4.4
 from modules.decision_simulator import DecisionSimulator  # Sprint 5
 from modules.consensus_engine import ConsensusEngine  # Sprint 5
+from modules.timespan_tracker import TimespanTracker  # Sprint 6
+from modules.action_chain_engine import ActionChainEngine  # Sprint 6
+from modules.system_monitor import SystemMonitor  # Sprint 6
 
 
 class SimulatedTester:
@@ -100,9 +103,13 @@ class SimulatedTester:
         # Sprint 5: Spåra simuleringar och konsensus
         self.simulation_results = []
         self.consensus_decisions = []
+        
+        # Sprint 6: Spåra timeline och action chains
+        self.timeline_insights = []
+        self.chain_executions = []
     
     def setup_modules(self) -> None:
-        """Initialiserar alla Sprint 1-4.3 moduler."""
+        """Initialiserar alla Sprint 1-6 moduler."""
         print("🔧 Initialiserar moduler...")
         
         # Sprint 4 moduler
@@ -147,13 +154,22 @@ class SimulatedTester:
         self.decision_simulator = DecisionSimulator(self.message_bus)
         self.consensus_engine = ConsensusEngine(self.message_bus, consensus_model='weighted')
         
+        # Sprint 6 moduler
+        self.timespan_tracker = TimespanTracker(self.message_bus)
+        self.action_chain_engine = ActionChainEngine(self.message_bus)
+        self.system_monitor = SystemMonitor(self.message_bus)
+        
         # Sprint 4.3: Prenumerera på parameter_adjustment
         self.message_bus.subscribe('parameter_adjustment', self._on_parameter_adjustment)
         
         # Sprint 5: Prenumerera på simulation_result för logging
         self.message_bus.subscribe('simulation_result', self._on_simulation_result)
         
-        print("✅ Alla moduler initialiserade (inkl. RewardTunerAgent från Sprint 4.4 och Sprint 5-moduler)")
+        # Sprint 6: Prenumerera på timeline_insight och chain_execution
+        self.message_bus.subscribe('timeline_insight', self._on_timeline_insight)
+        self.message_bus.subscribe('chain_execution', self._on_chain_execution)
+        
+        print("✅ Alla moduler initialiserade (inkl. Sprint 6: timespan_tracker, action_chain_engine, system_monitor)")
     
     def _on_parameter_adjustment(self, adjustment: Dict[str, Any]) -> None:
         """
@@ -187,6 +203,34 @@ class SimulatedTester:
         # Behåll senaste 50
         if len(self.simulation_results) > 50:
             self.simulation_results = self.simulation_results[-50:]
+    
+    def _on_timeline_insight(self, insight: Dict[str, Any]) -> None:
+        """
+        Callback för timeline insights (Sprint 6).
+        Loggar timeline-analys.
+        """
+        self.timeline_insights.append({
+            'timestamp': time.time(),
+            'insight': insight
+        })
+        
+        # Behåll senaste 50
+        if len(self.timeline_insights) > 50:
+            self.timeline_insights = self.timeline_insights[-50:]
+    
+    def _on_chain_execution(self, execution: Dict[str, Any]) -> None:
+        """
+        Callback för chain executions (Sprint 6).
+        Loggar action chain-körningar.
+        """
+        self.chain_executions.append({
+            'timestamp': time.time(),
+            'execution': execution
+        })
+        
+        # Behåll senaste 50
+        if len(self.chain_executions) > 50:
+            self.chain_executions = self.chain_executions[-50:]
     
     def generate_aggressive_price_movement(self, symbol: str) -> float:
         """
@@ -301,6 +345,29 @@ class SimulatedTester:
             symbol: Aktiesymbol
             price: Aktuellt pris
         """
+        # Sprint 6: Execute action chain for this trading decision
+        # Determine which chain to use based on market conditions
+        indicators = self.strategy_engine.current_indicators.get(symbol, {})
+        rsi = indicators.get('RSI', 50)
+        
+        # Choose chain based on market volatility/confidence
+        if rsi > 70 or rsi < 30:
+            # High RSI extremes - use aggressive chain for quick decisions
+            chain_name = 'aggressive'
+        elif 40 <= rsi <= 60:
+            # Neutral market - use standard trade chain
+            chain_name = 'standard_trade'
+        else:
+            # Moderate conditions - use risk-averse chain
+            chain_name = 'risk_averse'
+        
+        # Execute the chosen action chain
+        self.action_chain_engine.execute_chain(chain_name, {
+            'symbol': symbol,
+            'price': price,
+            'rsi': rsi
+        })
+        
         # Strategy engine genererar förslag
         proposal = self.strategy_engine.generate_proposal(symbol)
         self.strategy_engine.publish_proposal(proposal)
@@ -644,6 +711,50 @@ class SimulatedTester:
                 print(f"   Beslutsfördelning:")
                 for action, count in consensus_stats['action_distribution'].items():
                     print(f"      {action}: {count} beslut")
+        
+        print(f"{'='*90}\n")
+        
+        # Sprint 6: Tidsanalys och Action Chains
+        print(f"\n{'='*90}")
+        print(f"⏰ SPRINT 6 - Tidsanalys och Action Chains")
+        print(f"{'='*90}")
+        
+        # Timespan Tracker stats
+        timeline_summary = self.timespan_tracker.get_timeline_summary()
+        print(f"\n⏱️  Timespan Tracker:")
+        print(f"   Totalt events: {timeline_summary['total_events']}")
+        print(f"   Decision events: {timeline_summary['decision_events']}")
+        print(f"   Final decisions: {timeline_summary['final_decisions']}")
+        print(f"   Symboler spårade: {len(timeline_summary['symbols_tracked'])}")
+        if timeline_summary['time_span'] > 0:
+            print(f"   Time span: {timeline_summary['time_span']:.1f}s")
+        if len(self.timeline_insights) > 0:
+            latest_insight = self.timeline_insights[-1]['insight']
+            print(f"   Senaste insight:")
+            if 'avg_time_between_decisions' in latest_insight:
+                print(f"      Avg tid mellan beslut: {latest_insight['avg_time_between_decisions']:.2f}s")
+        
+        # Action Chain Engine stats
+        chain_stats = self.action_chain_engine.get_chain_statistics()
+        print(f"\n🔗 Action Chain Engine:")
+        print(f"   Totalt chains definierade: {chain_stats['total_chains_defined']}")
+        print(f"   Chain templates: {chain_stats['total_templates']}")
+        print(f"   Totalt executions: {chain_stats['total_executions']}")
+        if chain_stats['total_executions'] > 0:
+            print(f"      Template executions: {chain_stats['template_executions']}")
+            print(f"      Custom executions: {chain_stats['custom_executions']}")
+            print(f"   Avg execution duration: {chain_stats['avg_execution_duration']:.4f}s")
+        print(f"   Tillgängliga templates: {', '.join(chain_stats['available_templates'])}")
+        
+        # System Monitor health
+        system_health = self.system_monitor.get_system_health()
+        print(f"\n🏥 System Monitor:")
+        print(f"   Health score: {system_health['health_score']:.2f}")
+        print(f"   Status: {system_health['status']}")
+        print(f"   Aktiva moduler: {len(system_health['active_modules'])}/{system_health['total_modules']}")
+        if system_health['stale_modules']:
+            print(f"   ⚠️  Stale moduler: {', '.join(system_health['stale_modules'])}")
+        print(f"   Uptime: {system_health['uptime']:.1f}s")
         
         print(f"{'='*90}\n")
     

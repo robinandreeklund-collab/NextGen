@@ -49,6 +49,9 @@ from modules.rl_controller import RLController
 from modules.reward_tuner import RewardTunerAgent  # Sprint 4.4
 from modules.decision_simulator import DecisionSimulator  # Sprint 5
 from modules.consensus_engine import ConsensusEngine  # Sprint 5
+from modules.timespan_tracker import TimespanTracker  # Sprint 6
+from modules.action_chain_engine import ActionChainEngine  # Sprint 6
+from modules.system_monitor import SystemMonitor  # Sprint 6
 
 
 class WebSocketTester:
@@ -115,7 +118,7 @@ class WebSocketTester:
         self.simulation_results = []
     
     def setup_modules(self) -> None:
-        """Initialiserar alla Sprint 1-4 moduler."""
+        """Initialiserar alla Sprint 1-6 moduler."""
         print("🔧 Initialiserar moduler...")
         
         # Sprint 4 moduler
@@ -158,13 +161,18 @@ class WebSocketTester:
         self.decision_simulator = DecisionSimulator(self.message_bus)
         self.consensus_engine = ConsensusEngine(self.message_bus, consensus_model='weighted')
         
+        # Sprint 6 moduler
+        self.timespan_tracker = TimespanTracker(self.message_bus)
+        self.action_chain_engine = ActionChainEngine(self.message_bus)
+        self.system_monitor = SystemMonitor(self.message_bus)
+        
         # Sprint 4.2: Prenumerera på parameter_adjustment för debug-visning
         self.message_bus.subscribe('parameter_adjustment', self._on_parameter_adjustment)
         
         # Sprint 5: Prenumerera på simulation_result
         self.message_bus.subscribe('simulation_result', self._on_simulation_result)
         
-        print("✅ Alla moduler initialiserade (inkl. RewardTunerAgent från Sprint 4.4 och Sprint 5-moduler)")
+        print("✅ Alla moduler initialiserade (inkl. Sprint 6: timespan_tracker, action_chain_engine, system_monitor)")
     
     def _on_parameter_adjustment(self, adjustment: Dict[str, Any]) -> None:
         """
@@ -314,6 +322,29 @@ class WebSocketTester:
         # Spara priset för execution_engine
         self.current_prices = getattr(self, 'current_prices', {})
         self.current_prices[symbol] = price
+        
+        # Sprint 6: Execute action chain for this trading decision
+        # Determine which chain to use based on market conditions
+        indicators = self.strategy_engine.current_indicators.get(symbol, {})
+        rsi = indicators.get('RSI', 50)
+        
+        # Choose chain based on market volatility/confidence
+        if rsi > 70 or rsi < 30:
+            # High RSI extremes - use aggressive chain for quick decisions
+            chain_name = 'aggressive'
+        elif 40 <= rsi <= 60:
+            # Neutral market - use standard trade chain
+            chain_name = 'standard_trade'
+        else:
+            # Moderate conditions - use risk-averse chain
+            chain_name = 'risk_averse'
+        
+        # Execute the chosen action chain
+        self.action_chain_engine.execute_chain(chain_name, {
+            'symbol': symbol,
+            'price': price,
+            'rsi': rsi
+        })
         
         # Strategy engine genererar förslag (tar symbol)
         proposal = self.strategy_engine.generate_proposal(symbol)
