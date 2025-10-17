@@ -324,6 +324,52 @@ class TestRewardTunerAgent:
         )
         
         assert tuned_reward >= -10.0, "Reward ska clampas till min -10.0"
+    
+    def test_public_on_base_reward_callback(self):
+        """Test that public on_base_reward method works for callback registration."""
+        # Track if callback was invoked
+        callback_invoked = []
+        tuned_reward_received = []
+        
+        def on_tuned_reward(data):
+            tuned_reward_received.append(data)
+        
+        self.message_bus.subscribe('tuned_reward', on_tuned_reward)
+        
+        # Simulate portfolio_manager registering and calling the callback
+        reward_data = {
+            'reward': 1.5,
+            'source': 'portfolio_manager',
+            'portfolio_value': 1015.0,
+            'num_trades': 1
+        }
+        
+        # Call the public method (as portfolio_manager would)
+        self.reward_tuner.on_base_reward(reward_data)
+        
+        time.sleep(0.01)
+        
+        # Verify the callback processed the reward
+        assert len(self.reward_tuner.base_reward_history) == 1, "Base reward should be recorded"
+        assert self.reward_tuner.base_reward_history[0] == 1.5, "Base reward value should be correct"
+        assert len(tuned_reward_received) == 1, "Tuned reward should be published"
+        assert 'reward' in tuned_reward_received[0], "Tuned reward should have reward field"
+    
+    def test_public_method_delegates_to_private(self):
+        """Test that public on_base_reward delegates to private _on_base_reward."""
+        reward_data = {
+            'reward': 2.0,
+            'source': 'test',
+            'portfolio_value': 1020.0
+        }
+        
+        # Call public method
+        self.reward_tuner.on_base_reward(reward_data)
+        
+        # Verify it processed the reward (which proves delegation to private method)
+        assert len(self.reward_tuner.base_reward_history) > 0, "Should have processed reward"
+        assert self.reward_tuner.base_reward_history[-1] == 2.0, "Should have correct value"
+        assert len(self.reward_tuner.tuned_reward_history) > 0, "Should have generated tuned reward"
 
 
 if __name__ == '__main__':

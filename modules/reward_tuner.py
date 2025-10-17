@@ -94,6 +94,16 @@ class RewardTunerAgent:
         self.current_portfolio_status: Dict[str, Any] = {}
         self.current_agent_status: Dict[str, Any] = {}
     
+    def on_base_reward(self, reward_data: Dict[str, Any]) -> None:
+        """
+        Public method for callback registration from portfolio_manager.
+        Delegates to the private _on_base_reward method.
+        
+        Args:
+            reward_data: Dict with base_reward and context
+        """
+        self._on_base_reward(reward_data)
+    
     def _on_base_reward(self, reward_data: Dict[str, Any]) -> None:
         """
         Callback när base_reward publiceras från portfolio_manager.
