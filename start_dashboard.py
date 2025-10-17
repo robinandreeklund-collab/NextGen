@@ -704,7 +704,7 @@ class NextGenDashboard:
         print(f"🚀 Starting NextGen Dashboard on http://{host}:{port}")
         print(f"📊 Mode: {'Live' if self.live_mode else 'Demo'}")
         print("Press Ctrl+C to stop")
-        self.app.run_server(host=host, port=port, debug=debug)
+        self.app.run(host=host, port=port, debug=debug)
 
 
 if __name__ == '__main__':
