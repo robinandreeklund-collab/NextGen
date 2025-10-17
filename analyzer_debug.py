@@ -30,6 +30,7 @@ Användning:
 import time
 import random
 import math
+import json
 from datetime import datetime
 from typing import Dict, Any, List
 import threading
@@ -40,6 +41,9 @@ from dash import dcc, html, Input, Output
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
 
+# WebSocket för Finnhub
+import websocket
+
 # Importera våra moduler
 from modules.message_bus import MessageBus
 from modules.strategic_memory_engine import StrategicMemoryEngine
@@ -48,6 +52,7 @@ from modules.agent_manager import AgentManager
 from modules.feedback_router import FeedbackRouter
 from modules.feedback_analyzer import FeedbackAnalyzer
 from modules.introspection_panel import IntrospectionPanel
+from modules.indicator_registry import IndicatorRegistry
 from modules.strategy_engine import StrategyEngine
 from modules.risk_manager import RiskManager
 from modules.decision_engine import DecisionEngine
@@ -68,6 +73,9 @@ class AnalyzerDebugDashboard:
     
     def __init__(self):
         """Initialiserar dashboarden."""
+        # Finnhub API key - must be set before setup_modules
+        self.api_key = "d3in10hr01qmn7fkr2a0d3in10hr01qmn7fkr2ag"
+        
         # Symboler för test
         self.symbols = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA']
         
@@ -89,8 +97,11 @@ class AnalyzerDebugDashboard:
         
         # Dashboard state
         self.running = False
+        self.live_mode = False
         self.iteration_count = 0
         self.simulation_thread = None
+        self.ws = None
+        self.ws_thread = None
         
         # Setup Dash app
         self.app = dash.Dash(__name__)
@@ -123,6 +134,7 @@ class AnalyzerDebugDashboard:
         )
         
         # Sprint 1 moduler
+        self.indicator_registry = IndicatorRegistry(self.api_key, self.message_bus)
         self.strategy_engine = StrategyEngine(self.message_bus)
         self.risk_manager = RiskManager(self.message_bus)
         self.decision_engine = DecisionEngine(self.message_bus)
@@ -165,6 +177,10 @@ class AnalyzerDebugDashboard:
                 html.Button('Stop Simulation', id='stop-btn', n_clicks=0,
                            style={'margin': '10px', 'padding': '10px 20px',
                                   'backgroundColor': '#e74c3c', 'color': 'white',
+                                  'border': 'none', 'borderRadius': '5px', 'cursor': 'pointer'}),
+                html.Button('Live Data (Finnhub)', id='live-btn', n_clicks=0,
+                           style={'margin': '10px', 'padding': '10px 20px',
+                                  'backgroundColor': '#3498db', 'color': 'white',
                                   'border': 'none', 'borderRadius': '5px', 'cursor': 'pointer'}),
                 html.Span(id='status-indicator', 
                          style={'margin': '10px', 'padding': '10px', 'fontWeight': 'bold'}),
@@ -256,16 +272,28 @@ class AnalyzerDebugDashboard:
         @self.app.callback(
             Output('status-indicator', 'children'),
             [Input('start-btn', 'n_clicks'),
-             Input('stop-btn', 'n_clicks')]
+             Input('stop-btn', 'n_clicks'),
+             Input('live-btn', 'n_clicks')]
         )
-        def update_simulation_status(start_clicks, stop_clicks):
-            """Startar/stoppar simulation."""
-            if start_clicks > stop_clicks and not self.running:
+        def update_simulation_status(start_clicks, stop_clicks, live_clicks):
+            """Startar/stoppar simulation eller live data."""
+            # Determine which button was clicked last
+            if live_clicks > 0 and live_clicks > start_clicks and live_clicks > stop_clicks:
+                if not self.live_mode:
+                    self.start_live_data()
+                    return "🔴 Live Data Running (Finnhub)"
+            elif start_clicks > stop_clicks and start_clicks > live_clicks and not self.running:
+                if self.live_mode:
+                    self.stop_live_data()
                 self.start_simulation()
                 return "🟢 Simulation Running"
-            elif stop_clicks > 0 and self.running:
-                self.stop_simulation()
-                return "🔴 Simulation Stopped"
+            elif stop_clicks > 0 and (self.running or self.live_mode):
+                if self.live_mode:
+                    self.stop_live_data()
+                if self.running:
+                    self.stop_simulation()
+                return "🔴 Stopped"
+            
             return "⚪ Ready"
         
         @self.app.callback(
@@ -872,6 +900,114 @@ class AnalyzerDebugDashboard:
         ])
         
         return details
+    
+    # WebSocket methods for live data
+    def start_live_data(self):
+        """Startar live data från Finnhub WebSocket."""
+        if self.live_mode:
+            return
+        
+        print("📡 Starting Finnhub WebSocket connection...")
+        self.live_mode = True
+        
+        # Start WebSocket in a separate thread
+        self.ws_thread = threading.Thread(target=self.run_websocket, daemon=True)
+        self.ws_thread.start()
+    
+    def stop_live_data(self):
+        """Stoppar live data."""
+        if not self.live_mode:
+            return
+        
+        print("⏹️  Stopping Finnhub WebSocket connection...")
+        self.live_mode = False
+        
+        if self.ws:
+            self.ws.close()
+            self.ws = None
+    
+    def run_websocket(self):
+        """Kör WebSocket-anslutning."""
+        websocket_url = f"wss://ws.finnhub.io?token={self.api_key}"
+        
+        self.ws = websocket.WebSocketApp(
+            websocket_url,
+            on_message=self.on_ws_message,
+            on_error=self.on_ws_error,
+            on_close=self.on_ws_close,
+            on_open=self.on_ws_open
+        )
+        
+        try:
+            self.ws.run_forever()
+        except Exception as e:
+            print(f"❌ WebSocket error: {e}")
+            self.live_mode = False
+    
+    def on_ws_open(self, ws):
+        """Callback när WebSocket öppnas."""
+        print(f"✅ WebSocket connected! Subscribing to {len(self.symbols)} symbols...")
+        
+        for symbol in self.symbols:
+            subscribe_message = {
+                'type': 'subscribe',
+                'symbol': symbol
+            }
+            ws.send(json.dumps(subscribe_message))
+            print(f"   ✓ {symbol}")
+    
+    def on_ws_message(self, ws, message):
+        """Callback för WebSocket-meddelanden."""
+        try:
+            data = json.loads(message)
+            
+            if data.get('type') == 'trade':
+                for trade in data.get('data', []):
+                    self.process_live_trade(trade)
+        except Exception as e:
+            print(f"⚠️  Error processing WebSocket message: {e}")
+    
+    def on_ws_error(self, ws, error):
+        """Callback för WebSocket-fel."""
+        print(f"❌ WebSocket error: {error}")
+    
+    def on_ws_close(self, ws, close_status_code, close_msg):
+        """Callback när WebSocket stängs."""
+        print(f"🔌 WebSocket connection closed")
+        self.live_mode = False
+    
+    def process_live_trade(self, trade: Dict[str, Any]):
+        """Processar live trade från Finnhub."""
+        symbol = trade.get('s')
+        price = trade.get('p')
+        volume = trade.get('v')
+        timestamp = trade.get('t')
+        
+        if not all([symbol, price, volume, timestamp]):
+            return
+        
+        # Update current price
+        self.current_prices[symbol] = price
+        
+        # Publish market data
+        self.message_bus.publish('market_data', {
+            'symbol': symbol,
+            'price': price,
+            'volume': volume,
+            'timestamp': timestamp
+        })
+        
+        # Fetch indicators periodically
+        self.iteration_count += 1
+        if self.iteration_count % 5 == 0:
+            indicators = self.indicator_registry.get_indicators(symbol)
+            self.message_bus.publish('indicator_data', indicators)
+            self.strategy_engine.current_indicators[symbol] = indicators
+            self.risk_manager.current_indicators[symbol] = indicators
+        
+        # Make trading decision periodically
+        if self.iteration_count % 10 == 0:
+            self.make_trading_decision(symbol, price)
     
     def run(self, debug=True):
         """Kör dashboarden."""

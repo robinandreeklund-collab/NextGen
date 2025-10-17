@@ -49,19 +49,38 @@ python test_analyzer_debug.py
 
 ## 🎮 Kontroller
 
-- **Start Simulation** - Startar simulerad trading
-- **Stop Simulation** - Stoppar simulering
+- **Start Simulation** - Startar simulerad trading med syntetiska prisrörelser
+- **Stop Simulation** - Stoppar aktiv simulering eller live data
+- **Live Data (Finnhub)** - Ansluter till Finnhub WebSocket för realtidsdata från marknaden
 - **Auto-refresh** - Uppdaterar automatiskt var 2:a sekund
 
 ## 🔧 Funktionalitet
 
-### Simulering
+### Simulering (Offline Mode)
 Dashboard inkluderar inbyggd simulering baserad på `sim_test.py`:
 
 - **Prisrörelser** - Simulerar aggressiva prisrörelser med trends
 - **Indikatorer** - Genererar RSI, MACD, ATR, analyst ratings
 - **Beslut** - Komplett beslutsflöde genom alla moduler
 - **Execution** - Simulerad trade execution med portfolio updates
+
+### Live Data (Finnhub WebSocket)
+**NYT!** Dashboard kan nu ansluta till verklig marknadsdata:
+
+- **WebSocket-anslutning** - Direktanslutning till Finnhub för realtidsdata
+- **Live priser** - Faktiska marknadsdata från 5 symboler (AAPL, MSFT, GOOGL, AMZN, TSLA)
+- **Realtidsindikatorer** - Hämtar faktiska tekniska indikatorer från Finnhub API
+- **Verkliga beslut** - Fattar handelsbeslut baserat på live marknadsdata
+- **Portfolio tracking** - Spårar portfolio med verkliga prisrörelser
+
+**Användning:**
+1. Klicka på "Live Data (Finnhub)" knappen
+2. Vänta på WebSocket-anslutning (visas i konsolen)
+3. Dashboard börjar ta emot och processa live trades
+4. Beslut fattas var 10:e trade, indikatorer uppdateras var 5:e trade
+5. Klicka "Stop Simulation" för att stoppa
+
+**Obs:** Live data kräver giltig Finnhub API-nyckel (inkluderad i koden).
 
 ### Datakällor
 - **Message Bus** - Central pub/sub för all modulkommunikation
