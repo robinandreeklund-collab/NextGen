@@ -216,7 +216,7 @@ python start_demo.py
 
 # Terminal 2: Öppna browser
 # Navigera till http://localhost:8050
-# Klicka "Start" för att börja simulering
+# Simuleringen startar automatiskt i demo-läge
 # Växla mellan paneler för att se olika aspekter
 ```
 
