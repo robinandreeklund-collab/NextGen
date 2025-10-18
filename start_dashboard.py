@@ -37,6 +37,8 @@ import websocket
 
 # Import modules
 from modules.message_bus import MessageBus
+from modules.data_ingestion import DataIngestion
+from modules.data_ingestion_sim import DataIngestionSim
 from modules.strategic_memory_engine import StrategicMemoryEngine
 from modules.meta_agent_evolution_engine import MetaAgentEvolutionEngine
 from modules.agent_manager import AgentManager
@@ -60,6 +62,7 @@ from modules.system_monitor import SystemMonitor
 from modules.dqn_controller import DQNController
 from modules.gan_evolution_engine import GANEvolutionEngine
 from modules.gnn_timespan_analyzer import GNNTimespanAnalyzer
+import numpy as np
 
 
 # Color scheme inspired by Abstire Dashboard mockup
@@ -112,6 +115,13 @@ class NextGenDashboard:
         
         # Initialize modules
         self.message_bus = MessageBus()
+        
+        # Initialize data ingestion based on mode
+        if live_mode:
+            self.data_ingestion = DataIngestion(self.api_key, self.message_bus)
+        else:
+            self.data_ingestion = DataIngestionSim(self.message_bus, self.symbols)
+        
         self.setup_modules()
         
         # Dashboard state
@@ -695,28 +705,43 @@ class NextGenDashboard:
         return dcc.Graph(figure=fig, config={'displayModeBar': False}, style={'height': '200px'})
     
     def create_agent_events_list(self):
-        """Create list of recent agent decision events."""
-        events = [
-            {'agent': 'Agent 1', 'action': 'Buy', 'color': '#ff9500'},
-            {'agent': 'Agent 2', 'action': 'Sell', 'color': '#ffd43b'},
-            {'agent': 'Agent 3', 'action': 'Hold', 'color': '#51cf66'},
-            {'agent': 'Agent 4', 'action': 'Sell', 'color': '#ff6b6b'},
-            {'agent': 'Agent 5', 'action': 'Hold', 'color': '#4dabf7'},
-        ]
+        """Create list of recent agent decision events from actual decision history."""
+        # Get recent decisions from actual decision_history
+        recent_decisions = self.decision_history[-5:] if len(self.decision_history) >= 5 else self.decision_history
+        
+        # If no decisions yet, show placeholder
+        if not recent_decisions:
+            return html.Div([
+                html.Div("No decisions yet", style={'fontSize': '12px', 'marginBottom': '10px', 
+                                                      'color': THEME_COLORS['text_secondary']}),
+                html.Div("Waiting for trading activity...", 
+                        style={'textAlign': 'center', 'padding': '20px',
+                              'color': THEME_COLORS['text_secondary']})
+            ])
+        
+        # Map actions to colors
+        action_colors = {
+            'BUY': '#51cf66',   # Green
+            'SELL': '#ff6b6b',  # Red
+            'HOLD': '#4dabf7'   # Blue
+        }
         
         return html.Div([
             html.Div("Recent actions", style={'fontSize': '12px', 'marginBottom': '10px', 
                                               'color': THEME_COLORS['text_secondary']}),
             html.Div([
                 html.Div([
-                    html.Span('●', style={'color': event['color'], 'marginRight': '8px'}),
-                    html.Span(f"{event['agent']}: ", style={'fontWeight': '500'}),
-                    html.Span(event['action'], style={'padding': '2px 8px', 'borderRadius': '4px',
-                                                       'backgroundColor': event['color'], 
+                    html.Span('●', style={'color': action_colors.get(decision['action'], THEME_COLORS['text']), 
+                                         'marginRight': '8px'}),
+                    html.Span(f"{decision.get('agent', 'Agent')}: ", style={'fontWeight': '500'}),
+                    html.Span(decision['action'], style={'padding': '2px 8px', 'borderRadius': '4px',
+                                                       'backgroundColor': action_colors.get(decision['action'], THEME_COLORS['text']), 
                                                        'color': 'white', 'fontSize': '12px'}),
-                    html.Span('...', style={'marginLeft': 'auto', 'color': THEME_COLORS['text_secondary']}),
+                    html.Span(f" {decision.get('symbol', '')}", 
+                             style={'marginLeft': '8px', 'fontSize': '11px', 
+                                   'color': THEME_COLORS['text_secondary']}),
                 ], style={'display': 'flex', 'alignItems': 'center', 'marginBottom': '8px'})
-                for event in events
+                for decision in recent_decisions
             ])
         ])
     
@@ -1991,41 +2016,26 @@ class NextGenDashboard:
         print("🔄 Starting real-time market simulation...")
         
         # Initialize market state
-        for symbol in self.symbols:
-            self.price_trends[symbol] = random.uniform(-0.5, 0.5)  # Initial trend
+        if not self.live_mode and isinstance(self.data_ingestion, DataIngestionSim):
+            # In demo mode, market simulation is handled by data_ingestion_sim
+            pass
         
         while self.running:
             self.iteration_count += 1
             
-            # === REALISTIC MARKET SIMULATION ===
+            # === MARKET DATA FROM DATA_INGESTION ===
+            # Generate market tick via data_ingestion module
+            if not self.live_mode and isinstance(self.data_ingestion, DataIngestionSim):
+                self.data_ingestion.simulate_market_tick()
+                # Get updated prices from data_ingestion
+                self.current_prices = self.data_ingestion.get_current_prices()
+            
+            # Store price history
             for symbol in self.symbols:
-                # Market dynamics with trend, mean reversion, and volatility
-                trend = self.price_trends[symbol]
-                mean_reversion = (self.base_prices[symbol] - self.current_prices[symbol]) * 0.01
-                volatility = random.gauss(0, 0.015)  # 1.5% volatility
-                momentum = trend * 0.3
-                
-                # Price change combines all factors
-                change_pct = trend + mean_reversion + volatility + momentum
-                self.current_prices[symbol] *= (1 + change_pct)
-                
-                # Update trend with random walk
-                self.price_trends[symbol] += random.gauss(0, 0.1)
-                self.price_trends[symbol] = max(min(self.price_trends[symbol], 0.02), -0.02)  # Limit trend
-                
-                # Store price history
-                self.price_history[symbol].append(self.current_prices[symbol])
+                price = self.current_prices.get(symbol, self.base_prices[symbol])
+                self.price_history[symbol].append(price)
                 if len(self.price_history[symbol]) > 100:
                     self.price_history[symbol].pop(0)
-            
-            # Publish price updates to message bus via data_ingestion module
-            for symbol in self.symbols:
-                # Use data_ingestion.publish_market_data() method
-                self.data_ingestion.publish_market_data(symbol, {
-                    'price': self.current_prices[symbol],
-                    'timestamp': time.time(),
-                    'change': ((self.current_prices[symbol] - self.base_prices[symbol]) / self.base_prices[symbol]) * 100
-                })
             
             # === TRADING DECISIONS WITH ACTUAL MODULES ===
             selected_symbol = random.choice(self.symbols)
@@ -2108,13 +2118,17 @@ class NextGenDashboard:
                                     'price': current_price
                                 })
                     
-                    # Record decision
+                    # Record decision with actual reward from portfolio
+                    portfolio_value_after = self.portfolio_manager.get_portfolio_value(self.current_prices)
+                    reward = portfolio_value_after - portfolio_value
+                    
                     self.decision_history.append({
                         'timestamp': datetime.now().strftime('%H:%M:%S'),
-                        'agent': f'Agent {random.randint(1, 4)}',
+                        'agent': 'PPO' if final_action == ppo_action else 'DQN',
                         'action': final_action,
                         'symbol': selected_symbol,
-                        'price': current_price
+                        'price': current_price,
+                        'reward': reward
                     })
                     if len(self.decision_history) > 50:
                         self.decision_history.pop(0)
@@ -2126,12 +2140,11 @@ class NextGenDashboard:
             try:
                 # Portfolio and reward data
                 portfolio_value = self.portfolio_manager.get_portfolio_value(self.current_prices)
-                prev_value = self.reward_history['base'][-1] if self.reward_history['base'] else 1000.0
+                prev_value = self.reward_history['base'][-1] if self.reward_history['base'] else self.portfolio_manager.start_capital
                 base_reward = portfolio_value - prev_value
                 
-                # RewardTuner doesn't have transform_reward() method
-                # It subscribes to 'base_reward' topic and publishes 'tuned_reward'
-                # Publish base_reward and it will be automatically tuned
+                # Publish base_reward to message_bus
+                # RewardTuner subscribes to 'base_reward' topic and publishes 'tuned_reward'
                 self.message_bus.publish('base_reward', {
                     'reward': base_reward,
                     'source': 'portfolio_manager',
@@ -2140,14 +2153,16 @@ class NextGenDashboard:
                 })
                 
                 # For dashboard display, apply simple tuning estimate
+                # In production, this would come from reward_tuner via message_bus subscription
                 tuned_reward = base_reward * 1.2
                 
                 self.reward_history['base'].append(base_reward)
                 self.reward_history['tuned'].append(tuned_reward)
                 
-                # RL rewards from actual training
-                ppo_reward = base_reward * (1 + random.gauss(0, 0.2))  # PPO performance
-                dqn_reward = base_reward * (1 + random.gauss(0, 0.15))  # DQN performance
+                # RL rewards from actual module state if available
+                # These should ideally come from the RL controllers themselves
+                ppo_reward = base_reward * (1 + random.gauss(0, 0.2))  # PPO performance variation
+                dqn_reward = base_reward * (1 + random.gauss(0, 0.15))  # DQN performance variation
                 self.reward_history['ppo'].append(ppo_reward)
                 self.reward_history['dqn'].append(dqn_reward)
                 
@@ -2157,9 +2172,10 @@ class NextGenDashboard:
             except Exception as e:
                 print(f"Error collecting reward data: {e}")
             
-            # GAN Evolution metrics
+            # GAN Evolution metrics - get from actual module if available
             try:
-                # Simulate GAN training with improving trend
+                # In production, these would come from gan_evolution module
+                # For now, simulate realistic training progression
                 base_g_loss = 0.5 - (self.iteration_count * 0.001)
                 base_d_loss = 0.4 - (self.iteration_count * 0.0008)
                 self.gan_metrics_history['g_loss'].append(max(0.1, base_g_loss + random.gauss(0, 0.05)))
@@ -2172,16 +2188,23 @@ class NextGenDashboard:
             except Exception as e:
                 print(f"Error collecting GAN metrics: {e}")
             
-            # GNN Pattern Detection
+            # GNN Pattern Detection - use actual price trend data
             try:
-                # Detect patterns based on price movements
+                # Detect patterns based on actual price movements
                 pattern_types = ['Trend', 'Mean Reversion', 'Breakout', 'Support/Resistance', 
                                'Volatility Spike', 'Volume Anomaly', 'Momentum', 'Seasonal']
                 
-                # Higher confidence for strong trends
-                if abs(self.price_trends[selected_symbol]) > 0.015:
-                    pattern_type = 'Trend'
-                    confidence = 0.80 + random.uniform(0, 0.15)
+                # Calculate actual trend from price history
+                if len(prices) >= 10:
+                    recent_trend = (prices[-1] - prices[-10]) / prices[-10]
+                    
+                    # Higher confidence for strong trends
+                    if abs(recent_trend) > 0.015:
+                        pattern_type = 'Trend'
+                        confidence = 0.80 + min(abs(recent_trend) * 10, 0.15)
+                    else:
+                        pattern_type = random.choice(pattern_types)
+                        confidence = 0.60 + random.uniform(0, 0.30)
                 else:
                     pattern_type = random.choice(pattern_types)
                     confidence = 0.60 + random.uniform(0, 0.30)
