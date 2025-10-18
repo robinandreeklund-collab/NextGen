@@ -892,14 +892,15 @@ class NextGenDashboard:
         )
         
         # Position breakdown (holdings)
-        holdings = self.portfolio_manager.holdings
+        positions = self.portfolio_manager.positions
         
-        if holdings:
-            symbols = list(holdings.keys())
+        if positions:
+            symbols = list(positions.keys())
             values = []
             for symbol in symbols:
-                quantity = holdings[symbol]
-                price = self.current_prices.get(symbol, self.base_prices.get(symbol, 0))
+                position_data = positions[symbol]
+                quantity = position_data.get('quantity', 0)
+                price = self.current_prices.get(symbol, position_data.get('avg_price', 0))
                 values.append(quantity * price)
             
             # Pie chart for position breakdown
@@ -934,8 +935,9 @@ class NextGenDashboard:
         
         # Holdings table
         holdings_rows = []
-        for symbol, quantity in holdings.items():
-            price = self.current_prices.get(symbol, self.base_prices.get(symbol, 0))
+        for symbol, position_data in positions.items():
+            quantity = position_data.get('quantity', 0)
+            price = self.current_prices.get(symbol, position_data.get('avg_price', 0))
             value = quantity * price
             holdings_rows.append(html.Tr([
                 html.Td(symbol, style={'padding': '10px', 'color': THEME_COLORS['text']}),
