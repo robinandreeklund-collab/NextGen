@@ -514,7 +514,7 @@ NextGen/
 │   ├── timespan_tracker.py      # Sprint 6: Timeline-analys
 │   └── ...
 ├── dashboards/                  # Dash-visualiseringar (komponenter)
-├── tests/                       # 314 tester (100% pass rate)
+├── tests/                       # 332 tester (100% pass rate)
 ├── docs/                        # Dokumentation och YAML-specs
 │   ├── dashboard_structure_sprint8.yaml  # Dashboard spec
 │   ├── adaptive_parameters_sprint8.yaml  # Parameter spec
