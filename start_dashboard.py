@@ -3433,19 +3433,25 @@ class NextGenDashboard:
                     
                     # Track execution ONLY if trade was actually executed successfully
                     # This means it went into the portfolio
+                    # Only track actual BUY and SELL transactions (not HOLD or failed executions)
                     if execution_result and execution_result.get('success'):
-                        self.execution_history.append({
-                            'timestamp': datetime.now().strftime('%H:%M:%S'),
-                            'agent': 'PPO' if final_action == ppo_action else 'DQN',
-                            'action': final_action,
-                            'symbol': selected_symbol,
-                            'quantity': execution_result.get('quantity', 0),
-                            'price': execution_result.get('executed_price', current_price),
-                            'cost': execution_result.get('total_cost', 0),
-                            'slippage': execution_result.get('slippage', 0)
-                        })
-                        if len(self.execution_history) > 100:
-                            self.execution_history.pop(0)
+                        # Determine the actual action that was executed (always BUY or SELL)
+                        actual_action = execution_result.get('action', final_action)
+                        # Only track if it's an actual BUY or SELL
+                        if actual_action in ['BUY', 'SELL']:
+                            self.execution_history.append({
+                                'timestamp': datetime.now().strftime('%H:%M:%S'),
+                                'agent': 'PPO' if final_action == ppo_action else 'DQN',
+                                'action': actual_action,  # Use actual action (BUY or SELL)
+                                'symbol': selected_symbol,
+                                'quantity': execution_result.get('quantity', 0),
+                                'price': execution_result.get('executed_price', current_price),
+                                'cost': execution_result.get('total_cost', 0),
+                                'slippage': execution_result.get('slippage', 0),
+                                'original_action': final_action  # Track original action for reference
+                            })
+                            if len(self.execution_history) > 100:
+                                self.execution_history.pop(0)
                     
                     # Record decision with actual reward from portfolio
                     portfolio_value_after = self.portfolio_manager.get_portfolio_value(self.current_prices)
