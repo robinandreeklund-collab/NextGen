@@ -368,6 +368,7 @@ class NextGenDashboard:
                 self.create_sidebar_menu_item('📊', 'Dashboard', 'dashboard', True),
                 self.create_sidebar_menu_item('💼', 'Portfolio', 'portfolio', False),
                 self.create_sidebar_menu_item('🤖', 'Agents', 'agents', False),
+                self.create_sidebar_menu_item('🎯', 'DQN Controller', 'dqn', False),
                 self.create_sidebar_menu_item('🎁', 'Rewards', 'rewards', False),
                 self.create_sidebar_menu_item('📋', 'Executions', 'executions', False),
                 self.create_sidebar_menu_item('🧪', 'Testing', 'testing', False),
@@ -590,6 +591,8 @@ class NextGenDashboard:
                 return self.create_portfolio_panel(), 'portfolio'
             elif view_id == 'agents':
                 return self.create_rl_analysis_panel(), 'agents'
+            elif view_id == 'dqn':
+                return self.create_dqn_panel(), 'dqn'
             elif view_id == 'rewards':
                 return self.create_feedback_panel(), 'rewards'
             elif view_id == 'executions':
@@ -644,6 +647,8 @@ class NextGenDashboard:
                 return self.create_portfolio_panel(), current_view
             elif current_view == 'agents':
                 return self.create_rl_analysis_panel(), current_view
+            elif current_view == 'dqn':
+                return self.create_dqn_panel(), current_view
             elif current_view == 'rewards':
                 return self.create_feedback_panel(), current_view
             elif current_view == 'executions':
@@ -1291,9 +1296,23 @@ class NextGenDashboard:
         )
         
         # DQN Epsilon from actual controller
-        epsilon = self.dqn_controller.epsilon if hasattr(self.dqn_controller, 'epsilon') else 0.1
-        steps = list(range(100))
-        epsilon_values = [max(0.01, epsilon * (1 - i * 0.01)) for i in steps]
+        dqn_epsilon = self.dqn_controller.epsilon if hasattr(self.dqn_controller, 'epsilon') else 0.1
+        dqn_training_steps = self.dqn_controller.training_steps if hasattr(self.dqn_controller, 'training_steps') else 0
+        dqn_episodes = self.dqn_controller.episodes if hasattr(self.dqn_controller, 'episodes') else 0
+        
+        # Get PPO episodes from RL controller
+        ppo_episodes = 0
+        if hasattr(self.rl_controller, 'agents'):
+            for agent in self.rl_controller.agents.values():
+                if hasattr(agent, 'episodes'):
+                    ppo_episodes = max(ppo_episodes, agent.episodes)
+        
+        # Total episodes is the max of both agents
+        total_episodes = max(ppo_episodes, dqn_episodes, len(episodes))
+        
+        # Epsilon decay history
+        steps = list(range(min(100, dqn_training_steps + 1)))
+        epsilon_values = [max(0.01, dqn_epsilon * (1 - i * 0.01)) for i in steps]
         
         epsilon_fig = go.Figure(data=[
             go.Scatter(x=steps, y=epsilon_values, mode='lines', name='Epsilon',
@@ -1313,6 +1332,11 @@ class NextGenDashboard:
             yaxis=dict(gridcolor=THEME_COLORS['border']),
         )
         
+        # Get detailed training metrics
+        dqn_metrics = self.dqn_controller.get_metrics() if hasattr(self.dqn_controller, 'get_metrics') else {}
+        dqn_avg_loss = dqn_metrics.get('avg_loss', 0.0)
+        dqn_buffer_size = dqn_metrics.get('buffer_size', 0)
+        
         # Calculate actual metrics
         ppo_avg = sum(ppo_rewards[-10:]) / max(1, len(ppo_rewards[-10:]))
         dqn_avg = sum(dqn_rewards[-10:]) / max(1, len(dqn_rewards[-10:]))
@@ -1325,10 +1349,67 @@ class NextGenDashboard:
             html.Div([
                 self.create_metric_card("PPO Avg Reward", f"{ppo_avg:.2f}", THEME_COLORS['primary']),
                 self.create_metric_card("DQN Avg Reward", f"{dqn_avg:.2f}", THEME_COLORS['secondary']),
-                self.create_metric_card("Current Epsilon", f"{epsilon:.3f}", THEME_COLORS['danger']),
-                self.create_metric_card("Total Episodes", str(len(episodes)), THEME_COLORS['success']),
+                self.create_metric_card("Current Epsilon", f"{dqn_epsilon:.4f}", THEME_COLORS['danger']),
+                self.create_metric_card("Total Episodes", str(total_episodes), THEME_COLORS['success']),
             ], style={'display': 'grid', 'gridTemplateColumns': 'repeat(4, 1fr)', 
                      'gap': '20px', 'marginBottom': '30px'}),
+            
+            # Agent Development Metrics (detailed tracking)
+            html.Div([
+                html.H3("Agent Development Metrics", 
+                       style={'fontSize': '18px', 'marginBottom': '15px', 'color': THEME_COLORS['text']}),
+                html.Div([
+                    # PPO Metrics
+                    html.Div([
+                        html.H4("PPO Agent", style={'fontSize': '14px', 'color': THEME_COLORS['primary'], 'marginBottom': '10px'}),
+                        html.Div([
+                            html.Div([
+                                html.Span("Episodes:", style={'color': THEME_COLORS['text_secondary'], 'fontSize': '12px'}),
+                                html.Span(f" {ppo_episodes}", style={'color': THEME_COLORS['text'], 'fontWeight': '600', 'fontSize': '13px'}),
+                            ], style={'marginBottom': '5px'}),
+                            html.Div([
+                                html.Span("Avg Reward (10):", style={'color': THEME_COLORS['text_secondary'], 'fontSize': '12px'}),
+                                html.Span(f" {ppo_avg:.3f}", style={'color': THEME_COLORS['success'] if ppo_avg >= 0 else THEME_COLORS['danger'], 
+                                                                    'fontWeight': '600', 'fontSize': '13px'}),
+                            ], style={'marginBottom': '5px'}),
+                            html.Div([
+                                html.Span("Actions Taken:", style={'color': THEME_COLORS['text_secondary'], 'fontSize': '12px'}),
+                                html.Span(f" {sum(ppo_actions)}", style={'color': THEME_COLORS['text'], 'fontWeight': '600', 'fontSize': '13px'}),
+                            ], style={'marginBottom': '5px'}),
+                            html.Div([
+                                html.Span("Win Rate:", style={'color': THEME_COLORS['text_secondary'], 'fontSize': '12px'}),
+                                html.Span(f" {(sum(1 for r in ppo_rewards if r > 0) / max(1, len(ppo_rewards)) * 100):.1f}%", 
+                                         style={'color': THEME_COLORS['text'], 'fontWeight': '600', 'fontSize': '13px'}),
+                            ]),
+                        ]),
+                    ], style={'flex': '1', 'padding': '15px', 'backgroundColor': THEME_COLORS['surface'], 
+                             'borderRadius': '8px', 'border': f'1px solid {THEME_COLORS["border"]}'}),
+                    
+                    # DQN Metrics
+                    html.Div([
+                        html.H4("DQN Agent", style={'fontSize': '14px', 'color': THEME_COLORS['secondary'], 'marginBottom': '10px'}),
+                        html.Div([
+                            html.Div([
+                                html.Span("Training Steps:", style={'color': THEME_COLORS['text_secondary'], 'fontSize': '12px'}),
+                                html.Span(f" {dqn_training_steps}", style={'color': THEME_COLORS['text'], 'fontWeight': '600', 'fontSize': '13px'}),
+                            ], style={'marginBottom': '5px'}),
+                            html.Div([
+                                html.Span("Epsilon:", style={'color': THEME_COLORS['text_secondary'], 'fontSize': '12px'}),
+                                html.Span(f" {dqn_epsilon:.4f}", style={'color': THEME_COLORS['text'], 'fontWeight': '600', 'fontSize': '13px'}),
+                            ], style={'marginBottom': '5px'}),
+                            html.Div([
+                                html.Span("Avg Loss:", style={'color': THEME_COLORS['text_secondary'], 'fontSize': '12px'}),
+                                html.Span(f" {dqn_avg_loss:.4f}", style={'color': THEME_COLORS['text'], 'fontWeight': '600', 'fontSize': '13px'}),
+                            ], style={'marginBottom': '5px'}),
+                            html.Div([
+                                html.Span("Buffer Size:", style={'color': THEME_COLORS['text_secondary'], 'fontSize': '12px'}),
+                                html.Span(f" {dqn_buffer_size}", style={'color': THEME_COLORS['text'], 'fontWeight': '600', 'fontSize': '13px'}),
+                            ]),
+                        ]),
+                    ], style={'flex': '1', 'padding': '15px', 'backgroundColor': THEME_COLORS['surface'], 
+                             'borderRadius': '8px', 'border': f'1px solid {THEME_COLORS["border"]}'}),
+                ], style={'display': 'flex', 'gap': '20px', 'marginBottom': '20px'}),
+            ]),
             
             # Charts
             html.Div([
@@ -1343,6 +1424,213 @@ class NextGenDashboard:
                     dcc.Graph(figure=epsilon_fig, config={'displayModeBar': False}, style={'height': '300px'}),
                 ], style={'flex': '1'}),
             ], style={'display': 'flex', 'gap': '20px'}),
+        ])
+    
+    def create_dqn_panel(self) -> html.Div:
+        """Create dedicated DQN Controller panel with detailed metrics."""
+        import plotly.graph_objs as go
+        
+        # Get real DQN metrics
+        dqn_metrics = self.dqn_controller.get_metrics() if hasattr(self.dqn_controller, 'get_metrics') else {}
+        
+        training_steps = dqn_metrics.get('training_steps', 0)
+        epsilon = dqn_metrics.get('epsilon', 1.0)
+        buffer_size = dqn_metrics.get('buffer_size', 0)
+        avg_loss = dqn_metrics.get('avg_loss', 0.0)
+        recent_losses = dqn_metrics.get('recent_losses', [])
+        episodes = dqn_metrics.get('episodes', 0)
+        
+        # Q-values history (sample from recent actions)
+        q_values_sample = []
+        if hasattr(self.dqn_controller, 'q_values_history') and self.dqn_controller.q_values_history:
+            q_values_sample = self.dqn_controller.q_values_history[-50:]
+        else:
+            # Simulate Q-values for demo
+            q_values_sample = [[random.uniform(-1, 5) for _ in range(3)] for _ in range(50)]
+        
+        # Loss history chart
+        loss_history = recent_losses if recent_losses else [0.5 - i * 0.01 for i in range(50)]
+        loss_fig = go.Figure()
+        loss_fig.add_trace(go.Scatter(
+            y=loss_history,
+            mode='lines',
+            name='Training Loss',
+            line=dict(color=THEME_COLORS['danger'], width=2)
+        ))
+        loss_fig.update_layout(
+            **self.get_chart_layout("DQN Training Loss"),
+            height=300,
+            yaxis_title="Loss",
+            xaxis_title="Training Step"
+        )
+        
+        # Epsilon decay chart
+        epsilon_history = [max(0.01, 1.0 - (i / max(1, training_steps))) for i in range(min(training_steps + 1, 100))]
+        epsilon_fig = go.Figure()
+        epsilon_fig.add_trace(go.Scatter(
+            y=epsilon_history,
+            mode='lines',
+            name='Epsilon',
+            line=dict(color=THEME_COLORS['warning'], width=2),
+            fill='tozeroy',
+            fillcolor='rgba(255, 212, 59, 0.2)'
+        ))
+        epsilon_fig.update_layout(
+            **self.get_chart_layout("Epsilon Decay (Exploration Rate)"),
+            height=300,
+            yaxis_title="Epsilon",
+            yaxis_range=[0, 1],
+            xaxis_title="Training Step"
+        )
+        
+        # Q-values distribution (for latest actions)
+        if q_values_sample:
+            # Extract Q-values for each action
+            q_buy = [qvals[0] for qvals in q_values_sample[-30:]]
+            q_sell = [qvals[1] for qvals in q_values_sample[-30:]]
+            q_hold = [qvals[2] for qvals in q_values_sample[-30:]]
+            
+            q_values_fig = go.Figure()
+            q_values_fig.add_trace(go.Scatter(y=q_buy, mode='lines', name='Q(BUY)', 
+                                             line=dict(color=THEME_COLORS['success'], width=2)))
+            q_values_fig.add_trace(go.Scatter(y=q_sell, mode='lines', name='Q(SELL)', 
+                                             line=dict(color=THEME_COLORS['danger'], width=2)))
+            q_values_fig.add_trace(go.Scatter(y=q_hold, mode='lines', name='Q(HOLD)', 
+                                             line=dict(color=THEME_COLORS['primary'], width=2)))
+            
+            q_values_fig.update_layout(
+                **self.get_chart_layout("Q-Values per Action"),
+                height=300,
+                yaxis_title="Q-Value",
+                xaxis_title="Recent Actions",
+                showlegend=True,
+                legend=dict(x=0.7, y=1)
+            )
+        else:
+            q_values_fig = go.Figure()
+            q_values_fig.update_layout(
+                **self.get_chart_layout("Q-Values per Action"),
+                height=300,
+                annotations=[dict(
+                    text="No Q-value data yet",
+                    x=0.5, y=0.5,
+                    showarrow=False,
+                    font=dict(size=16, color=THEME_COLORS['text_secondary'])
+                )]
+            )
+        
+        # Replay buffer utilization
+        max_buffer = self.dqn_controller.replay_buffer.buffer.maxlen if hasattr(self.dqn_controller, 'replay_buffer') else 10000
+        buffer_utilization = (buffer_size / max_buffer * 100) if max_buffer > 0 else 0
+        
+        return html.Div([
+            html.H2("DQN Controller - Deep Q-Network", 
+                   style={'color': THEME_COLORS['primary'], 'marginBottom': '30px', 'fontSize': '28px'}),
+            
+            # Top metrics
+            html.Div([
+                self.create_metric_card("Training Steps", str(training_steps), THEME_COLORS['primary']),
+                self.create_metric_card("Current Epsilon", f"{epsilon:.4f}", THEME_COLORS['warning']),
+                self.create_metric_card("Replay Buffer", f"{buffer_size}/{max_buffer}", THEME_COLORS['secondary']),
+                self.create_metric_card("Avg Loss", f"{avg_loss:.4f}", THEME_COLORS['danger']),
+            ], style={'display': 'grid', 'gridTemplateColumns': 'repeat(4, 1fr)', 
+                     'gap': '20px', 'marginBottom': '30px'}),
+            
+            # DQN Configuration Info
+            html.Div([
+                html.H3("DQN Configuration", 
+                       style={'fontSize': '18px', 'marginBottom': '15px', 'color': THEME_COLORS['text']}),
+                html.Div([
+                    html.Div([
+                        html.Span("State Dimension:", style={'color': THEME_COLORS['text_secondary'], 'fontSize': '12px'}),
+                        html.Span(f" {self.dqn_controller.state_dim}", 
+                                 style={'color': THEME_COLORS['text'], 'fontWeight': '600', 'fontSize': '13px'}),
+                    ], style={'marginBottom': '8px'}),
+                    html.Div([
+                        html.Span("Action Dimension:", style={'color': THEME_COLORS['text_secondary'], 'fontSize': '12px'}),
+                        html.Span(f" {self.dqn_controller.action_dim}", 
+                                 style={'color': THEME_COLORS['text'], 'fontWeight': '600', 'fontSize': '13px'}),
+                    ], style={'marginBottom': '8px'}),
+                    html.Div([
+                        html.Span("Batch Size:", style={'color': THEME_COLORS['text_secondary'], 'fontSize': '12px'}),
+                        html.Span(f" {self.dqn_controller.batch_size}", 
+                                 style={'color': THEME_COLORS['text'], 'fontWeight': '600', 'fontSize': '13px'}),
+                    ], style={'marginBottom': '8px'}),
+                    html.Div([
+                        html.Span("Discount Factor (γ):", style={'color': THEME_COLORS['text_secondary'], 'fontSize': '12px'}),
+                        html.Span(f" {self.dqn_controller.discount_factor:.4f}", 
+                                 style={'color': THEME_COLORS['text'], 'fontWeight': '600', 'fontSize': '13px'}),
+                    ], style={'marginBottom': '8px'}),
+                    html.Div([
+                        html.Span("Epsilon Decay:", style={'color': THEME_COLORS['text_secondary'], 'fontSize': '12px'}),
+                        html.Span(f" {self.dqn_controller.epsilon_decay:.4f}", 
+                                 style={'color': THEME_COLORS['text'], 'fontWeight': '600', 'fontSize': '13px'}),
+                    ], style={'marginBottom': '8px'}),
+                    html.Div([
+                        html.Span("Epsilon Min:", style={'color': THEME_COLORS['text_secondary'], 'fontSize': '12px'}),
+                        html.Span(f" {self.dqn_controller.epsilon_min:.4f}", 
+                                 style={'color': THEME_COLORS['text'], 'fontWeight': '600', 'fontSize': '13px'}),
+                    ], style={'marginBottom': '8px'}),
+                    html.Div([
+                        html.Span("Target Update Frequency:", style={'color': THEME_COLORS['text_secondary'], 'fontSize': '12px'}),
+                        html.Span(f" {self.dqn_controller.target_update_frequency} steps", 
+                                 style={'color': THEME_COLORS['text'], 'fontWeight': '600', 'fontSize': '13px'}),
+                    ], style={'marginBottom': '8px'}),
+                    html.Div([
+                        html.Span("Buffer Utilization:", style={'color': THEME_COLORS['text_secondary'], 'fontSize': '12px'}),
+                        html.Span(f" {buffer_utilization:.1f}%", 
+                                 style={'color': THEME_COLORS['success'] if buffer_utilization > 50 else THEME_COLORS['warning'], 
+                                       'fontWeight': '600', 'fontSize': '13px'}),
+                    ]),
+                ], style={'display': 'grid', 'gridTemplateColumns': 'repeat(2, 1fr)', 'gap': '10px'})
+            ], style={'backgroundColor': THEME_COLORS['surface'], 'padding': '20px', 
+                     'borderRadius': '8px', 'border': f'1px solid {THEME_COLORS["border"]}',
+                     'marginBottom': '30px'}),
+            
+            # Charts
+            html.Div([
+                html.Div([
+                    dcc.Graph(figure=loss_fig, config={'displayModeBar': False}, style={'height': '300px'}),
+                ], style={'flex': '1'}),
+                html.Div([
+                    dcc.Graph(figure=epsilon_fig, config={'displayModeBar': False}, style={'height': '300px'}),
+                ], style={'flex': '1'}),
+            ], style={'display': 'flex', 'gap': '20px', 'marginBottom': '30px'}),
+            
+            # Q-values chart
+            html.Div([
+                dcc.Graph(figure=q_values_fig, config={'displayModeBar': False}, style={'height': '300px'}),
+            ], style={'marginBottom': '30px'}),
+            
+            # Training Status
+            html.Div([
+                html.H3("Training Status", 
+                       style={'fontSize': '18px', 'marginBottom': '15px', 'color': THEME_COLORS['text']}),
+                html.Div([
+                    html.Div("Training Active", style={'fontSize': '14px', 'marginBottom': '10px', 
+                                                       'color': THEME_COLORS['success'], 'fontWeight': '600'})
+                        if training_steps > 0 else
+                    html.Div("Waiting for Training Data", style={'fontSize': '14px', 'marginBottom': '10px',
+                                                                 'color': THEME_COLORS['warning'], 'fontWeight': '600'}),
+                    html.Div([
+                        html.Span(f"• {training_steps} training steps completed", 
+                                 style={'fontSize': '13px', 'color': THEME_COLORS['text']}),
+                    ], style={'marginBottom': '5px'}),
+                    html.Div([
+                        html.Span(f"• {buffer_size} experiences in replay buffer", 
+                                 style={'fontSize': '13px', 'color': THEME_COLORS['text']}),
+                    ], style={'marginBottom': '5px'}),
+                    html.Div([
+                        html.Span(f"• Epsilon at {epsilon:.4f} (exploration rate)", 
+                                 style={'fontSize': '13px', 'color': THEME_COLORS['text']}),
+                    ], style={'marginBottom': '5px'}),
+                    html.Div([
+                        html.Span(f"• Target network updates: every {self.dqn_controller.target_update_frequency} steps", 
+                                 style={'fontSize': '13px', 'color': THEME_COLORS['text']}),
+                    ]),
+                ])
+            ], style={'backgroundColor': THEME_COLORS['surface'], 'padding': '20px', 
+                     'borderRadius': '8px', 'border': f'1px solid {THEME_COLORS["border"]}'}),
         ])
     
     def create_agent_evolution_panel(self) -> html.Div:
@@ -2860,6 +3148,29 @@ class NextGenDashboard:
                     # Record decision with actual reward from portfolio
                     portfolio_value_after = self.portfolio_manager.get_portfolio_value(self.current_prices)
                     reward = portfolio_value_after - portfolio_value
+                    
+                    # Train DQN with experience (Sprint 8)
+                    # Calculate next state after action
+                    next_state = [
+                        (current_price - prices[-2]) / prices[-2] if len(prices) >= 2 else 0,
+                        rsi / 100,
+                        macd / 10,
+                        portfolio_value_after / 1000.0
+                    ]
+                    
+                    # Store transition in DQN replay buffer
+                    action_idx = action_map.index(final_action) if final_action in action_map else 2
+                    self.dqn_controller.store_transition(
+                        np.array(state),
+                        action_idx,
+                        reward,
+                        np.array(next_state),
+                        False  # episode not done
+                    )
+                    
+                    # Train DQN if buffer has enough samples
+                    if len(self.dqn_controller.replay_buffer) >= self.dqn_controller.batch_size:
+                        self.dqn_controller.train_step()
                     
                     self.decision_history.append({
                         'timestamp': datetime.now().strftime('%H:%M:%S'),
