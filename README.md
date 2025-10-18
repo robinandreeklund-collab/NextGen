@@ -15,6 +15,30 @@ python start_live.py
 # Öppna http://localhost:8050 i webbläsaren
 ```
 
+**⚠️ VIKTIGT: Data Integrity Policy**
+
+Dashboarden är designad för att visa **ENDAST verklig data från systemets moduler och message_bus**. 
+
+**Förbjudet:**
+- ❌ Hårdkodade värden i dashboard-paneler
+- ❌ Mockup-data eller randomvärden i visualiseringar
+- ❌ UI-genererade metrics (alla metrics ska komma från moduler)
+- ❌ Statiska siffror i grafer eller tabeller
+
+**Tillåtet:**
+- ✅ Data från `data_ingestion_sim.py` (demo-läge)
+- ✅ Data från `data_ingestion.py` (live-läge)
+- ✅ Metrics från portfolio_manager, rl_controller, dqn_controller, etc.
+- ✅ Real-time data via message_bus
+
+**Dataflöde:**
+```
+Demo-läge:  data_ingestion_sim → message_bus → modules → dashboard
+Live-läge:  data_ingestion (Finnhub) → message_bus → modules → dashboard
+```
+
+Alla paneler och visualiseringar måste reflektera systemets faktiska tillstånd!
+
 ### Kör Analyzer Debug Dashboard
 ```bash
 python analyzer_debug.py
@@ -46,17 +70,50 @@ Fullskalig dashboard byggd enligt `docs/dashboard_structure_sprint8.yaml` med mo
 **Demo-läge (Simulerad data):**
 ```bash
 python start_demo.py
-# Startar med mock/replay data, ingen WebSocket-anslutning krävs
+# Startar med simulerad realtidsdata från data_ingestion_sim.py
+# Genererar realistiska prisrörelser med trend, volatilitet och mean reversion
+# Publicerar data via message_bus till alla moduler
+# Ingen WebSocket-anslutning krävs
 ```
 
 **Live-läge (Real-time data):**
 ```bash
 python start_live.py
 # Ansluter till Finnhub WebSocket för live marknadsdata
+# Använder data_ingestion.py för att hämta data från Finnhub API
 # Kräver giltig Finnhub API-nyckel
 ```
 
 Öppna sedan `http://localhost:8050` i webbläsaren.
+
+**Datakällor:**
+
+Alla dashboardpaneler använder **ENDAST** data från:
+
+1. **Market Data**: 
+   - Demo: `data_ingestion_sim.py` → `market_data` topic
+   - Live: `data_ingestion.py` → `market_data` topic
+
+2. **Portfolio Metrics**:
+   - `portfolio_manager.py` → portfolio value, cash, positions, ROI
+
+3. **RL Agent Metrics**:
+   - `rl_controller.py` → PPO rewards, agent actions
+   - `dqn_controller.py` → DQN rewards, epsilon, actions
+
+4. **Evolution Metrics**:
+   - `gan_evolution_engine.py` → generator loss, discriminator loss, acceptance rate
+
+5. **Pattern Detection**:
+   - `gnn_timespan_analyzer.py` → pattern types, confidence levels
+
+6. **Reward Flow**:
+   - `reward_tuner.py` → base rewards, tuned rewards
+
+7. **Conflicts**:
+   - Decision history → PPO vs DQN conflicts
+
+**Inga hårdkodade värden eller mockup-data används!**
 
 ### Dashboard-paneler
 
@@ -343,6 +400,7 @@ http://localhost:8050
 |-------|-------------|--------|
 | `analyzer_debug.py` | Debug dashboard med fullständig systemvisualisering | Sprint 7 |
 | `data_ingestion.py` | WebSocket-dataflöde från Finnhub | Sprint 1 |
+| `data_ingestion_sim.py` | Simulerad marknadsdata för demo-läge | Sprint 1 |
 | `strategy_engine.py` | Genererar tradeförslag baserat på indikatorer | Sprint 1-2 |
 | `risk_manager.py` | Riskbedömning och justering | Sprint 1-2 |
 | `decision_engine.py` | Fattar handelsbeslut | Sprint 1-2 |
@@ -415,6 +473,22 @@ Market Data (Finnhub) → Data Ingestion → Indicators
                                               ↓
                                        RL Controller → Agent Updates
 ```
+
+### Demo-läge Dataflöde (data_ingestion_sim.py)
+
+```
+data_ingestion_sim.simulate_market_tick()
+    ↓ publicerar market_data
+message_bus
+    ↓ distribuerar till
+[indicator_registry, strategy_engine, portfolio_manager, ...]
+    ↓ processerar och publicerar resultat
+message_bus
+    ↓ distribuerar till
+dashboard (visualisering)
+```
+
+**Viktig princip:** ALL data som visas i dashboarden kommer från message_bus topics som publicerats av modulerna. Ingen data genereras direkt i UI-lagret.
 
 ### Reward Flow (Sprint 4.4)
 
@@ -498,12 +572,14 @@ python websocket_test.py
 ```
 NextGen/
 ├── start_dashboard.py           # 🆕 Fullskalig dashboard (main)
-├── start_demo.py                # 🆕 Starta i demo-läge
-├── start_live.py                # 🆕 Starta i live-läge
+├── start_demo.py                # 🆕 Starta i demo-läge (använder data_ingestion_sim)
+├── start_live.py                # 🆕 Starta i live-läge (använder data_ingestion)
 ├── analyzer_debug.py            # Debug dashboard (legacy)
 ├── sim_test.py                  # Simulerad trading
 ├── websocket_test.py            # Live trading med Finnhub
-├── modules/                     # Alla kärnmoduler (29 stycken)
+├── modules/                     # Alla kärnmoduler (30 stycken)
+│   ├── data_ingestion.py        # Live WebSocket från Finnhub
+│   ├── data_ingestion_sim.py    # 🆕 Simulerad marknadsdata för demo
 │   ├── reward_tuner.py          # Sprint 4.4: Reward transformation
 │   ├── rl_controller.py         # Sprint 2, 4.2: PPO-agenter
 │   ├── dqn_controller.py        # Sprint 8: DQN RL
