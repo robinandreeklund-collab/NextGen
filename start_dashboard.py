@@ -2401,6 +2401,11 @@ class NextGenDashboard:
         adaptive_params = config.get('adaptive_parameters', {})
         reward_tuner_params = config.get('reward_tuner_parameters', {})
         
+        # Filter out metadata keys to get only actual parameters
+        metadata_keys = {'description', 'controller', 'agent_type', 'logging_module', 'visualization_module', 'versioning_module'}
+        adaptive_params = {k: v for k, v in adaptive_params.items() if k not in metadata_keys and isinstance(v, dict) and 'module' in v}
+        reward_tuner_params = {k: v for k, v in reward_tuner_params.items() if isinstance(v, dict) and 'module' in v}
+        
         # Combine all parameters (13 module params + 3 reward tuner params = 16 total)
         all_params = {**adaptive_params, **reward_tuner_params}
         
