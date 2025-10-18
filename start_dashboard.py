@@ -133,6 +133,7 @@ class NextGenDashboard:
         
         # Data history for charts
         self.price_history = {symbol: [] for symbol in self.symbols}
+        self.volume_history = {symbol: [] for symbol in self.symbols}  # Track volume for expanded state
         self.reward_history = {'base': [], 'tuned': [], 'ppo': [], 'dqn': []}
         self.agent_metrics_history = []
         self.gan_metrics_history = {'g_loss': [], 'd_loss': [], 'acceptance_rate': []}
@@ -200,8 +201,10 @@ class NextGenDashboard:
         self.system_monitor = SystemMonitor(self.message_bus)
         
         # Sprint 8 modules
-        # state_dim=4: matches sim_test.py state representation
-        self.dqn_controller = DQNController(self.message_bus, state_dim=4, action_dim=3)
+        # state_dim=12: Expanded state with technical indicators, volume, and portfolio context
+        # [price_change, rsi, macd, atr, bb_position, volume_ratio, sma_distance, 
+        #  volume_trend, price_momentum, volatility_index, position_size, cash_ratio]
+        self.dqn_controller = DQNController(self.message_bus, state_dim=12, action_dim=3)
         self.gan_evolution = GANEvolutionEngine(self.message_bus, latent_dim=64, param_dim=16)
         self.gnn_analyzer = GNNTimespanAnalyzer(self.message_bus, input_dim=32, temporal_window=20)
         
@@ -1584,8 +1587,21 @@ class NextGenDashboard:
                 html.Div([
                     html.Div([
                         html.Span("State Dimension:", style={'color': THEME_COLORS['text_secondary'], 'fontSize': '12px'}),
-                        html.Span(f" {self.dqn_controller.state_dim}", 
+                        html.Span(f" {self.dqn_controller.state_dim} (expanded)", 
                                  style={'color': THEME_COLORS['text'], 'fontWeight': '600', 'fontSize': '13px'}),
+                    ], style={'marginBottom': '8px'}),
+                    html.Div([
+                        html.Span("State Features:", style={'color': THEME_COLORS['text_secondary'], 'fontSize': '11px'}),
+                        html.Div([
+                            html.Span("• Technical: Price change, RSI, MACD, ATR, BB position", 
+                                     style={'fontSize': '10px', 'color': THEME_COLORS['text_secondary'], 'display': 'block'}),
+                            html.Span("• Volume: Volume ratio, volume trend", 
+                                     style={'fontSize': '10px', 'color': THEME_COLORS['text_secondary'], 'display': 'block'}),
+                            html.Span("• Trend: SMA distance, price momentum", 
+                                     style={'fontSize': '10px', 'color': THEME_COLORS['text_secondary'], 'display': 'block'}),
+                            html.Span("• Risk: Volatility index, position size, cash ratio", 
+                                     style={'fontSize': '10px', 'color': THEME_COLORS['text_secondary'], 'display': 'block'}),
+                        ], style={'marginTop': '5px', 'marginLeft': '10px'}),
                     ], style={'marginBottom': '8px'}),
                     html.Div([
                         html.Span("Action Dimension:", style={'color': THEME_COLORS['text_secondary'], 'fontSize': '12px'}),
@@ -3082,21 +3098,42 @@ class NextGenDashboard:
                 # Get updated prices from data_ingestion
                 self.current_prices = self.data_ingestion.get_current_prices()
             
-            # Store price history
+            # Store price history and volume history
             for symbol in self.symbols:
                 price = self.current_prices.get(symbol, self.base_prices[symbol])
                 self.price_history[symbol].append(price)
                 if len(self.price_history[symbol]) > 100:
                     self.price_history[symbol].pop(0)
+                
+                # Simulate volume (in real system, this would come from market data)
+                # Volume varies with price volatility
+                if len(self.price_history[symbol]) >= 2:
+                    price_change_pct = abs((price - self.price_history[symbol][-2]) / self.price_history[symbol][-2])
+                    base_volume = 100000
+                    volume = base_volume * (1 + price_change_pct * 10) * random.uniform(0.8, 1.2)
+                else:
+                    volume = 100000
+                
+                self.volume_history[symbol].append(volume)
+                if len(self.volume_history[symbol]) > 100:
+                    self.volume_history[symbol].pop(0)
             
             # === TRADING DECISIONS WITH ACTUAL MODULES ===
             selected_symbol = random.choice(self.symbols)
             
             try:
-                # Calculate indicators (RSI, MACD)
+                # Calculate indicators (RSI, MACD, ATR, etc.)
                 prices = self.price_history[selected_symbol]
-                if len(prices) >= 20:
-                    # Simple RSI calculation
+                volumes = self.volume_history.get(selected_symbol, [100000] * len(prices))  # Default volume if not available
+                
+                if len(prices) >= 26:  # Need enough data for indicators
+                    current_price = self.current_prices[selected_symbol]
+                    portfolio_value = self.portfolio_manager.get_portfolio_value(self.current_prices)
+                    
+                    # 1. Price change (momentum)
+                    price_change = (current_price - prices[-2]) / prices[-2] if len(prices) >= 2 else 0
+                    
+                    # 2. RSI (momentum indicator)
                     changes = [prices[i] - prices[i-1] for i in range(1, len(prices))]
                     gains = [c if c > 0 else 0 for c in changes[-14:]]
                     losses = [-c if c < 0 else 0 for c in changes[-14:]]
@@ -3105,20 +3142,82 @@ class NextGenDashboard:
                     rs = avg_gain / avg_loss
                     rsi = 100 - (100 / (1 + rs))
                     
-                    # Simple MACD
+                    # 3. MACD (trend strength)
                     sma_12 = sum(prices[-12:]) / 12
-                    sma_26 = sum(prices[-26:]) / 26 if len(prices) >= 26 else sma_12
+                    sma_26 = sum(prices[-26:]) / 26
                     macd = sma_12 - sma_26
                     
+                    # 4. ATR (volatility/risk measure) - Average True Range
+                    true_ranges = []
+                    for i in range(1, min(14, len(prices))):
+                        high_low = abs(prices[-i] - prices[-i-1])
+                        true_ranges.append(high_low)
+                    atr = sum(true_ranges) / len(true_ranges) if true_ranges else 0.01
+                    
+                    # 5. Bollinger Band position (price relative to bands)
+                    sma_20 = sum(prices[-20:]) / 20
+                    std_dev = (sum([(p - sma_20)**2 for p in prices[-20:]]) / 20) ** 0.5
+                    upper_band = sma_20 + (2 * std_dev)
+                    lower_band = sma_20 - (2 * std_dev)
+                    bb_position = (current_price - lower_band) / (upper_band - lower_band) if (upper_band - lower_band) > 0 else 0.5
+                    bb_position = max(0, min(1, bb_position))  # Clamp to [0, 1]
+                    
+                    # 6. Volume ratio (current vs average)
+                    avg_volume = sum(volumes[-20:]) / 20 if len(volumes) >= 20 else 100000
+                    current_volume = volumes[-1] if volumes else 100000
+                    volume_ratio = current_volume / avg_volume if avg_volume > 0 else 1.0
+                    
+                    # 7. Price vs SMA(20) (trend confirmation)
+                    sma_distance = (current_price - sma_20) / sma_20 if sma_20 > 0 else 0
+                    
+                    # 8. Volume trend (increasing/decreasing)
+                    if len(volumes) >= 10:
+                        recent_vol = sum(volumes[-5:]) / 5
+                        older_vol = sum(volumes[-10:-5]) / 5
+                        volume_trend = (recent_vol - older_vol) / older_vol if older_vol > 0 else 0
+                    else:
+                        volume_trend = 0
+                    
+                    # 9. Price momentum (rate of change over 10 periods)
+                    if len(prices) >= 10:
+                        price_momentum = (current_price - prices[-10]) / prices[-10] if prices[-10] > 0 else 0
+                    else:
+                        price_momentum = 0
+                    
+                    # 10. Volatility index (recent price swings)
+                    if len(prices) >= 10:
+                        recent_returns = [(prices[-i] - prices[-i-1]) / prices[-i-1] for i in range(1, 10)]
+                        volatility_index = (sum([r**2 for r in recent_returns]) / 9) ** 0.5
+                    else:
+                        volatility_index = 0
+                    
+                    # 11. Current position size for symbol (portfolio context)
+                    position_size = 0.0
+                    if selected_symbol in self.portfolio_manager.positions:
+                        position_qty = self.portfolio_manager.positions[selected_symbol]['quantity']
+                        position_value = position_qty * current_price
+                        position_size = position_value / portfolio_value if portfolio_value > 0 else 0
+                    
+                    # 12. Cash ratio (available capital %)
+                    cash_ratio = self.portfolio_manager.cash / portfolio_value if portfolio_value > 0 else 1.0
+                    
+                    # Create expanded state (12 dimensions) with normalization
+                    state = [
+                        price_change,           # Already normalized (%)
+                        rsi / 100,             # Normalize to [0, 1]
+                        macd / 10,             # Scale down
+                        atr / current_price,   # Normalize by price
+                        bb_position,           # Already in [0, 1]
+                        min(volume_ratio, 3.0) / 3.0,  # Cap at 3x and normalize
+                        max(-0.2, min(0.2, sma_distance)),  # Clamp to [-0.2, 0.2]
+                        max(-1, min(1, volume_trend)),      # Clamp to [-1, 1]
+                        max(-0.5, min(0.5, price_momentum)), # Clamp to [-0.5, 0.5]
+                        min(volatility_index, 0.1) / 0.1,   # Cap at 0.1 and normalize
+                        position_size,          # Already in [0, 1]
+                        cash_ratio             # Already in [0, 1]
+                    ]
+                    
                     # Make trading decision using RL controllers
-                    current_price = self.current_prices[selected_symbol]
-                    portfolio_value = self.portfolio_manager.get_portfolio_value(self.current_prices)
-                    
-                    # Create state for RL (matching sim_test.py: 4 features)
-                    price_change = (current_price - prices[-2]) / prices[-2] if len(prices) >= 2 else 0
-                    state = [price_change, rsi / 100, macd / 10, portfolio_value / 1000.0]
-                    
-                    # Get PPO and DQN actions using correct API
                     # RLController has agents dict with PPOAgent instances with state_dim=10
                     # We need to pad our 4-feature state to match the agent's expected dimensions
                     ppo_agent = list(self.rl_controller.agents.values())[0] if self.rl_controller.agents else None
