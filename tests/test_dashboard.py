@@ -24,9 +24,10 @@ class TestNextGenDashboard:
         
         assert dashboard.live_mode is False
         assert dashboard.symbols == ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA']
-        assert dashboard.running is True
+        assert dashboard.running is False  # Not running until start_simulation() is called
         assert dashboard.iteration_count == 0
         assert dashboard.app is not None
+        assert hasattr(dashboard, 'data_ingestion')  # Should have data_ingestion module
     
     def test_dashboard_initialization_live_mode(self):
         """Test dashboard initialization in live mode."""

@@ -63,10 +63,11 @@ class DataIngestionSim:
             'TSLA': 200.0
         }
         
-        # Current simulated prices
-        self.current_prices = self.base_prices.copy()
+        # Current simulated prices - only for requested symbols
+        self.current_prices = {symbol: self.base_prices.get(symbol, 100.0) 
+                               for symbol in self.symbols}
         
-        # Price trends (momentum)
+        # Price trends (momentum) - only for requested symbols
         self.price_trends = {symbol: 0.0 for symbol in self.symbols}
         
         # Volume simulation
@@ -182,7 +183,8 @@ class DataIngestionSim:
     
     def reset_prices(self) -> None:
         """Återställer priser till base values."""
-        self.current_prices = self.base_prices.copy()
+        self.current_prices = {symbol: self.base_prices.get(symbol, 100.0) 
+                               for symbol in self.symbols}
         self.price_trends = {symbol: 0.0 for symbol in self.symbols}
         self.iteration = 0
         print("🔄 Market prices reset to base values")
