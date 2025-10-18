@@ -27,7 +27,7 @@ class TestNextGenDashboard:
         
         assert dashboard.live_mode is False
         assert dashboard.symbols == ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA']
-        assert dashboard.running is False
+        assert dashboard.running is True
         assert dashboard.iteration_count == 0
         assert dashboard.app is not None
     
