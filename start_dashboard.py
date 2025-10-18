@@ -352,6 +352,7 @@ class NextGenDashboard:
                 self.create_sidebar_menu_item('🧪', 'Testing', 'testing', False),
                 self.create_sidebar_menu_item('📈', 'Drift', 'drift', False),
                 self.create_sidebar_menu_item('⚠️', 'Conflicts', 'conflicts', False),
+                self.create_sidebar_menu_item('🗳️', 'Consensus', 'consensus', False),
                 self.create_sidebar_menu_item('📅', 'Events', 'events', False),
                 self.create_sidebar_menu_item('💹', 'Market', 'logs', False),
                 self.create_sidebar_menu_item('⚙️', 'Settings', 'settings', False),
@@ -541,19 +542,20 @@ class NextGenDashboard:
         
         # Sidebar navigation callback
         @self.app.callback(
-            Output('dashboard-content', 'children'),
+            [Output('dashboard-content', 'children'),
+             Output('current-view', 'data')],
             Input({'type': 'sidebar-menu-item', 'index': ALL}, 'n_clicks'),
             prevent_initial_call=False
         )
         def render_view(n_clicks):
             ctx = dash.callback_context
             if not ctx.triggered or all(c is None for c in n_clicks):
-                return self.create_dashboard_view()
+                return self.create_dashboard_view(), 'dashboard'
             
             # Get which menu item was clicked
             triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
             if triggered_id == '':
-                return self.create_dashboard_view()
+                return self.create_dashboard_view(), 'dashboard'
                 
             import json
             button_info = json.loads(triggered_id)
@@ -561,27 +563,79 @@ class NextGenDashboard:
             
             # Route to appropriate view
             if view_id == 'dashboard':
-                return self.create_dashboard_view()
+                return self.create_dashboard_view(), 'dashboard'
             elif view_id == 'portfolio':
-                return self.create_portfolio_panel()
+                return self.create_portfolio_panel(), 'portfolio'
             elif view_id == 'agents':
-                return self.create_rl_analysis_panel()
+                return self.create_rl_analysis_panel(), 'agents'
             elif view_id == 'rewards':
-                return self.create_feedback_panel()
+                return self.create_feedback_panel(), 'rewards'
             elif view_id == 'testing':
-                return self.create_ci_tests_panel()
+                return self.create_ci_tests_panel(), 'testing'
             elif view_id == 'drift':
-                return self.create_temporal_gnn_panel()
+                return self.create_temporal_gnn_panel(), 'drift'
             elif view_id == 'conflicts':
-                return self.create_conflict_panel()
+                return self.create_conflict_panel(), 'conflicts'
+            elif view_id == 'consensus':
+                return self.create_consensus_panel(), 'consensus'
             elif view_id == 'events':
-                return self.create_agent_evolution_panel()
+                return self.create_agent_evolution_panel(), 'events'
             elif view_id == 'logs':
-                return self.create_market_watch_panel()
+                return self.create_market_watch_panel(), 'logs'
             elif view_id == 'settings':
-                return self.create_adaptive_panel()
+                return self.create_adaptive_panel(), 'settings'
             
-            return self.create_dashboard_view()
+            return self.create_dashboard_view(), 'dashboard'
+        
+        # Auto-refresh callback for dashboard content
+        @self.app.callback(
+            [Output('dashboard-content', 'children', allow_duplicate=True),
+             Output('current-view', 'data', allow_duplicate=True)],
+            [Input('interval-component', 'n_intervals'),
+             Input({'type': 'sidebar-menu-item', 'index': ALL}, 'n_clicks')],
+            State('current-view', 'data'),
+            prevent_initial_call=True
+        )
+        def auto_refresh_dashboard(n_intervals, menu_clicks, current_view):
+            """Auto-refresh dashboard content every 2 seconds when simulation is running."""
+            ctx = dash.callback_context
+            
+            # Check if triggered by menu click
+            if ctx.triggered and 'sidebar-menu-item' in ctx.triggered[0]['prop_id']:
+                # Menu was clicked, update the current view
+                triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
+                if triggered_id:
+                    import json
+                    button_info = json.loads(triggered_id)
+                    current_view = button_info['index']
+            
+            # Don't refresh if not running
+            if not self.running:
+                raise dash.exceptions.PreventUpdate
+            
+            # Route to appropriate view based on current_view
+            if current_view == 'portfolio':
+                return self.create_portfolio_panel(), current_view
+            elif current_view == 'agents':
+                return self.create_rl_analysis_panel(), current_view
+            elif current_view == 'rewards':
+                return self.create_feedback_panel(), current_view
+            elif current_view == 'testing':
+                return self.create_ci_tests_panel(), current_view
+            elif current_view == 'drift':
+                return self.create_temporal_gnn_panel(), current_view
+            elif current_view == 'conflicts':
+                return self.create_conflict_panel(), current_view
+            elif current_view == 'consensus':
+                return self.create_consensus_panel(), current_view
+            elif current_view == 'events':
+                return self.create_agent_evolution_panel(), current_view
+            elif current_view == 'logs':
+                return self.create_market_watch_panel(), current_view
+            elif current_view == 'settings':
+                return self.create_adaptive_panel(), current_view
+            else:
+                return self.create_dashboard_view(), 'dashboard'
         
         # Start/Stop callbacks
         @self.app.callback(
@@ -2145,10 +2199,10 @@ class NextGenDashboard:
                     
                     # Get PPO and DQN actions using correct API
                     # RLController has agents dict with PPOAgent instances
-                    # PPOAgent has get_action() method, not select_action()
+                    # PPOAgent has select_action() method
                     ppo_agent = list(self.rl_controller.agents.values())[0] if self.rl_controller.agents else None
                     if ppo_agent:
-                        ppo_action_idx = ppo_agent.get_action(np.array(state))
+                        ppo_action_idx = ppo_agent.select_action(np.array(state))
                     else:
                         ppo_action_idx = 2  # Default to HOLD
                     
