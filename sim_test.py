@@ -171,7 +171,9 @@ class SimulatedTester:
         # state_dim=12: Expanded state with technical indicators, volume, and portfolio context
         # [price_change, rsi, macd, atr, bb_position, volume_ratio, sma_distance,
         #  volume_trend, price_momentum, volatility_index, position_size, cash_ratio]
-        self.dqn_controller = DQNController(self.message_bus, state_dim=12, action_dim=3)
+        # action_dim=7: Expanded actions with position sizing
+        # [BUY_SMALL, BUY_MEDIUM, BUY_LARGE, SELL_PARTIAL, SELL_ALL, HOLD, REBALANCE]
+        self.dqn_controller = DQNController(self.message_bus, state_dim=12, action_dim=7)
         self.gan_evolution = GANEvolutionEngine(self.message_bus, latent_dim=64, param_dim=16)
         self.gnn_analyzer = GNNTimespanAnalyzer(self.message_bus, input_dim=32, temporal_window=20)
         

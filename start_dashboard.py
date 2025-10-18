@@ -204,7 +204,9 @@ class NextGenDashboard:
         # state_dim=12: Expanded state with technical indicators, volume, and portfolio context
         # [price_change, rsi, macd, atr, bb_position, volume_ratio, sma_distance, 
         #  volume_trend, price_momentum, volatility_index, position_size, cash_ratio]
-        self.dqn_controller = DQNController(self.message_bus, state_dim=12, action_dim=3)
+        # action_dim=7: Expanded actions with position sizing
+        # [BUY_SMALL, BUY_MEDIUM, BUY_LARGE, SELL_PARTIAL, SELL_ALL, HOLD, REBALANCE]
+        self.dqn_controller = DQNController(self.message_bus, state_dim=12, action_dim=7)
         self.gan_evolution = GANEvolutionEngine(self.message_bus, latent_dim=64, param_dim=16)
         self.gnn_analyzer = GNNTimespanAnalyzer(self.message_bus, input_dim=32, temporal_window=20)
         
@@ -2402,9 +2404,11 @@ class NextGenDashboard:
         """Create Decision & Consensus panel."""
         # Get consensus data from consensus_engine
         try:
-            # Simulate voting matrix
-            agents = ['PPO', 'DQN', 'Agent1', 'Agent2']
-            decisions = ['BUY', 'SELL', 'HOLD']
+            # Expanded agent list with specialized agents
+            agents = ['PPO', 'DQN', 'Conservative', 'Aggressive', 'Momentum', 
+                     'Mean Reversion', 'Contrarian', 'Volatility', 'Volume', 'Tech Pattern']
+            # Expanded decisions with position sizing
+            decisions = ['BUY_SMALL', 'BUY_MED', 'BUY_LARGE', 'SELL_PART', 'SELL_ALL', 'HOLD', 'REBAL']
             
             # Create voting matrix
             voting_data = []
@@ -2475,7 +2479,7 @@ class NextGenDashboard:
                 self.create_metric_card("Total Votes", str(total_decisions), THEME_COLORS['primary']),
                 self.create_metric_card("Avg Consensus", f"{avg_consensus:.2%}", THEME_COLORS['success']),
                 self.create_metric_card("Agreement Rate", f"{agreement_rate:.1f}%", THEME_COLORS['warning']),
-                self.create_metric_card("Active Agents", "4", THEME_COLORS['chart_line1']),
+                self.create_metric_card("Active Agents", str(len(agents)), THEME_COLORS['chart_line1']),
             ], style={'display': 'grid', 'gridTemplateColumns': 'repeat(4, 1fr)', 
                      'gap': '20px', 'marginBottom': '30px'}),
             
@@ -2579,6 +2583,59 @@ class NextGenDashboard:
                 'borderRadius': '8px',
                 'border': f'1px solid {THEME_COLORS["border"]}'
             }),
+            
+            # Specialized Agents Information
+            html.Div([
+                html.H3("Specialized Agent Strategies", 
+                       style={'fontSize': '18px', 'marginBottom': '15px', 'marginTop': '30px', 'color': THEME_COLORS['text']}),
+                html.Div([
+                    # Core RL Agents
+                    html.Div([
+                        html.H4("Core RL Agents", style={'fontSize': '14px', 'color': THEME_COLORS['primary'], 'marginBottom': '10px'}),
+                        html.Div("• PPO: Proximal Policy Optimization - General-purpose learning", 
+                                style={'fontSize': '12px', 'marginBottom': '5px', 'color': THEME_COLORS['text']}),
+                        html.Div("• DQN: Deep Q-Network - Value-based decision making with 12-dim state", 
+                                style={'fontSize': '12px', 'marginBottom': '5px', 'color': THEME_COLORS['text']}),
+                    ], style={'flex': '1', 'padding': '15px', 'backgroundColor': THEME_COLORS['surface'],
+                             'borderRadius': '8px', 'border': f'1px solid {THEME_COLORS["border"]}'}),
+                    
+                    # Risk-Focused Agents
+                    html.Div([
+                        html.H4("Risk-Focused Agents", style={'fontSize': '14px', 'color': THEME_COLORS['success'], 'marginBottom': '10px'}),
+                        html.Div("• Conservative: Capital preservation, low volatility preference", 
+                                style={'fontSize': '12px', 'marginBottom': '5px', 'color': THEME_COLORS['text']}),
+                        html.Div("• Aggressive: High-risk/high-reward, larger positions, momentum", 
+                                style={'fontSize': '12px', 'marginBottom': '5px', 'color': THEME_COLORS['text']}),
+                    ], style={'flex': '1', 'padding': '15px', 'backgroundColor': THEME_COLORS['surface'],
+                             'borderRadius': '8px', 'border': f'1px solid {THEME_COLORS["border"]}'}),
+                ], style={'display': 'flex', 'gap': '15px', 'marginBottom': '15px'}),
+                
+                html.Div([
+                    # Strategy-Focused Agents
+                    html.Div([
+                        html.H4("Strategy Agents", style={'fontSize': '14px', 'color': THEME_COLORS['secondary'], 'marginBottom': '10px'}),
+                        html.Div("• Momentum: Follows trends, volume spikes, price momentum", 
+                                style={'fontSize': '12px', 'marginBottom': '5px', 'color': THEME_COLORS['text']}),
+                        html.Div("• Mean Reversion: Buys oversold (RSI<30), sells overbought (RSI>70)", 
+                                style={'fontSize': '12px', 'marginBottom': '5px', 'color': THEME_COLORS['text']}),
+                        html.Div("• Contrarian: Takes opposite positions for diversification", 
+                                style={'fontSize': '12px', 'marginBottom': '5px', 'color': THEME_COLORS['text']}),
+                    ], style={'flex': '1', 'padding': '15px', 'backgroundColor': THEME_COLORS['surface'],
+                             'borderRadius': '8px', 'border': f'1px solid {THEME_COLORS["border"]}'}),
+                    
+                    # Specialized Agents
+                    html.Div([
+                        html.H4("Specialized Agents", style={'fontSize': '14px', 'color': THEME_COLORS['warning'], 'marginBottom': '10px'}),
+                        html.Div("• Volatility: ATR-based trading, volatility patterns", 
+                                style={'fontSize': '12px', 'marginBottom': '5px', 'color': THEME_COLORS['text']}),
+                        html.Div("• Volume: Volume breakouts, unusual activity detection", 
+                                style={'fontSize': '12px', 'marginBottom': '5px', 'color': THEME_COLORS['text']}),
+                        html.Div("• Tech Pattern: Chart patterns (BB squeezes, support/resistance)", 
+                                style={'fontSize': '12px', 'marginBottom': '5px', 'color': THEME_COLORS['text']}),
+                    ], style={'flex': '1', 'padding': '15px', 'backgroundColor': THEME_COLORS['surface'],
+                             'borderRadius': '8px', 'border': f'1px solid {THEME_COLORS["border"]}'}),
+                ], style={'display': 'flex', 'gap': '15px'}),
+            ], style={'marginTop': '30px'}),
         ])
     
     def create_adaptive_panel(self) -> html.Div:
@@ -3235,9 +3292,13 @@ class NextGenDashboard:
                     # DQN controller uses the full 12-dimensional state
                     dqn_action_idx = self.dqn_controller.select_action(np.array(state))
                     
-                    action_map = ['BUY', 'SELL', 'HOLD']
-                    ppo_action = action_map[ppo_action_idx]
-                    dqn_action = action_map[dqn_action_idx]
+                    # Expanded action map with position sizing (7 actions)
+                    action_map_full = ['BUY_SMALL', 'BUY_MEDIUM', 'BUY_LARGE', 'SELL_PARTIAL', 'SELL_ALL', 'HOLD', 'REBALANCE']
+                    # PPO still uses 3 actions (for backward compatibility)
+                    action_map_ppo = ['BUY', 'SELL', 'HOLD']
+                    
+                    ppo_action = action_map_ppo[ppo_action_idx] if ppo_action_idx < len(action_map_ppo) else 'HOLD'
+                    dqn_action = action_map_full[dqn_action_idx] if dqn_action_idx < len(action_map_full) else 'HOLD'
                     
                     # Detect conflicts
                     if ppo_action != dqn_action:
@@ -3255,41 +3316,63 @@ class NextGenDashboard:
                     else:
                         final_action = ppo_action
                     
-                    # Execute trade with proper budget checks
+                    # Execute trade with proper budget checks and position sizing
                     execution_result = None
-                    if final_action == 'BUY':
-                        # Calculate how many shares we can afford
-                        max_quantity = min(10, self.portfolio_manager.cash / current_price)
-                        # Account for transaction fees (0.25%)
-                        total_cost_estimate = current_price * max_quantity * 1.0025
+                    
+                    # Handle expanded action set with position sizing
+                    if final_action in ['BUY', 'BUY_SMALL', 'BUY_MEDIUM', 'BUY_LARGE']:
+                        # Determine position size based on action
+                        if final_action == 'BUY_SMALL':
+                            size_fraction = 0.25  # 25% of available cash
+                        elif final_action == 'BUY_MEDIUM':
+                            size_fraction = 0.50  # 50% of available cash
+                        elif final_action == 'BUY_LARGE':
+                            size_fraction = 0.75  # 75% of available cash
+                        else:  # 'BUY' (default)
+                            size_fraction = 0.50  # 50% default
+                        
+                        # Calculate how many shares we can afford with size fraction
+                        affordable_cash = self.portfolio_manager.cash * size_fraction
+                        max_quantity = int(affordable_cash / (current_price * 1.0025))
+                        max_quantity = min(max_quantity, 10)  # Max 10 shares per trade
                         
                         # Only proceed if we have enough cash for at least 1 share
-                        if self.portfolio_manager.cash >= current_price * 1.0025:
-                            # Adjust quantity to fit budget
-                            quantity = int(self.portfolio_manager.cash / (current_price * 1.0025))
+                        if max_quantity > 0 and self.portfolio_manager.cash >= current_price * 1.0025:
+                            quantity = max_quantity
+                            
+                            self.log_message(f"Executing {final_action}: {quantity} shares of {selected_symbol} @ ${current_price:.2f}", "INFO")
+                            execution_result = self.execution_engine.execute_trade({
+                                'symbol': selected_symbol,
+                                'action': 'BUY',
+                                'quantity': quantity,
+                                'current_price': current_price
+                            })
+                            # Publish result to message_bus so portfolio_manager can update
+                            if execution_result and execution_result.get('success'):
+                                self.execution_engine.publish_result(execution_result)
+                                self.log_message(f"{final_action} executed: {quantity} {selected_symbol} for ${execution_result.get('total_cost', 0):.2f}", "SUCCESS")
+                            else:
+                                self.log_message(f"{final_action} failed for {selected_symbol}", "WARNING")
+                        else:
+                            self.log_message(f"Insufficient funds for {final_action} {selected_symbol}", "WARNING")
+                    
+                    elif final_action in ['SELL', 'SELL_PARTIAL', 'SELL_ALL']:
+                        if selected_symbol in self.portfolio_manager.positions:
+                            current_position = self.portfolio_manager.positions[selected_symbol]['quantity']
+                            
+                            # Determine quantity to sell based on action
+                            if final_action == 'SELL_PARTIAL':
+                                quantity = int(current_position * 0.5)  # Sell 50%
+                            elif final_action == 'SELL_ALL':
+                                quantity = current_position  # Sell all
+                            else:  # 'SELL' (default)
+                                quantity = current_position  # Sell all by default
+                            
                             quantity = min(quantity, 10)  # Max 10 shares per trade
+                            quantity = max(quantity, 1)  # At least 1 share
                             
                             if quantity > 0:
-                                self.log_message(f"Executing BUY: {quantity} shares of {selected_symbol} @ ${current_price:.2f}", "INFO")
-                                execution_result = self.execution_engine.execute_trade({
-                                    'symbol': selected_symbol,
-                                    'action': 'BUY',
-                                    'quantity': quantity,
-                                    'current_price': current_price
-                                })
-                                # Publish result to message_bus so portfolio_manager can update
-                                if execution_result and execution_result.get('success'):
-                                    self.execution_engine.publish_result(execution_result)
-                                    self.log_message(f"BUY executed: {quantity} {selected_symbol} for ${execution_result.get('total_cost', 0):.2f}", "SUCCESS")
-                                else:
-                                    self.log_message(f"BUY failed for {selected_symbol}", "WARNING")
-                        else:
-                            self.log_message(f"Insufficient funds for BUY {selected_symbol} (need ${current_price * 1.0025:.2f}, have ${self.portfolio_manager.cash:.2f})", "WARNING")
-                    elif final_action == 'SELL':
-                        if selected_symbol in self.portfolio_manager.positions:
-                            quantity = min(10, self.portfolio_manager.positions[selected_symbol]['quantity'])
-                            if quantity > 0:
-                                self.log_message(f"Executing SELL: {quantity} shares of {selected_symbol} @ ${current_price:.2f}", "INFO")
+                                self.log_message(f"Executing {final_action}: {quantity} shares of {selected_symbol} @ ${current_price:.2f}", "INFO")
                                 execution_result = self.execution_engine.execute_trade({
                                     'symbol': selected_symbol,
                                     'action': 'SELL',
@@ -3299,11 +3382,54 @@ class NextGenDashboard:
                                 # Publish result to message_bus so portfolio_manager can update
                                 if execution_result and execution_result.get('success'):
                                     self.execution_engine.publish_result(execution_result)
-                                    self.log_message(f"SELL executed: {quantity} {selected_symbol} for ${execution_result.get('total_cost', 0):.2f}", "SUCCESS")
+                                    self.log_message(f"{final_action} executed: {quantity} {selected_symbol} for ${execution_result.get('total_cost', 0):.2f}", "SUCCESS")
                                 else:
-                                    self.log_message(f"SELL failed for {selected_symbol}", "WARNING")
+                                    self.log_message(f"{final_action} failed for {selected_symbol}", "WARNING")
                         else:
-                            self.log_message(f"No holdings to SELL for {selected_symbol}", "WARNING")
+                            self.log_message(f"No holdings to {final_action} for {selected_symbol}", "WARNING")
+                    
+                    elif final_action == 'REBALANCE':
+                        # Rebalance action - adjust position to target allocation
+                        if selected_symbol in self.portfolio_manager.positions:
+                            current_position = self.portfolio_manager.positions[selected_symbol]['quantity']
+                            position_value = current_position * current_price
+                            target_allocation = 0.1  # Target 10% of portfolio
+                            target_value = portfolio_value * target_allocation
+                            
+                            if position_value < target_value * 0.9:  # More than 10% below target
+                                # Buy more
+                                needed_value = target_value - position_value
+                                quantity = int(needed_value / (current_price * 1.0025))
+                                quantity = min(quantity, 5)  # Max 5 shares for rebalancing
+                                if quantity > 0 and self.portfolio_manager.cash >= quantity * current_price * 1.0025:
+                                    final_action = 'BUY'  # Convert to BUY for execution
+                                    execution_result = self.execution_engine.execute_trade({
+                                        'symbol': selected_symbol,
+                                        'action': 'BUY',
+                                        'quantity': quantity,
+                                        'current_price': current_price
+                                    })
+                                    if execution_result and execution_result.get('success'):
+                                        self.execution_engine.publish_result(execution_result)
+                                        self.log_message(f"REBALANCE (BUY): {quantity} {selected_symbol}", "SUCCESS")
+                            elif position_value > target_value * 1.1:  # More than 10% above target
+                                # Sell some
+                                excess_value = position_value - target_value
+                                quantity = int(excess_value / current_price)
+                                quantity = min(quantity, 5, current_position)  # Max 5 shares for rebalancing
+                                if quantity > 0:
+                                    final_action = 'SELL'  # Convert to SELL for execution
+                                    execution_result = self.execution_engine.execute_trade({
+                                        'symbol': selected_symbol,
+                                        'action': 'SELL',
+                                        'quantity': quantity,
+                                        'current_price': current_price
+                                    })
+                                    if execution_result and execution_result.get('success'):
+                                        self.execution_engine.publish_result(execution_result)
+                                        self.log_message(f"REBALANCE (SELL): {quantity} {selected_symbol}", "SUCCESS")
+                        else:
+                            self.log_message(f"No position to REBALANCE for {selected_symbol}", "INFO")
                     
                     # Track execution ONLY if trade was actually executed successfully
                     # This means it went into the portfolio
@@ -3353,7 +3479,8 @@ class NextGenDashboard:
                     ]
                     
                     # Store transition in DQN replay buffer
-                    action_idx = action_map.index(final_action) if final_action in action_map else 2
+                    # Map final action to index in expanded action space
+                    action_idx = action_map_full.index(final_action) if final_action in action_map_full else 5  # Default to HOLD
                     self.dqn_controller.store_transition(
                         np.array(state),
                         action_idx,
