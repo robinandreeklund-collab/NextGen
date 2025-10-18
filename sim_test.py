@@ -168,8 +168,12 @@ class SimulatedTester:
         self.system_monitor = SystemMonitor(self.message_bus)
         
         # Sprint 8 moduler
-        # state_dim=4: [price_change, rsi, macd, portfolio_value_norm]
-        self.dqn_controller = DQNController(self.message_bus, state_dim=4, action_dim=3)
+        # state_dim=12: Expanded state with technical indicators, volume, and portfolio context
+        # [price_change, rsi, macd, atr, bb_position, volume_ratio, sma_distance,
+        #  volume_trend, price_momentum, volatility_index, position_size, cash_ratio]
+        # action_dim=7: Expanded actions with position sizing
+        # [BUY_SMALL, BUY_MEDIUM, BUY_LARGE, SELL_PARTIAL, SELL_ALL, HOLD, REBALANCE]
+        self.dqn_controller = DQNController(self.message_bus, state_dim=12, action_dim=7)
         self.gan_evolution = GANEvolutionEngine(self.message_bus, latent_dim=64, param_dim=16)
         self.gnn_analyzer = GNNTimespanAnalyzer(self.message_bus, input_dim=32, temporal_window=20)
         
@@ -519,13 +523,70 @@ class SimulatedTester:
             
             # Sprint 8: Träna DQN med states och rewards
             if hasattr(self, 'last_state'):
-                # Simple state representation: [price_change, rsi, macd, portfolio_value_norm]
+                # Expanded state representation (12 dimensions):
+                # [price_change, rsi, macd, atr, bb_position, volume_ratio, sma_distance,
+                #  volume_trend, price_momentum, volatility_index, position_size, cash_ratio]
                 indicators = self.strategy_engine.current_indicators.get(symbol, {})
+                prices = self.price_history.get(symbol, [price])
+                
+                # Calculate expanded state features
+                price_change = (price - self.current_prices.get(symbol, price)) / (price if price != 0 else 1e-8)
+                rsi = indicators.get('technical', {}).get('RSI', 50) / 100.0
+                macd = indicators.get('technical', {}).get('MACD', {}).get('histogram', 0) / 10.0
+                
+                # ATR approximation
+                atr = indicators.get('technical', {}).get('ATR', 0.02) / price if price > 0 else 0.02
+                
+                # Bollinger Band position (approximation)
+                bb_upper = indicators.get('technical', {}).get('BB_upper', price * 1.02)
+                bb_lower = indicators.get('technical', {}).get('BB_lower', price * 0.98)
+                bb_position = (price - bb_lower) / (bb_upper - bb_lower) if (bb_upper - bb_lower) > 0 else 0.5
+                bb_position = max(0, min(1, bb_position))
+                
+                # Volume ratio (approximation - use 1.0 as baseline in sim)
+                volume_ratio = 1.0
+                
+                # SMA distance
+                sma_20 = indicators.get('technical', {}).get('SMA_20', price)
+                sma_distance = (price - sma_20) / sma_20 if sma_20 > 0 else 0
+                sma_distance = max(-0.2, min(0.2, sma_distance))
+                
+                # Volume trend (approximation)
+                volume_trend = 0.0
+                
+                # Price momentum (from recent price history)
+                if len(prices) >= 10:
+                    price_momentum = (price - prices[-10]) / prices[-10] if prices[-10] > 0 else 0
+                    price_momentum = max(-0.5, min(0.5, price_momentum))
+                else:
+                    price_momentum = 0
+                
+                # Volatility index (approximation)
+                volatility_index = 0.05  # Default moderate volatility
+                
+                # Position size
+                position_size = 0.0
+                if symbol in self.portfolio_manager.positions:
+                    position_qty = self.portfolio_manager.positions[symbol]['quantity']
+                    position_value = position_qty * price
+                    position_size = position_value / portfolio_value if portfolio_value > 0 else 0
+                
+                # Cash ratio
+                cash_ratio = self.portfolio_manager.cash / portfolio_value if portfolio_value > 0 else 1.0
+                
                 current_state = [
-                    (price - self.current_prices.get(symbol, price)) / (price if price != 0 else 1e-8),
-                    indicators.get('technical', {}).get('RSI', 50) / 100.0,
-                    indicators.get('technical', {}).get('MACD', {}).get('histogram', 0) / 10.0,
-                    portfolio_value / 1000.0
+                    price_change,
+                    rsi,
+                    macd,
+                    atr,
+                    bb_position,
+                    volume_ratio / 3.0,  # Normalize
+                    sma_distance,
+                    volume_trend,
+                    price_momentum,
+                    volatility_index * 10,  # Scale up for network
+                    position_size,
+                    cash_ratio
                 ]
                 
                 # Map action to index: BUY=0, SELL=1, HOLD=2
@@ -547,13 +608,21 @@ class SimulatedTester:
                 
                 self.last_state = current_state
             else:
-                # Initialize state
+                # Initialize state with expanded features (12 dimensions)
                 indicators = self.strategy_engine.current_indicators.get(symbol, {})
                 self.last_state = [
-                    0.0,
-                    indicators.get('technical', {}).get('RSI', 50) / 100.0,
-                    indicators.get('technical', {}).get('MACD', {}).get('histogram', 0) / 10.0,
-                    portfolio_value / 1000.0
+                    0.0,  # price_change
+                    indicators.get('technical', {}).get('RSI', 50) / 100.0,  # rsi
+                    indicators.get('technical', {}).get('MACD', {}).get('histogram', 0) / 10.0,  # macd
+                    0.02,  # atr (default)
+                    0.5,   # bb_position (middle)
+                    1.0 / 3.0,  # volume_ratio (normalized)
+                    0.0,   # sma_distance
+                    0.0,   # volume_trend
+                    0.0,   # price_momentum
+                    0.5,   # volatility_index
+                    0.0,   # position_size
+                    1.0    # cash_ratio (start with all cash)
                 ]
             
             # Sprint 8: Feed agent performance to GAN every 10 iterations

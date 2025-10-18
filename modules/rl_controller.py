@@ -112,6 +112,7 @@ class PPOAgent:
         self.training_steps = 0
         self.cumulative_reward = 0.0
         self.episode_rewards: List[float] = []
+        self.episodes = 0  # Track number of completed episodes
     
     def select_action(self, state: np.ndarray) -> int:
         """
@@ -158,6 +159,10 @@ class PPOAgent:
         
         # Lägg till reward i episodhistorik
         self.episode_rewards.append(reward)
+        
+        # Increment episode counter every 10 steps (approximate episode length)
+        if self.training_steps % 10 == 0:
+            self.episodes += 1
     
     def _softmax(self, x: np.ndarray) -> np.ndarray:
         """Softmax för action probabilities."""
