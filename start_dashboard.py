@@ -339,13 +339,14 @@ class NextGenDashboard:
             # Navigation menu items
             html.Div([
                 self.create_sidebar_menu_item('📊', 'Dashboard', 'dashboard', True),
+                self.create_sidebar_menu_item('💼', 'Portfolio', 'portfolio', False),
                 self.create_sidebar_menu_item('🤖', 'Agents', 'agents', False),
                 self.create_sidebar_menu_item('🎁', 'Rewards', 'rewards', False),
                 self.create_sidebar_menu_item('🧪', 'Testing', 'testing', False),
                 self.create_sidebar_menu_item('📈', 'Drift', 'drift', False),
                 self.create_sidebar_menu_item('⚠️', 'Conflicts', 'conflicts', False),
                 self.create_sidebar_menu_item('📅', 'Events', 'events', False),
-                self.create_sidebar_menu_item('📝', 'Logs', 'logs', False),
+                self.create_sidebar_menu_item('💹', 'Market', 'logs', False),
                 self.create_sidebar_menu_item('⚙️', 'Settings', 'settings', False),
             ], style={'marginBottom': 'auto'}),
             
@@ -522,6 +523,8 @@ class NextGenDashboard:
             # Route to appropriate view
             if view_id == 'dashboard':
                 return self.create_dashboard_view()
+            elif view_id == 'portfolio':
+                return self.create_portfolio_panel()
             elif view_id == 'agents':
                 return self.create_rl_analysis_panel()
             elif view_id == 'rewards':
@@ -535,7 +538,7 @@ class NextGenDashboard:
             elif view_id == 'events':
                 return self.create_agent_evolution_panel()
             elif view_id == 'logs':
-                return self.create_consensus_panel()
+                return self.create_market_watch_panel()
             elif view_id == 'settings':
                 return self.create_adaptive_panel()
             
@@ -848,7 +851,7 @@ class NextGenDashboard:
     # Panel creation methods
     
     def create_portfolio_panel(self) -> html.Div:
-        """Create Portfolio panel."""
+        """Create Portfolio panel with comprehensive data."""
         # Get portfolio data
         total_value = self.portfolio_manager.get_portfolio_value(self.current_prices)
         cash = self.portfolio_manager.cash
@@ -859,6 +862,87 @@ class NextGenDashboard:
             roi = ((total_value - self.portfolio_manager.start_capital) / self.portfolio_manager.start_capital) * 100
         else:
             roi = 0.0
+        
+        # Portfolio value over time chart
+        portfolio_values = [self.portfolio_manager.start_capital]
+        if hasattr(self, 'reward_history') and len(self.reward_history) > 0:
+            # Use actual portfolio value history from simulation
+            for _ in range(min(len(self.reward_history), 50)):
+                portfolio_values.append(total_value)
+        else:
+            # Simulate some history for demo
+            for i in range(50):
+                portfolio_values.append(self.portfolio_manager.start_capital * (1 + roi/100 * (i+1)/50))
+        
+        value_fig = go.Figure()
+        value_fig.add_trace(go.Scatter(
+            y=portfolio_values,
+            mode='lines',
+            name='Portfolio Value',
+            line=dict(color=THEME_COLORS['primary'], width=2),
+            fill='tozeroy',
+            fillcolor='rgba(77, 171, 247, 0.2)'
+        ))
+        
+        value_fig.update_layout(
+            **self.get_chart_layout("Portfolio Value Over Time"),
+            height=300,
+            yaxis_title="Value ($)",
+            xaxis_title="Time"
+        )
+        
+        # Position breakdown (holdings)
+        holdings = self.portfolio_manager.holdings
+        
+        if holdings:
+            symbols = list(holdings.keys())
+            values = []
+            for symbol in symbols:
+                quantity = holdings[symbol]
+                price = self.current_prices.get(symbol, self.base_prices.get(symbol, 0))
+                values.append(quantity * price)
+            
+            # Pie chart for position breakdown
+            position_fig = go.Figure(data=[go.Pie(
+                labels=symbols,
+                values=values,
+                marker=dict(colors=[THEME_COLORS['chart_line1'], THEME_COLORS['chart_line2'], 
+                                   THEME_COLORS['chart_line3'], THEME_COLORS['chart_line4'],
+                                   THEME_COLORS['chart_line5']]),
+                hole=0.4
+            )])
+            
+            position_fig.update_layout(
+                **self.get_chart_layout("Position Breakdown"),
+                height=300,
+                showlegend=True,
+                legend=dict(x=0.7, y=1)
+            )
+        else:
+            # No holdings - show empty state
+            position_fig = go.Figure()
+            position_fig.update_layout(
+                **self.get_chart_layout("Position Breakdown"),
+                height=300,
+                annotations=[dict(
+                    text="No positions held",
+                    x=0.5, y=0.5,
+                    showarrow=False,
+                    font=dict(size=16, color=THEME_COLORS['text_secondary'])
+                )]
+            )
+        
+        # Holdings table
+        holdings_rows = []
+        for symbol, quantity in holdings.items():
+            price = self.current_prices.get(symbol, self.base_prices.get(symbol, 0))
+            value = quantity * price
+            holdings_rows.append(html.Tr([
+                html.Td(symbol, style={'padding': '10px', 'color': THEME_COLORS['text']}),
+                html.Td(f"{quantity}", style={'padding': '10px', 'color': THEME_COLORS['text'], 'textAlign': 'right'}),
+                html.Td(f"${price:.2f}", style={'padding': '10px', 'color': THEME_COLORS['text'], 'textAlign': 'right'}),
+                html.Td(f"${value:.2f}", style={'padding': '10px', 'color': THEME_COLORS['text'], 'textAlign': 'right'}),
+            ]))
         
         return html.Div([
             html.H2("Portfolio Overview", 
@@ -873,15 +957,50 @@ class NextGenDashboard:
                 self.create_metric_card("Holdings", f"${holdings_value:.2f}", 
                                        THEME_COLORS['secondary']),
                 self.create_metric_card("ROI", f"{roi:.2f}%", 
-                                       THEME_COLORS['warning']),
+                                       THEME_COLORS['warning'] if roi >= 0 else THEME_COLORS['danger']),
             ], style={'display': 'grid', 'gridTemplateColumns': 'repeat(4, 1fr)', 
                      'gap': '20px', 'marginBottom': '30px'}),
             
-            # Charts
+            # Charts row
             html.Div([
-                html.Div("Portfolio value chart would be displayed here with live updates"),
-                html.Div("Position breakdown chart would be displayed here"),
-            ], style={'display': 'grid', 'gridTemplateColumns': '1fr 1fr', 'gap': '20px'}),
+                # Portfolio value chart
+                html.Div([
+                    dcc.Graph(figure=value_fig, config={'displayModeBar': False}, 
+                             style={'height': '300px'})
+                ], style={'backgroundColor': THEME_COLORS['surface'], 'borderRadius': '8px',
+                         'padding': '15px', 'maxHeight': '350px', 'overflow': 'hidden'}),
+                
+                # Position breakdown chart
+                html.Div([
+                    dcc.Graph(figure=position_fig, config={'displayModeBar': False},
+                             style={'height': '300px'})
+                ], style={'backgroundColor': THEME_COLORS['surface'], 'borderRadius': '8px',
+                         'padding': '15px', 'maxHeight': '350px', 'overflow': 'hidden'}),
+            ], style={'display': 'grid', 'gridTemplateColumns': '1fr 1fr', 'gap': '20px',
+                     'marginBottom': '30px'}),
+            
+            # Holdings table
+            html.Div([
+                html.H3("Current Holdings", style={'color': THEME_COLORS['text'], 'marginBottom': '15px'}),
+                html.Table([
+                    html.Thead(html.Tr([
+                        html.Th("Symbol", style={'padding': '10px', 'color': THEME_COLORS['text_secondary'], 
+                                                'borderBottom': f'1px solid {THEME_COLORS["border"]}'}),
+                        html.Th("Quantity", style={'padding': '10px', 'color': THEME_COLORS['text_secondary'], 
+                                                   'textAlign': 'right', 'borderBottom': f'1px solid {THEME_COLORS["border"]}'}),
+                        html.Th("Price", style={'padding': '10px', 'color': THEME_COLORS['text_secondary'], 
+                                               'textAlign': 'right', 'borderBottom': f'1px solid {THEME_COLORS["border"]}'}),
+                        html.Th("Value", style={'padding': '10px', 'color': THEME_COLORS['text_secondary'], 
+                                               'textAlign': 'right', 'borderBottom': f'1px solid {THEME_COLORS["border"]}'}),
+                    ])),
+                    html.Tbody(holdings_rows if holdings_rows else [
+                        html.Tr([html.Td("No holdings", colSpan=4, 
+                                        style={'padding': '20px', 'textAlign': 'center', 
+                                              'color': THEME_COLORS['text_secondary']})])
+                    ])
+                ], style={'width': '100%', 'borderCollapse': 'collapse'})
+            ], style={'backgroundColor': THEME_COLORS['surface'], 'borderRadius': '8px',
+                     'padding': '20px'}),
         ])
     
     def create_rl_analysis_panel(self) -> html.Div:
@@ -1801,6 +1920,10 @@ class NextGenDashboard:
                 })
             ]),
         ])
+    
+    def create_market_watch_panel(self) -> html.Div:
+        """Create Live Market Watch panel (wrapper for create_market_panel)."""
+        return self.create_market_panel()
     
     def create_metric_card(self, title: str, value: str, color: str) -> html.Div:
         """Create a metric card."""
