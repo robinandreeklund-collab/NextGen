@@ -3219,16 +3219,20 @@ class NextGenDashboard:
                     
                     # Make trading decision using RL controllers
                     # RLController has agents dict with PPOAgent instances with state_dim=10
-                    # We need to pad our 4-feature state to match the agent's expected dimensions
+                    # DQN uses the full 12-dimensional state, PPO uses first 10 (or padded to 10)
                     ppo_agent = list(self.rl_controller.agents.values())[0] if self.rl_controller.agents else None
                     if ppo_agent:
-                        # Pad state to match agent's state_dim (10 dimensions)
-                        padded_state = np.array(state + [0.0] * (ppo_agent.state_dim - len(state)))
-                        ppo_action_idx = ppo_agent.select_action(padded_state)
+                        # PPO expects state_dim from config (typically 10)
+                        # Take first N dimensions or pad if needed
+                        if len(state) >= ppo_agent.state_dim:
+                            ppo_state = np.array(state[:ppo_agent.state_dim])
+                        else:
+                            ppo_state = np.array(state + [0.0] * (ppo_agent.state_dim - len(state)))
+                        ppo_action_idx = ppo_agent.select_action(ppo_state)
                     else:
                         ppo_action_idx = 2  # Default to HOLD
                     
-                    # DQN controller has select_action() method
+                    # DQN controller uses the full 12-dimensional state
                     dqn_action_idx = self.dqn_controller.select_action(np.array(state))
                     
                     action_map = ['BUY', 'SELL', 'HOLD']
@@ -3322,12 +3326,30 @@ class NextGenDashboard:
                     reward = portfolio_value_after - portfolio_value
                     
                     # Train DQN with experience (Sprint 8)
-                    # Calculate next state after action
+                    # Recalculate next state after action (using same 12-dimensional structure)
+                    # Position size and cash ratio may have changed after the action
+                    position_size_after = 0.0
+                    if selected_symbol in self.portfolio_manager.positions:
+                        position_qty_after = self.portfolio_manager.positions[selected_symbol]['quantity']
+                        position_value_after = position_qty_after * current_price
+                        position_size_after = position_value_after / portfolio_value_after if portfolio_value_after > 0 else 0
+                    
+                    cash_ratio_after = self.portfolio_manager.cash / portfolio_value_after if portfolio_value_after > 0 else 1.0
+                    
+                    # Next state is similar to current state but with updated portfolio context
                     next_state = [
-                        (current_price - prices[-2]) / prices[-2] if len(prices) >= 2 else 0,
-                        rsi / 100,
-                        macd / 10,
-                        portfolio_value_after / 1000.0
+                        price_change,           # Same as before
+                        rsi / 100,             # Same as before
+                        macd / 10,             # Same as before
+                        atr / current_price,   # Same as before
+                        bb_position,           # Same as before
+                        min(volume_ratio, 3.0) / 3.0,  # Same as before
+                        max(-0.2, min(0.2, sma_distance)),  # Same as before
+                        max(-1, min(1, volume_trend)),      # Same as before
+                        max(-0.5, min(0.5, price_momentum)), # Same as before
+                        min(volatility_index, 0.1) / 0.1,   # Same as before
+                        position_size_after,    # Updated after action
+                        cash_ratio_after       # Updated after action
                     ]
                     
                     # Store transition in DQN replay buffer
