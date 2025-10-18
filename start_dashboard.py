@@ -2398,15 +2398,17 @@ class NextGenDashboard:
             self.load_adaptive_parameters()
         
         config = self.adaptive_params_config
-        adaptive_params = config.get('adaptive_parameters', {})
-        reward_tuner_params = config.get('reward_tuner_parameters', {})
         
-        # Filter out metadata keys to get only actual parameters
-        metadata_keys = {'description', 'controller', 'agent_type', 'logging_module', 'visualization_module', 'versioning_module'}
-        adaptive_params = {k: v for k, v in adaptive_params.items() if k not in metadata_keys and isinstance(v, dict) and 'module' in v}
-        reward_tuner_params = {k: v for k, v in reward_tuner_params.items() if isinstance(v, dict) and 'module' in v}
+        # Helper function to filter out metadata and keep only actual parameters
+        def filter_params(params_dict):
+            """Filter dict to keep only entries that are actual parameters (have 'module' field)."""
+            return {k: v for k, v in params_dict.items() if isinstance(v, dict) and 'module' in v}
         
-        # Combine all parameters (13 module params + 3 reward tuner params = 16 total)
+        # Get actual parameters (13 module params + 3 reward tuner params = 16 total)
+        adaptive_params = filter_params(config.get('adaptive_parameters', {}))
+        reward_tuner_params = filter_params(config.get('reward_tuner_parameters', {}))
+        
+        # Combine all parameters
         all_params = {**adaptive_params, **reward_tuner_params}
         
         # Get real current values from modules
