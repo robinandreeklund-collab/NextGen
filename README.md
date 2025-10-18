@@ -4,6 +4,17 @@ Ett självreflekterande, modulärt och RL-drivet handelssystem byggt för transp
 
 ## 🎯 Snabbstart
 
+### 🆕 Kör Fullskalig Dashboard (Rekommenderat)
+```bash
+# Demo-läge (simulerad data)
+python start_demo.py
+
+# Live-läge (WebSocket streaming)
+python start_live.py
+
+# Öppna http://localhost:8050 i webbläsaren
+```
+
 ### Kör Analyzer Debug Dashboard
 ```bash
 python analyzer_debug.py
@@ -19,6 +30,228 @@ python sim_test.py
 ```bash
 pytest tests/ -v
 ```
+
+---
+
+## 📊 Fullskalig NextGen Dashboard
+
+**start_demo.py / start_live.py** - Omfattande full-scale dashboard för hela NextGen projektet.
+
+### Översikt
+
+Fullskalig dashboard byggd enligt `docs/dashboard_structure_sprint8.yaml` med modern design inspirerad av "Abstire Dashboard". Innehåller alla 10 huvudpaneler för komplett systemövervakning och kontroll.
+
+### Starta Dashboard
+
+**Demo-läge (Simulerad data):**
+```bash
+python start_demo.py
+# Startar med mock/replay data, ingen WebSocket-anslutning krävs
+```
+
+**Live-läge (Real-time data):**
+```bash
+python start_live.py
+# Ansluter till Finnhub WebSocket för live marknadsdata
+# Kräver giltig Finnhub API-nyckel
+```
+
+Öppna sedan `http://localhost:8050` i webbläsaren.
+
+### Dashboard-paneler
+
+Dashboard innehåller 10 huvudpaneler baserade på YAML-specifikationerna:
+
+#### 1. **Portfolio**
+- Portföljöversikt med total värde, cash, holdings och ROI
+- Realtidsuppdateringar av portföljvärde
+- Positionsvisualisering
+- P&L-tracking
+
+#### 2. **RL Agent Analysis**
+- Hybrid RL-jämförelse: PPO vs DQN prestanda
+- Reward flow-visualisering (base → tuned → PPO/DQN)
+- DQN-specifika metriker (epsilon, loss, buffer)
+- Epsilon decay schedule
+- Training progress för båda agentsystem
+
+#### 3. **Agent Evolution & GAN**
+- GAN generator/discriminator loss-kurvor
+- Kandidatacceptans-gauge
+- Agentevolutions-tidslinje
+- Candidate distribution histogram
+- Deployment timeline för nya agenter
+
+#### 4. **Temporal Drift & GNN**
+- GNN pattern detection (8 mönstertyper)
+- Pattern confidence charts
+- Temporal graph visualization
+- Pattern timeline med Gantt-diagram
+- Success rate per pattern
+- Temporal insights och rekommendationer
+
+#### 5. **Feedback & Reward Loop**
+- Reward transformation visualization
+- Base vs tuned reward comparison
+- Volatility och overfitting tracking
+- Feedback flow mellan moduler
+- Transformation ratio över tid
+
+#### 6. **CI Test Results**
+- Test suite overview (314 tester)
+- Pass/fail metrics
+- Coverage tracking (85%+)
+- Test results breakdown
+- Sprint-specific test status
+
+#### 7. **RL Conflict Monitor**
+- PPO vs DQN konfliktfrekvens
+- Resolution strategy breakdown
+- Conflict details table
+- Parameter conflicts vs decision conflicts
+- Outcome tracking för olika resolutions
+
+#### 8. **Decision & Consensus**
+- Consensus model visualization
+- Voting matrix heatmap
+- Decision robustness metrics
+- Agent agreement rates
+- Consensus confidence över tid
+
+#### 9. **Adaptive Settings**
+- 16+ adaptiva parametrar live-tracking
+- Parameter evolution över tid
+- Manuella overrides (sliders)
+- DQN epsilon control
+- GAN threshold adjustment
+- Parameter groups visualization
+
+#### 10. **Live Market Watch**
+- Real-time prisdiagram för alla symboler
+- Tekniska indikatorer (RSI, MACD, ATR)
+- Volume och trend analysis
+- Market sentiment indicators
+
+### Design och Tema
+
+Dashboard använder ett modernt dark theme inspirerat av "Abstire Dashboard" mockup:
+
+**Färgschema:**
+- **Background:** `#0a0e1a` (djup mörk blå)
+- **Surface:** `#141b2d` (mörk panel)
+- **Primary:** `#4dabf7` (ljusblå för accenter)
+- **Secondary:** `#845ef7` (lila för sekundära element)
+- **Success:** `#51cf66` (grön för positiva värden)
+- **Warning:** `#ffd43b` (gul för varningar)
+- **Danger:** `#ff6b6b` (röd för fel/kritiska värden)
+
+**Komponenter:**
+- **Top Header:** Systemstatus, mode (Demo/Live), realtidsklocka
+- **Sidebar:** Quick stats, module status, navigation, Start/Stop knappar, statusindikator
+- **Tab Navigation:** 10 paneler med smooth övergångar
+- **Responsive Design:** Funkar på desktop, tablet och mobile
+
+### Funktioner
+
+**Realtidsuppdateringar:**
+- Auto-refresh var 2:a sekund
+- WebSocket streaming i live-läge
+- Smooth chart animations
+
+**Interaktiva kontroller:**
+- Start/stop simulation
+- Parameter overrides via sliders
+- Tab navigation mellan paneler
+- Expandable charts
+
+**Modulär arkitektur:**
+- Separata paneler för varje systemdel
+- Återanvändbara chart-komponenter
+- Enhetlig styling via tema-system
+
+### Arkitektur
+
+Dashboard implementerar följande struktur:
+
+```
+start_demo.py / start_live.py
+    ↓
+NextGenDashboard (start_dashboard.py)
+    ├── Module Initialization (Sprint 1-8)
+    ├── Layout Creation
+    │   ├── Top Header
+    │   ├── Sidebar
+    │   ├── Control Panel
+    │   └── Tab Content (10 paneler)
+    ├── Callbacks
+    │   ├── Tab rendering
+    │   ├── Start/stop control
+    │   ├── Auto-refresh
+    │   └── Sidebar updates
+    └── Simulation Loop (demo) / WebSocket (live)
+```
+
+### YAML-referenser
+
+Dashboard implementerar specifikationer från:
+- `docs/dashboard_structure_sprint8.yaml` - Huvudstruktur och paneler
+- `docs/adaptive_parameters_sprint8.yaml` - Adaptiva parametrar
+- `docs/sprint_8.yaml` - Sprint 8 funktioner
+- `docs/ci_pipeline_sprint8.yaml` - CI/CD integration
+
+### Teknisk Stack
+
+- **Backend:** Python 3.12+
+- **Dashboard:** Dash 3.2+ och Plotly 6.3+
+- **Styling:** Inline CSS med tema-system
+- **Real-time:** WebSocket-client för live data
+- **Threading:** Async simulation loop
+
+### Användningsexempel
+
+**Starta i demo-läge och övervaka systemet:**
+```bash
+# Terminal 1: Starta dashboard
+python start_demo.py
+
+# Terminal 2: Öppna browser
+# Navigera till http://localhost:8050
+# Simuleringen startar automatiskt i demo-läge
+# Växla mellan paneler för att se olika aspekter
+```
+
+**Live trading med WebSocket:**
+```bash
+# Sätt API-nyckel (om inte redan i koden)
+export FINNHUB_API_KEY="your_api_key_here"
+
+# Starta live dashboard
+python start_live.py
+
+# Dashboard ansluter automatiskt till Finnhub WebSocket
+# Real-time marknadsdata visas i Live Market Watch panel
+```
+
+### Troubleshooting
+
+**Dashboard startar inte:**
+```bash
+# Kontrollera dependencies
+pip install -r requirements.txt
+
+# Testa import
+python -c "from start_dashboard import NextGenDashboard; print('OK')"
+```
+
+**Inga data visas:**
+- Klicka "Start" knappen i control panel
+- Kontrollera att simulation loop körs (check console output)
+- Verifiera att moduler är initialiserade korrekt
+
+**WebSocket fel i live-läge:**
+- Kontrollera Finnhub API-nyckel
+- Verifiera internet-anslutning
+- Kolla att Finnhub-tjänsten är tillgänglig
 
 ---
 
@@ -264,18 +497,28 @@ python websocket_test.py
 
 ```
 NextGen/
-├── analyzer_debug.py           # 🆕 Debug dashboard
-├── sim_test.py                 # Simulerad trading
-├── websocket_test.py           # Live trading med Finnhub
-├── modules/                    # Alla kärnmoduler (26 stycken)
-│   ├── reward_tuner.py         # Sprint 4.4: Reward transformation
-│   ├── rl_controller.py        # Sprint 2, 4.2: PPO-agenter
-│   ├── consensus_engine.py     # Sprint 5: Konsensusbeslut
-│   ├── timespan_tracker.py     # Sprint 6: Timeline-analys
+├── start_dashboard.py           # 🆕 Fullskalig dashboard (main)
+├── start_demo.py                # 🆕 Starta i demo-läge
+├── start_live.py                # 🆕 Starta i live-läge
+├── analyzer_debug.py            # Debug dashboard (legacy)
+├── sim_test.py                  # Simulerad trading
+├── websocket_test.py            # Live trading med Finnhub
+├── modules/                     # Alla kärnmoduler (29 stycken)
+│   ├── reward_tuner.py          # Sprint 4.4: Reward transformation
+│   ├── rl_controller.py         # Sprint 2, 4.2: PPO-agenter
+│   ├── dqn_controller.py        # Sprint 8: DQN RL
+│   ├── gan_evolution_engine.py  # Sprint 8: GAN evolution
+│   ├── gnn_timespan_analyzer.py # Sprint 8: GNN temporal analysis
+│   ├── consensus_engine.py      # Sprint 5: Konsensusbeslut
+│   ├── timespan_tracker.py      # Sprint 6: Timeline-analys
 │   └── ...
-├── dashboards/                 # Dash-visualiseringar
-├── tests/                      # 214 tester (100% pass rate)
-├── docs/                       # Dokumentation och YAML-specs
+├── dashboards/                  # Dash-visualiseringar (komponenter)
+├── tests/                       # 332 tester (100% pass rate)
+├── docs/                        # Dokumentation och YAML-specs
+│   ├── dashboard_structure_sprint8.yaml  # Dashboard spec
+│   ├── adaptive_parameters_sprint8.yaml  # Parameter spec
+│   ├── sprint_8.yaml                     # Sprint 8 overview
+│   └── ...
 └── requirements.txt
 ```
 
@@ -514,6 +757,58 @@ Sprint 8 integrerar avancerade deep learning-tekniker för förbättrad beslutsf
 - Automatiska tester vid varje push
 - 100% test pass rate krävs
 - Coverage tracking
+
+---
+
+## 📚 YAML-specifikationer och Artefakter
+
+Fullskalig dashboard implementerar följande YAML-specifikationer:
+
+### Dashboard-struktur
+- **`docs/dashboard_structure_sprint8.yaml`**
+  - Definierar alla 10 paneler och deras komponenter
+  - Layout-specifikationer (grid, columns, etc.)
+  - Refresh rates och data sources
+  - Responsive design guidelines
+  - Accessibility features
+
+### Adaptive Parameters
+- **`docs/adaptive_parameters_sprint8.yaml`**
+  - DQN-parametrar (learning_rate, epsilon, batch_size, etc.)
+  - GAN-parametrar (generator_lr, discriminator_lr, latent_dim)
+  - GNN-parametrar (num_layers, hidden_dim, attention_heads)
+  - Hybrid RL-parametrar (weights, conflict resolution)
+
+### Sprint Specifikationer
+- **`docs/sprint_8.yaml`**
+  - Sprint 8 goals och features
+  - Hybrid RL architecture
+  - GAN evolution strategy
+  - GNN temporal analysis
+  - Test requirements
+
+### CI/CD Pipeline
+- **`docs/ci_pipeline_sprint8.yaml`**
+  - Test suite struktur (314 tester)
+  - Stages: setup, lint, unit tests, integration, regression
+  - Coverage requirements (85%+)
+  - Performance metrics
+
+### Övriga Referenser
+- **`docs/consensus_models.yaml`** - Konsensusmodeller
+- **`docs/feedback_loop_sprint1_7.yaml`** - Feedback flow
+- **`docs/functions.yaml`** - Modul-funktioner
+- **`docs/indicator_map.yaml`** - Tekniska indikatorer
+
+### Mockup och Design
+
+Dashboard designen är inspirerad av "Abstire Dashboard" mockup med:
+- Modern dark theme (#0a0e1a background)
+- Blå/lila färgschema (#4dabf7, #845ef7)
+- Card-baserad layout
+- Sidebar navigation
+- Real-time updates
+- Responsive grid system
 
 ---
 
