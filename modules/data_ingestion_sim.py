@@ -182,7 +182,7 @@ class DataIngestionSim:
         return self.symbols.copy()
     
     def reset_prices(self) -> None:
-        """Återställer priser till base values."""
+        """Resets prices to base values."""
         self.current_prices = {symbol: self.base_prices.get(symbol, 100.0) 
                                for symbol in self.symbols}
         self.price_trends = {symbol: 0.0 for symbol in self.symbols}
