@@ -209,9 +209,6 @@ class NextGenDashboard:
                 
                 # Main content area (with margin for sidebar and header)
                 html.Div([
-                    # Control panel
-                    self.create_control_panel(),
-                    
                     # Main dashboard content (no tabs - navigation via sidebar)
                     html.Div(id='dashboard-content', children=self.create_dashboard_view(), 
                             style={'padding': '20px'}),
@@ -348,6 +345,53 @@ class NextGenDashboard:
                 self.create_sidebar_menu_item('📅', 'Events', 'events', False),
                 self.create_sidebar_menu_item('💹', 'Market', 'logs', False),
                 self.create_sidebar_menu_item('⚙️', 'Settings', 'settings', False),
+            ], style={'marginBottom': '20px'}),
+            
+            # Simulation controls (Start/Stop buttons)
+            html.Div([
+                html.Div("Simulation", style={
+                    'fontSize': '13px',
+                    'fontWeight': '600',
+                    'color': THEME_COLORS['text_secondary'],
+                    'marginBottom': '10px',
+                }),
+                html.Button('▶ Start', id='start-btn', n_clicks=0,
+                           style={
+                               'width': '100%',
+                               'padding': '10px',
+                               'marginBottom': '8px',
+                               'backgroundColor': THEME_COLORS['success'],
+                               'color': 'white',
+                               'border': 'none',
+                               'borderRadius': '6px',
+                               'cursor': 'pointer',
+                               'fontSize': '14px',
+                               'fontWeight': '500',
+                               'transition': 'opacity 0.2s',
+                           }),
+                html.Button('⬛ Stop', id='stop-btn', n_clicks=0,
+                           style={
+                               'width': '100%',
+                               'padding': '10px',
+                               'marginBottom': '10px',
+                               'backgroundColor': THEME_COLORS['danger'],
+                               'color': 'white',
+                               'border': 'none',
+                               'borderRadius': '6px',
+                               'cursor': 'pointer',
+                               'fontSize': '14px',
+                               'fontWeight': '500',
+                               'transition': 'opacity 0.2s',
+                           }),
+                html.Div(id='status-indicator', children='●  Stopped',
+                        style={
+                            'fontSize': '12px',
+                            'color': THEME_COLORS['text_secondary'],
+                            'textAlign': 'center',
+                            'padding': '8px',
+                            'backgroundColor': THEME_COLORS['surface_light'],
+                            'borderRadius': '4px',
+                        }),
             ], style={'marginBottom': 'auto'}),
             
             # Bottom: Parameter Slider Sync toggle
@@ -427,21 +471,6 @@ class NextGenDashboard:
         })
     
     
-    def create_control_panel(self) -> html.Div:
-        """Create control panel with start/stop buttons."""
-        return html.Div([
-            html.Button('Start', id='start-btn', n_clicks=0,
-                       style=self.get_button_style(THEME_COLORS['success'])),
-            html.Button('Stop', id='stop-btn', n_clicks=0,
-                       style=self.get_button_style(THEME_COLORS['danger'])),
-            html.Span(id='status-indicator', children='Status: Stopped',
-                     style={'marginLeft': '20px', 'fontSize': '14px', 
-                           'color': THEME_COLORS['text_secondary']}),
-        ], style={
-            'padding': '15px 20px',
-            'backgroundColor': THEME_COLORS['surface_light'],
-            'borderBottom': f'1px solid {THEME_COLORS["border"]}',
-        })
     
     def get_button_style(self, bg_color: str) -> dict:
         """Get consistent button styling."""
@@ -554,18 +583,20 @@ class NextGenDashboard:
         def control_simulation(start_clicks, stop_clicks):
             ctx = dash.callback_context
             if not ctx.triggered:
-                return 'Status: Stopped'
+                return '● Stopped'
             
             button_id = ctx.triggered[0]['prop_id'].split('.')[0]
             
             if button_id == 'start-btn' and not self.running:
                 self.start_simulation()
-                return f'Status: Running ({"Live" if self.live_mode else "Demo"})'
+                return f'● Running ({"Live" if self.live_mode else "Demo"})'
             elif button_id == 'stop-btn' and self.running:
                 self.stop_simulation()
-                return 'Status: Stopped'
+                return '● Stopped'
             
-            return f'Status: {"Running" if self.running else "Stopped"}'
+            status = 'Running' if self.running else 'Stopped'
+            mode = f' ({"Live" if self.live_mode else "Demo"})' if self.running else ''
+            return f'● {status}{mode}'
         
     def create_dashboard_view(self) -> html.Div:
         """Create main dashboard view with all key metrics and charts."""
