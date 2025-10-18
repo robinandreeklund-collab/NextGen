@@ -139,6 +139,7 @@ class NextGenDashboard:
         self.gnn_pattern_history = []
         self.conflict_history = []
         self.decision_history = []
+        self.execution_history = []  # Track all executed trades
         
         # Setup Dash app
         self.app = dash.Dash(__name__, suppress_callback_exceptions=True)
@@ -349,6 +350,7 @@ class NextGenDashboard:
                 self.create_sidebar_menu_item('💼', 'Portfolio', 'portfolio', False),
                 self.create_sidebar_menu_item('🤖', 'Agents', 'agents', False),
                 self.create_sidebar_menu_item('🎁', 'Rewards', 'rewards', False),
+                self.create_sidebar_menu_item('📋', 'Executions', 'executions', False),
                 self.create_sidebar_menu_item('🧪', 'Testing', 'testing', False),
                 self.create_sidebar_menu_item('📈', 'Drift', 'drift', False),
                 self.create_sidebar_menu_item('⚠️', 'Conflicts', 'conflicts', False),
@@ -570,6 +572,8 @@ class NextGenDashboard:
                 return self.create_rl_analysis_panel(), 'agents'
             elif view_id == 'rewards':
                 return self.create_feedback_panel(), 'rewards'
+            elif view_id == 'executions':
+                return self.create_execution_panel(), 'executions'
             elif view_id == 'testing':
                 return self.create_ci_tests_panel(), 'testing'
             elif view_id == 'drift':
@@ -620,6 +624,8 @@ class NextGenDashboard:
                 return self.create_rl_analysis_panel(), current_view
             elif current_view == 'rewards':
                 return self.create_feedback_panel(), current_view
+            elif current_view == 'executions':
+                return self.create_execution_panel(), current_view
             elif current_view == 'testing':
                 return self.create_ci_tests_panel(), current_view
             elif current_view == 'drift':
@@ -1717,6 +1723,153 @@ class NextGenDashboard:
             ], style={'display': 'flex', 'gap': '20px'}),
         ])
     
+    def create_execution_panel(self) -> html.Div:
+        """Create Execution History panel to track all buy/sell transactions."""
+        import plotly.graph_objs as go
+        
+        # Get recent executions
+        recent_executions = self.execution_history[-50:] if len(self.execution_history) > 0 else []
+        
+        # Calculate summary metrics
+        total_executions = len(self.execution_history)
+        buy_count = sum(1 for e in self.execution_history if e.get('action') == 'BUY')
+        sell_count = sum(1 for e in self.execution_history if e.get('action') == 'SELL')
+        total_cost = sum(e.get('cost', 0) for e in self.execution_history)
+        avg_slippage = sum(e.get('slippage', 0) for e in self.execution_history) / max(1, total_executions)
+        
+        # Execution timeline chart
+        if recent_executions:
+            timestamps = [e['timestamp'] for e in recent_executions]
+            costs = [e.get('cost', 0) for e in recent_executions]
+            colors = [THEME_COLORS['success'] if e.get('action') == 'BUY' else THEME_COLORS['danger'] 
+                     for e in recent_executions]
+            
+            timeline_fig = go.Figure()
+            timeline_fig.add_trace(go.Bar(
+                x=list(range(len(timestamps))),
+                y=costs,
+                marker_color=colors,
+                text=[f"{e.get('action')} {e.get('symbol')}" for e in recent_executions],
+                hovertemplate='<b>%{text}</b><br>Cost: $%{y:.2f}<extra></extra>'
+            ))
+            
+            timeline_fig.update_layout(
+                title="Execution Timeline (Last 50)",
+                plot_bgcolor=THEME_COLORS['background'],
+                paper_bgcolor=THEME_COLORS['surface'],
+                font=dict(color=THEME_COLORS['text']),
+                margin=dict(l=50, r=20, t=50, b=50),
+                height=300,
+                xaxis_title="Execution #",
+                yaxis_title="Cost ($)",
+                xaxis=dict(gridcolor=THEME_COLORS['border']),
+                yaxis=dict(gridcolor=THEME_COLORS['border']),
+                showlegend=False
+            )
+        else:
+            timeline_fig = go.Figure()
+            timeline_fig.update_layout(
+                title="No executions yet",
+                plot_bgcolor=THEME_COLORS['background'],
+                paper_bgcolor=THEME_COLORS['surface'],
+                font=dict(color=THEME_COLORS['text']),
+                height=300
+            )
+        
+        return html.Div([
+            html.H2("Execution History", 
+                   style={'color': THEME_COLORS['primary'], 'marginBottom': '30px', 'fontSize': '28px'}),
+            
+            # Summary metrics
+            html.Div([
+                self.create_metric_card("Total Executions", str(total_executions), THEME_COLORS['primary']),
+                self.create_metric_card("Buy Orders", str(buy_count), THEME_COLORS['success']),
+                self.create_metric_card("Sell Orders", str(sell_count), THEME_COLORS['danger']),
+                self.create_metric_card("Avg Slippage", f"{avg_slippage:.4f}", THEME_COLORS['warning']),
+            ], style={'display': 'grid', 'gridTemplateColumns': 'repeat(4, 1fr)', 
+                     'gap': '20px', 'marginBottom': '30px'}),
+            
+            # Timeline chart
+            html.Div([
+                dcc.Graph(figure=timeline_fig, config={'displayModeBar': False}, style={'height': '300px'}),
+            ], style={'marginBottom': '30px'}),
+            
+            # Execution table
+            html.Div([
+                html.H3("Recent Executions", 
+                       style={'fontSize': '18px', 'marginBottom': '15px', 'color': THEME_COLORS['text']}),
+                html.Div([
+                    html.Table([
+                        html.Thead(html.Tr([
+                            html.Th("Time", style={'textAlign': 'left', 'padding': '12px', 
+                                                  'color': THEME_COLORS['text_secondary'], 'fontSize': '12px'}),
+                            html.Th("Agent", style={'textAlign': 'left', 'padding': '12px',
+                                                   'color': THEME_COLORS['text_secondary'], 'fontSize': '12px'}),
+                            html.Th("Action", style={'textAlign': 'left', 'padding': '12px',
+                                                    'color': THEME_COLORS['text_secondary'], 'fontSize': '12px'}),
+                            html.Th("Symbol", style={'textAlign': 'left', 'padding': '12px',
+                                                    'color': THEME_COLORS['text_secondary'], 'fontSize': '12px'}),
+                            html.Th("Quantity", style={'textAlign': 'right', 'padding': '12px',
+                                                      'color': THEME_COLORS['text_secondary'], 'fontSize': '12px'}),
+                            html.Th("Price", style={'textAlign': 'right', 'padding': '12px',
+                                                   'color': THEME_COLORS['text_secondary'], 'fontSize': '12px'}),
+                            html.Th("Cost", style={'textAlign': 'right', 'padding': '12px',
+                                                  'color': THEME_COLORS['text_secondary'], 'fontSize': '12px'}),
+                            html.Th("Slippage", style={'textAlign': 'right', 'padding': '12px',
+                                                      'color': THEME_COLORS['text_secondary'], 'fontSize': '12px'}),
+                        ])),
+                        html.Tbody([
+                            html.Tr([
+                                html.Td(ex.get('timestamp', 'N/A'), 
+                                       style={'padding': '12px', 'color': THEME_COLORS['text']}),
+                                html.Td(ex.get('agent', 'N/A'),
+                                       style={'padding': '12px', 'color': THEME_COLORS['text']}),
+                                html.Td(
+                                    html.Span(ex.get('action', 'N/A'), 
+                                             style={'padding': '4px 12px', 'borderRadius': '4px',
+                                                   'backgroundColor': THEME_COLORS['success'] if ex.get('action') == 'BUY' 
+                                                   else THEME_COLORS['danger'],
+                                                   'color': 'white', 'fontSize': '12px', 'fontWeight': '600'}),
+                                    style={'padding': '12px'}
+                                ),
+                                html.Td(ex.get('symbol', 'N/A'),
+                                       style={'padding': '12px', 'color': THEME_COLORS['text'], 'fontWeight': '600'}),
+                                html.Td(f"{ex.get('quantity', 0):.2f}",
+                                       style={'padding': '12px', 'textAlign': 'right', 'color': THEME_COLORS['text']}),
+                                html.Td(f"${ex.get('price', 0):.2f}",
+                                       style={'padding': '12px', 'textAlign': 'right', 'color': THEME_COLORS['text']}),
+                                html.Td(f"${ex.get('cost', 0):.2f}",
+                                       style={'padding': '12px', 'textAlign': 'right', 
+                                             'color': THEME_COLORS['danger'] if ex.get('action') == 'BUY' 
+                                             else THEME_COLORS['success'], 'fontWeight': '600'}),
+                                html.Td(f"{ex.get('slippage', 0):.4f}",
+                                       style={'padding': '12px', 'textAlign': 'right', 
+                                             'color': THEME_COLORS['text_secondary']}),
+                            ], style={'borderBottom': f'1px solid {THEME_COLORS["border"]}'})
+                            for ex in reversed(recent_executions[-20:])  # Show last 20 executions
+                        ] if recent_executions else [
+                            html.Tr([
+                                html.Td("No executions yet", colSpan=8,
+                                       style={'padding': '20px', 'textAlign': 'center', 
+                                             'color': THEME_COLORS['text_secondary']})
+                            ])
+                        ])
+                    ], style={
+                        'width': '100%',
+                        'borderCollapse': 'collapse',
+                        'backgroundColor': THEME_COLORS['surface'],
+                        'borderRadius': '8px',
+                        'border': f'1px solid {THEME_COLORS["border"]}'
+                    })
+                ], style={'overflowX': 'auto'})
+            ], style={
+                'backgroundColor': THEME_COLORS['surface'],
+                'padding': '20px',
+                'borderRadius': '8px',
+                'border': f'1px solid {THEME_COLORS["border"]}'
+            }),
+        ])
+    
     def create_consensus_panel(self) -> html.Div:
         """Create Decision & Consensus panel."""
         # Get consensus data from consensus_engine
@@ -2198,11 +2351,13 @@ class NextGenDashboard:
                     state = [price_change, rsi / 100, macd / 10, portfolio_value / 1000.0]
                     
                     # Get PPO and DQN actions using correct API
-                    # RLController has agents dict with PPOAgent instances
-                    # PPOAgent has select_action() method
+                    # RLController has agents dict with PPOAgent instances with state_dim=10
+                    # We need to pad our 4-feature state to match the agent's expected dimensions
                     ppo_agent = list(self.rl_controller.agents.values())[0] if self.rl_controller.agents else None
                     if ppo_agent:
-                        ppo_action_idx = ppo_agent.select_action(np.array(state))
+                        # Pad state to match agent's state_dim (10 dimensions)
+                        padded_state = np.array(state + [0.0] * (ppo_agent.state_dim - len(state)))
+                        ppo_action_idx = ppo_agent.select_action(padded_state)
                     else:
                         ppo_action_idx = 2  # Default to HOLD
                     
@@ -2230,24 +2385,46 @@ class NextGenDashboard:
                         final_action = ppo_action
                     
                     # Execute trade
+                    execution_result = None
                     if final_action == 'BUY' and self.portfolio_manager.cash > current_price:
                         quantity = min(10, self.portfolio_manager.cash / current_price)
-                        self.execution_engine.execute_order({
+                        execution_result = self.execution_engine.execute_trade({
                             'symbol': selected_symbol,
                             'action': 'BUY',
                             'quantity': quantity,
-                            'price': current_price
+                            'current_price': current_price
                         })
+                        # Publish result to message_bus so portfolio_manager can update
+                        if execution_result and execution_result.get('success'):
+                            self.execution_engine.publish_result(execution_result)
                     elif final_action == 'SELL':
                         if selected_symbol in self.portfolio_manager.positions:
                             quantity = min(10, self.portfolio_manager.positions[selected_symbol]['quantity'])
                             if quantity > 0:
-                                self.execution_engine.execute_order({
+                                execution_result = self.execution_engine.execute_trade({
                                     'symbol': selected_symbol,
                                     'action': 'SELL',
                                     'quantity': quantity,
-                                    'price': current_price
+                                    'current_price': current_price
                                 })
+                                # Publish result to message_bus so portfolio_manager can update
+                                if execution_result and execution_result.get('success'):
+                                    self.execution_engine.publish_result(execution_result)
+                    
+                    # Track execution if trade was executed
+                    if execution_result and execution_result.get('success'):
+                        self.execution_history.append({
+                            'timestamp': datetime.now().strftime('%H:%M:%S'),
+                            'agent': 'PPO' if final_action == ppo_action else 'DQN',
+                            'action': final_action,
+                            'symbol': selected_symbol,
+                            'quantity': execution_result.get('quantity', 0),
+                            'price': execution_result.get('executed_price', current_price),
+                            'cost': execution_result.get('total_cost', 0),
+                            'slippage': execution_result.get('slippage', 0)
+                        })
+                        if len(self.execution_history) > 100:
+                            self.execution_history.pop(0)
                     
                     # Record decision with actual reward from portfolio
                     portfolio_value_after = self.portfolio_manager.get_portfolio_value(self.current_prices)
