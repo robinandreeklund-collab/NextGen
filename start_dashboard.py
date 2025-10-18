@@ -1987,10 +1987,10 @@ class NextGenDashboard:
                 if len(self.price_history[symbol]) > 100:
                     self.price_history[symbol].pop(0)
             
-            # Publish price updates to message bus
+            # Publish price updates to message bus via data_ingestion module
             for symbol in self.symbols:
-                self.message_bus.publish('price_update', {
-                    'symbol': symbol,
+                # Use data_ingestion.publish_market_data() method
+                self.data_ingestion.publish_market_data(symbol, {
                     'price': self.current_prices[symbol],
                     'timestamp': time.time(),
                     'change': ((self.current_prices[symbol] - self.base_prices[symbol]) / self.base_prices[symbol]) * 100
@@ -2025,9 +2025,17 @@ class NextGenDashboard:
                     price_change = (current_price - prices[-2]) / prices[-2] if len(prices) >= 2 else 0
                     state = [price_change, rsi / 100, macd / 10, portfolio_value / 1000.0]
                     
-                    # Get PPO and DQN actions
-                    ppo_action_idx = self.rl_controller.select_action(state)
-                    dqn_action_idx = self.dqn_controller.select_action(state)
+                    # Get PPO and DQN actions using correct API
+                    # RLController has agents dict with PPOAgent instances
+                    # PPOAgent has get_action() method, not select_action()
+                    ppo_agent = list(self.rl_controller.agents.values())[0] if self.rl_controller.agents else None
+                    if ppo_agent:
+                        ppo_action_idx = ppo_agent.get_action(np.array(state))
+                    else:
+                        ppo_action_idx = 2  # Default to HOLD
+                    
+                    # DQN controller has select_action() method
+                    dqn_action_idx = self.dqn_controller.select_action(np.array(state))
                     
                     action_map = ['BUY', 'SELL', 'HOLD']
                     ppo_action = action_map[ppo_action_idx]
@@ -2089,7 +2097,19 @@ class NextGenDashboard:
                 portfolio_value = self.portfolio_manager.get_portfolio_value(self.current_prices)
                 prev_value = self.reward_history['base'][-1] if self.reward_history['base'] else 1000.0
                 base_reward = portfolio_value - prev_value
-                tuned_reward = self.reward_tuner.transform_reward(base_reward) if hasattr(self, 'reward_tuner') else base_reward * 1.2
+                
+                # RewardTuner doesn't have transform_reward() method
+                # It subscribes to 'base_reward' topic and publishes 'tuned_reward'
+                # Publish base_reward and it will be automatically tuned
+                self.message_bus.publish('base_reward', {
+                    'reward': base_reward,
+                    'source': 'portfolio_manager',
+                    'portfolio_value': portfolio_value,
+                    'timestamp': time.time()
+                })
+                
+                # For dashboard display, apply simple tuning estimate
+                tuned_reward = base_reward * 1.2
                 
                 self.reward_history['base'].append(base_reward)
                 self.reward_history['tuned'].append(tuned_reward)
