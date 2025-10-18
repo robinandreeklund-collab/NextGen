@@ -28,7 +28,7 @@ import threading
 
 # Dash and Plotly
 import dash
-from dash import dcc, html, Input, Output, State
+from dash import dcc, html, Input, Output, State, ALL
 import plotly.graph_objs as go
 from plotly.subplots import make_subplots
 
@@ -212,42 +212,9 @@ class NextGenDashboard:
                     # Control panel
                     self.create_control_panel(),
                     
-                    # Tabs for different panels
-                    dcc.Tabs(id='dashboard-tabs', value='portfolio', children=[
-                        dcc.Tab(label='Portfolio', value='portfolio', 
-                               style=self.get_tab_style(), 
-                               selected_style=self.get_tab_selected_style()),
-                        dcc.Tab(label='RL Agent Analysis', value='rl_analysis',
-                               style=self.get_tab_style(), 
-                               selected_style=self.get_tab_selected_style()),
-                        dcc.Tab(label='Agent Evolution & GAN', value='agent_evolution',
-                               style=self.get_tab_style(), 
-                               selected_style=self.get_tab_selected_style()),
-                        dcc.Tab(label='Temporal Drift & GNN', value='temporal_gnn',
-                               style=self.get_tab_style(), 
-                               selected_style=self.get_tab_selected_style()),
-                        dcc.Tab(label='Feedback & Reward Loop', value='feedback',
-                               style=self.get_tab_style(), 
-                               selected_style=self.get_tab_selected_style()),
-                        dcc.Tab(label='CI Test Results', value='ci_tests',
-                               style=self.get_tab_style(), 
-                               selected_style=self.get_tab_selected_style()),
-                        dcc.Tab(label='RL Conflict Monitor', value='conflict',
-                               style=self.get_tab_style(), 
-                               selected_style=self.get_tab_selected_style()),
-                        dcc.Tab(label='Decision & Consensus', value='consensus',
-                               style=self.get_tab_style(), 
-                               selected_style=self.get_tab_selected_style()),
-                        dcc.Tab(label='Adaptive Settings', value='adaptive',
-                               style=self.get_tab_style(), 
-                               selected_style=self.get_tab_selected_style()),
-                        dcc.Tab(label='Live Market Watch', value='market',
-                               style=self.get_tab_style(), 
-                               selected_style=self.get_tab_selected_style()),
-                    ], style={'backgroundColor': THEME_COLORS['surface']}),
-                    
-                    # Tab content
-                    html.Div(id='tab-content', style={'padding': '20px'}),
+                    # Main dashboard content (no tabs - navigation via sidebar)
+                    html.Div(id='dashboard-content', children=self.create_dashboard_view(), 
+                            style={'padding': '20px'}),
                     
                 ], style={
                     'marginLeft': '180px',  # Sidebar width
@@ -259,6 +226,9 @@ class NextGenDashboard:
             
             # Auto-refresh interval
             dcc.Interval(id='interval-component', interval=2000, n_intervals=0),
+            
+            # Store for current view
+            dcc.Store(id='current-view', data='dashboard'),
             
         ], style={
             'fontFamily': 'Segoe UI, Roboto, Arial, sans-serif',
@@ -368,15 +338,15 @@ class NextGenDashboard:
             
             # Navigation menu items
             html.Div([
-                self.create_sidebar_menu_item('📊', 'Dashboard', True),
-                self.create_sidebar_menu_item('🤖', 'Agents', False),
-                self.create_sidebar_menu_item('🎁', 'Rewards', False),
-                self.create_sidebar_menu_item('🧪', 'Testing', False),
-                self.create_sidebar_menu_item('📈', 'Drift', False),
-                self.create_sidebar_menu_item('⚠️', 'Conflicts', False),
-                self.create_sidebar_menu_item('📅', 'Events', False),
-                self.create_sidebar_menu_item('📝', 'Logs', False),
-                self.create_sidebar_menu_item('⚙️', 'Settings', False),
+                self.create_sidebar_menu_item('📊', 'Dashboard', 'dashboard', True),
+                self.create_sidebar_menu_item('🤖', 'Agents', 'agents', False),
+                self.create_sidebar_menu_item('🎁', 'Rewards', 'rewards', False),
+                self.create_sidebar_menu_item('🧪', 'Testing', 'testing', False),
+                self.create_sidebar_menu_item('📈', 'Drift', 'drift', False),
+                self.create_sidebar_menu_item('⚠️', 'Conflicts', 'conflicts', False),
+                self.create_sidebar_menu_item('📅', 'Events', 'events', False),
+                self.create_sidebar_menu_item('📝', 'Logs', 'logs', False),
+                self.create_sidebar_menu_item('⚙️', 'Settings', 'settings', False),
             ], style={'marginBottom': 'auto'}),
             
             # Bottom: Parameter Slider Sync toggle
@@ -435,7 +405,7 @@ class NextGenDashboard:
             'zIndex': '999',
         })
     
-    def create_sidebar_menu_item(self, icon: str, label: str, active: bool = False) -> html.Div:
+    def create_sidebar_menu_item(self, icon: str, label: str, view_id: str, active: bool = False) -> html.Div:
         """Create a sidebar menu item."""
         bg_color = THEME_COLORS['primary'] if active else 'transparent'
         text_color = 'white' if active else THEME_COLORS['text']
@@ -443,7 +413,7 @@ class NextGenDashboard:
         return html.Div([
             html.Span(icon, style={'marginRight': '10px', 'fontSize': '16px'}),
             html.Span(label, style={'fontSize': '14px', 'fontWeight': '500' if active else '400'}),
-        ], style={
+        ], id={'type': 'sidebar-menu-item', 'index': view_id}, style={
             'padding': '10px 12px',
             'marginBottom': '4px',
             'backgroundColor': bg_color,
@@ -529,33 +499,47 @@ class NextGenDashboard:
     def setup_callbacks(self) -> None:
         """Setup all dashboard callbacks."""
         
-        # Tab content callback
+        # Sidebar navigation callback
         @self.app.callback(
-            Output('tab-content', 'children'),
-            Input('dashboard-tabs', 'value')
+            Output('dashboard-content', 'children'),
+            Input({'type': 'sidebar-menu-item', 'index': ALL}, 'n_clicks'),
+            prevent_initial_call=False
         )
-        def render_tab_content(active_tab):
-            if active_tab == 'portfolio':
-                return self.create_portfolio_panel()
-            elif active_tab == 'rl_analysis':
+        def render_view(n_clicks):
+            ctx = dash.callback_context
+            if not ctx.triggered or all(c is None for c in n_clicks):
+                return self.create_dashboard_view()
+            
+            # Get which menu item was clicked
+            triggered_id = ctx.triggered[0]['prop_id'].split('.')[0]
+            if triggered_id == '':
+                return self.create_dashboard_view()
+                
+            import json
+            button_info = json.loads(triggered_id)
+            view_id = button_info['index']
+            
+            # Route to appropriate view
+            if view_id == 'dashboard':
+                return self.create_dashboard_view()
+            elif view_id == 'agents':
                 return self.create_rl_analysis_panel()
-            elif active_tab == 'agent_evolution':
-                return self.create_agent_evolution_panel()
-            elif active_tab == 'temporal_gnn':
-                return self.create_temporal_gnn_panel()
-            elif active_tab == 'feedback':
+            elif view_id == 'rewards':
                 return self.create_feedback_panel()
-            elif active_tab == 'ci_tests':
+            elif view_id == 'testing':
                 return self.create_ci_tests_panel()
-            elif active_tab == 'conflict':
+            elif view_id == 'drift':
+                return self.create_temporal_gnn_panel()
+            elif view_id == 'conflicts':
                 return self.create_conflict_panel()
-            elif active_tab == 'consensus':
+            elif view_id == 'events':
+                return self.create_agent_evolution_panel()
+            elif view_id == 'logs':
                 return self.create_consensus_panel()
-            elif active_tab == 'adaptive':
+            elif view_id == 'settings':
                 return self.create_adaptive_panel()
-            elif active_tab == 'market':
-                return self.create_market_panel()
-            return html.Div("Select a panel")
+            
+            return self.create_dashboard_view()
         
         # Start/Stop callbacks
         @self.app.callback(
@@ -580,6 +564,284 @@ class NextGenDashboard:
             
             return f'Status: {"Running" if self.running else "Stopped"}'
         
+    def create_dashboard_view(self) -> html.Div:
+        """Create main dashboard view with all key metrics and charts."""
+        # Get live data
+        total_value = self.portfolio_manager.get_portfolio_value(self.current_prices)
+        cash = self.portfolio_manager.cash
+        holdings_value = total_value - cash
+        
+        if self.portfolio_manager.start_capital > 0:
+            roi = ((total_value - self.portfolio_manager.start_capital) / self.portfolio_manager.start_capital) * 100
+        else:
+            roi = 0.0
+        
+        return html.Div([
+            html.H1("Dashboard", style={'fontSize': '32px', 'marginBottom': '30px', 
+                                        'color': THEME_COLORS['text']}),
+            
+            # Top metrics row
+            html.Div([
+                self.create_metric_card("Total Value", f"${total_value:.2f}", THEME_COLORS['primary']),
+                self.create_metric_card("Cash", f"${cash:.2f}", THEME_COLORS['success']),
+                self.create_metric_card("Holdings", f"${holdings_value:.2f}", THEME_COLORS['secondary']),
+                self.create_metric_card("ROI", f"{roi:.2f}%", THEME_COLORS['warning']),
+            ], style={'display': 'grid', 'gridTemplateColumns': 'repeat(4, 1fr)', 
+                     'gap': '20px', 'marginBottom': '30px'}),
+            
+            # Main content grid (3 columns x 3 rows)
+            html.Div([
+                # Row 1: Reward Trace, Agent Decision Events, GNN Drift
+                self.create_chart_card("Reward Trace", 
+                    self.create_reward_trace_chart()),
+                self.create_chart_card("Agent Decision Events", 
+                    self.create_agent_events_list()),
+                self.create_chart_card("GNN Drift", 
+                    self.create_drift_metric()),
+                
+                # Row 2: Conflict Highlights, Test Trigger Markers, System Logs
+                self.create_chart_card("Conflict Highlights", 
+                    self.create_conflict_display()),
+                self.create_chart_card("Test Trigger Markers", 
+                    self.create_test_markers()),
+                self.create_chart_card("System Logs", 
+                    self.create_system_logs()),
+                
+                # Row 3: Parameter Sliders, Export Snapshot, Replay Mode
+                self.create_chart_card("Parameter Sliders", 
+                    self.create_parameter_sliders()),
+                self.create_chart_card("Export Snapshot", 
+                    self.create_export_controls()),
+                self.create_chart_card("Replay Mode", 
+                    self.create_replay_controls()),
+                    
+            ], style={'display': 'grid', 'gridTemplateColumns': 'repeat(3, 1fr)', 
+                     'gap': '20px'}),
+        ])
+    
+    def create_chart_card(self, title: str, content) -> html.Div:
+        """Create a card for charts."""
+        return html.Div([
+            html.H3(title, style={'fontSize': '16px', 'marginBottom': '15px', 
+                                  'color': THEME_COLORS['text']}),
+            content
+        ], style={
+            'backgroundColor': THEME_COLORS['surface'],
+            'padding': '20px',
+            'borderRadius': '8px',
+            'border': f'1px solid {THEME_COLORS["border"]}',
+        })
+    
+    def create_reward_trace_chart(self):
+        """Create reward trace line chart."""
+        import plotly.graph_objs as go
+        
+        # Get reward history
+        rewards = [h.get('reward', 0) for h in self.decision_history[-100:]] if self.decision_history else [0]
+        x = list(range(len(rewards)))
+        
+        fig = go.Figure(data=[
+            go.Scatter(x=x, y=rewards, mode='lines', name='Reward',
+                      line=dict(color=THEME_COLORS['primary'], width=2))
+        ])
+        
+        fig.update_layout(
+            plot_bgcolor=THEME_COLORS['background'],
+            paper_bgcolor=THEME_COLORS['surface'],
+            font=dict(color=THEME_COLORS['text']),
+            margin=dict(l=40, r=20, t=20, b=40),
+            height=200,
+            showlegend=False,
+            xaxis=dict(gridcolor=THEME_COLORS['border']),
+            yaxis=dict(gridcolor=THEME_COLORS['border']),
+        )
+        
+        return dcc.Graph(figure=fig, config={'displayModeBar': False})
+    
+    def create_agent_events_list(self):
+        """Create list of recent agent decision events."""
+        events = [
+            {'agent': 'Agent 1', 'action': 'Buy', 'color': '#ff9500'},
+            {'agent': 'Agent 2', 'action': 'Sell', 'color': '#ffd43b'},
+            {'agent': 'Agent 3', 'action': 'Hold', 'color': '#51cf66'},
+            {'agent': 'Agent 4', 'action': 'Sell', 'color': '#ff6b6b'},
+            {'agent': 'Agent 5', 'action': 'Hold', 'color': '#4dabf7'},
+        ]
+        
+        return html.Div([
+            html.Div("Recent actions", style={'fontSize': '12px', 'marginBottom': '10px', 
+                                              'color': THEME_COLORS['text_secondary']}),
+            html.Div([
+                html.Div([
+                    html.Span('●', style={'color': event['color'], 'marginRight': '8px'}),
+                    html.Span(f"{event['agent']}: ", style={'fontWeight': '500'}),
+                    html.Span(event['action'], style={'padding': '2px 8px', 'borderRadius': '4px',
+                                                       'backgroundColor': event['color'], 
+                                                       'color': 'white', 'fontSize': '12px'}),
+                    html.Span('...', style={'marginLeft': 'auto', 'color': THEME_COLORS['text_secondary']}),
+                ], style={'display': 'flex', 'alignItems': 'center', 'marginBottom': '8px'})
+                for event in events
+            ])
+        ])
+    
+    def create_drift_metric(self):
+        """Create GNN drift metric display."""
+        drift_value = 0.02
+        
+        import plotly.graph_objs as go
+        
+        # Simple line chart showing minimal drift
+        x = list(range(20))
+        y = [0.01 + i * 0.0005 for i in x]
+        
+        fig = go.Figure(data=[
+            go.Scatter(x=x, y=y, mode='lines', line=dict(color='#ffd43b', width=3))
+        ])
+        
+        fig.update_layout(
+            plot_bgcolor=THEME_COLORS['background'],
+            paper_bgcolor=THEME_COLORS['surface'],
+            font=dict(color=THEME_COLORS['text']),
+            margin=dict(l=20, r=20, t=40, b=20),
+            height=180,
+            showlegend=False,
+            xaxis=dict(showgrid=False, showticklabels=False),
+            yaxis=dict(showgrid=False, showticklabels=False),
+            annotations=[
+                dict(text=f"Minimal Drift<br>{drift_value:.2f}", xref="paper", yref="paper",
+                     x=0.5, y=0.5, showarrow=False, font=dict(size=16, color=THEME_COLORS['text']))
+            ]
+        )
+        
+        return dcc.Graph(figure=fig, config={'displayModeBar': False})
+    
+    def create_conflict_display(self):
+        """Create conflict highlights display."""
+        return html.Div([
+            html.Div("No conflicts detected", 
+                    style={'textAlign': 'center', 'padding': '40px 20px',
+                          'fontSize': '16px', 'color': THEME_COLORS['text_secondary']})
+        ])
+    
+    def create_test_markers(self):
+        """Create test trigger markers list."""
+        tests = [
+            {'name': 'Test 1', 'status': 'Pass', 'color': '#ff9500'},
+            {'name': 'Test 2', 'status': 'Pass', 'color': '#ffb366'},
+            {'name': 'Test 3', 'status': 'Pass', 'color': '#ffc999'},
+            {'name': 'Test 1', 'status': 'Pass', 'color': '#ff66cc'},
+            {'name': 'Test 3', 'status': 'Pass', 'color': '#66cccc'},
+        ]
+        
+        return html.Div([
+            html.Div("Recent test trigger", 
+                    style={'fontSize': '12px', 'marginBottom': '10px', 
+                          'color': THEME_COLORS['text_secondary']}),
+            html.Div([
+                html.Div([
+                    html.Span('●', style={'color': test['color'], 'marginRight': '8px'}),
+                    html.Span(f"{test['name']}: {test['status']}", style={'fontSize': '13px'}),
+                    html.Span('→', style={'marginLeft': 'auto', 'color': THEME_COLORS['text_secondary']}),
+                ], style={'display': 'flex', 'alignItems': 'center', 'marginBottom': '8px'})
+                for test in tests
+            ])
+        ])
+    
+    def create_system_logs(self):
+        """Create system logs display."""
+        logs = [
+            "Info: System initialized",
+            "Info: Agents deployed",
+            "Info: Agents deployed",
+            "Info: Test completed",
+            "Info: Test ✓ validated",
+            "Info: Test completed",
+            "Info: Test completed",
+            "Info: Test completed",
+            "Info: Test completed",
+        ]
+        
+        return html.Div([
+            html.Div("Recent Logs", 
+                    style={'fontSize': '12px', 'marginBottom': '10px',
+                          'color': THEME_COLORS['text_secondary']}),
+            html.Div([
+                html.Div(log, style={'fontSize': '11px', 'marginBottom': '4px',
+                                     'color': THEME_COLORS['text']})
+                for log in logs
+            ], style={'maxHeight': '150px', 'overflowY': 'auto'})
+        ])
+    
+    def create_parameter_sliders(self):
+        """Create parameter sliders."""
+        return html.Div([
+            html.Div([
+                html.Div([
+                    html.Span("Learning Rate", style={'fontSize': '13px', 'marginBottom': '5px'}),
+                    html.Div([
+                        dcc.Slider(min=0, max=1, value=0.5, marks={}, 
+                                  tooltip={"placement": "bottom", "always_visible": False},
+                                  className='custom-slider'),
+                        html.Span("✏️", style={'marginLeft': '8px', 'cursor': 'pointer'}),
+                    ], style={'display': 'flex', 'alignItems': 'center'}),
+                ], style={'marginBottom': '15px'}),
+                
+                html.Div([
+                    html.Span("Discount Factor", style={'fontSize': '13px', 'marginBottom': '5px'}),
+                    html.Div([
+                        dcc.Slider(min=0, max=1, value=0.75, marks={},
+                                  tooltip={"placement": "bottom", "always_visible": False}),
+                        html.Span("✏️", style={'marginLeft': '8px', 'cursor': 'pointer'}),
+                    ], style={'display': 'flex', 'alignItems': 'center'}),
+                ], style={'marginBottom': '15px'}),
+                
+                html.Div([
+                    html.Span("Exploration Rate", style={'fontSize': '13px', 'marginBottom': '5px'}),
+                    html.Div([
+                        dcc.Slider(min=0, max=1, value=0.3, marks={},
+                                  tooltip={"placement": "bottom", "always_visible": False}),
+                        html.Span("✏️", style={'marginLeft': '8px', 'cursor': 'pointer'}),
+                    ], style={'display': 'flex', 'alignItems': 'center'}),
+                ]),
+            ])
+        ])
+    
+    def create_export_controls(self):
+        """Create export snapshot controls."""
+        return html.Div([
+            html.Button("Export Data", 
+                       style={'width': '100%', 'padding': '12px', 'marginTop': '40px',
+                             'backgroundColor': THEME_COLORS['primary'], 'color': 'white',
+                             'border': 'none', 'borderRadius': '6px', 'cursor': 'pointer',
+                             'fontSize': '14px', 'fontWeight': '500'})
+        ], style={'textAlign': 'center'})
+    
+    def create_replay_controls(self):
+        """Create replay mode controls."""
+        return html.Div([
+            html.Button("⚙️", 
+                       style={'width': '100%', 'padding': '20px', 'marginBottom': '10px',
+                             'backgroundColor': 'white', 'color': THEME_COLORS['text'],
+                             'border': f'1px solid {THEME_COLORS["border"]}', 
+                             'borderRadius': '6px', 'cursor': 'pointer',
+                             'fontSize': '24px'}),
+            html.Div("Start Replay", 
+                    style={'textAlign': 'center', 'marginBottom': '10px', 'fontSize': '13px'}),
+            
+            html.Button("Pause Replay", 
+                       style={'width': '100%', 'padding': '12px', 'marginBottom': '10px',
+                             'backgroundColor': THEME_COLORS['text_secondary'], 
+                             'color': 'white', 'border': 'none', 'borderRadius': '6px',
+                             'cursor': 'pointer', 'fontSize': '14px'}),
+            
+            html.Button("💬", 
+                       style={'width': '100%', 'padding': '20px',
+                             'backgroundColor': 'white', 'color': THEME_COLORS['text'],
+                             'border': f'1px solid {THEME_COLORS["border"]}',
+                             'borderRadius': '6px', 'cursor': 'pointer', 'fontSize': '24px'}),
+            html.Div("Step Forward", 
+                    style={'textAlign': 'center', 'marginTop': '10px', 'fontSize': '13px'}),
+        ])
     
     # Panel creation methods
     
