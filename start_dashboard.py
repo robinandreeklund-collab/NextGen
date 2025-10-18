@@ -140,6 +140,7 @@ class NextGenDashboard:
         self.conflict_history = []
         self.decision_history = []
         self.execution_history = []  # Track all executed trades
+        self.console_logs = []  # Track console output for System Logs panel
         
         # Setup Dash app
         self.app = dash.Dash(__name__, suppress_callback_exceptions=True)
@@ -357,6 +358,7 @@ class NextGenDashboard:
                 self.create_sidebar_menu_item('🗳️', 'Consensus', 'consensus', False),
                 self.create_sidebar_menu_item('📅', 'Events', 'events', False),
                 self.create_sidebar_menu_item('💹', 'Market', 'logs', False),
+                self.create_sidebar_menu_item('📝', 'System Logs', 'systemlogs', False),
                 self.create_sidebar_menu_item('⚙️', 'Settings', 'settings', False),
             ], style={'marginBottom': '20px'}),
             
@@ -586,6 +588,8 @@ class NextGenDashboard:
                 return self.create_agent_evolution_panel(), 'events'
             elif view_id == 'logs':
                 return self.create_market_watch_panel(), 'logs'
+            elif view_id == 'systemlogs':
+                return self.create_system_logs_panel(), 'systemlogs'
             elif view_id == 'settings':
                 return self.create_adaptive_panel(), 'settings'
             
@@ -638,6 +642,8 @@ class NextGenDashboard:
                 return self.create_agent_evolution_panel(), current_view
             elif current_view == 'logs':
                 return self.create_market_watch_panel(), current_view
+            elif current_view == 'systemlogs':
+                return self.create_system_logs_panel(), current_view
             elif current_view == 'settings':
                 return self.create_adaptive_panel(), current_view
             else:
@@ -2104,6 +2110,85 @@ class NextGenDashboard:
             }),
         ])
     
+    def log_message(self, message: str, level: str = 'INFO'):
+        """Add a message to console logs."""
+        timestamp = datetime.now().strftime('%H:%M:%S.%f')[:-3]
+        self.console_logs.append({
+            'timestamp': timestamp,
+            'level': level,
+            'message': message
+        })
+        # Keep only last 200 log entries
+        if len(self.console_logs) > 200:
+            self.console_logs.pop(0)
+    
+    def create_system_logs_panel(self) -> html.Div:
+        """Create System Logs panel showing console output."""
+        # Get recent logs
+        recent_logs = self.console_logs[-100:] if self.console_logs else []
+        
+        # Define colors for different log levels
+        level_colors = {
+            'INFO': THEME_COLORS['text'],
+            'SUCCESS': THEME_COLORS['success'],
+            'WARNING': THEME_COLORS['warning'],
+            'ERROR': THEME_COLORS['danger'],
+            'DEBUG': THEME_COLORS['text_secondary']
+        }
+        
+        return html.Div([
+            html.H2("System Logs", 
+                   style={'color': THEME_COLORS['primary'], 'marginBottom': '30px', 'fontSize': '28px'}),
+            
+            # Summary metrics
+            html.Div([
+                self.create_metric_card("Total Logs", str(len(self.console_logs)), THEME_COLORS['primary']),
+                self.create_metric_card("Iterations", str(self.iteration_count), THEME_COLORS['success']),
+                self.create_metric_card("Running", "Yes" if self.running else "No", 
+                                       THEME_COLORS['success'] if self.running else THEME_COLORS['danger']),
+                self.create_metric_card("Mode", "Live" if self.live_mode else "Demo", THEME_COLORS['warning']),
+            ], style={'display': 'grid', 'gridTemplateColumns': 'repeat(4, 1fr)', 
+                     'gap': '20px', 'marginBottom': '30px'}),
+            
+            # Log console
+            html.Div([
+                html.H3("Console Output", 
+                       style={'fontSize': '18px', 'marginBottom': '15px', 'color': THEME_COLORS['text']}),
+                html.Div([
+                    html.Div([
+                        html.Div([
+                            html.Span(f"[{log['timestamp']}] ", 
+                                     style={'color': THEME_COLORS['text_secondary'], 
+                                           'fontFamily': 'monospace', 'fontSize': '12px'}),
+                            html.Span(f"[{log['level']}] ", 
+                                     style={'color': level_colors.get(log['level'], THEME_COLORS['text']),
+                                           'fontWeight': 'bold', 'fontFamily': 'monospace', 'fontSize': '12px'}),
+                            html.Span(log['message'],
+                                     style={'color': THEME_COLORS['text'], 'fontFamily': 'monospace', 
+                                           'fontSize': '12px'})
+                        ], style={'padding': '4px 8px', 'borderBottom': f'1px solid {THEME_COLORS["border"]}'})
+                        for log in reversed(recent_logs)
+                    ] if recent_logs else [
+                        html.Div("No log messages yet", 
+                                style={'padding': '20px', 'textAlign': 'center', 
+                                      'color': THEME_COLORS['text_secondary']})
+                    ])
+                ], style={
+                    'backgroundColor': '#000000',
+                    'padding': '15px',
+                    'borderRadius': '8px',
+                    'maxHeight': '600px',
+                    'overflowY': 'auto',
+                    'fontFamily': 'monospace'
+                })
+            ], style={
+                'backgroundColor': THEME_COLORS['surface'],
+                'padding': '20px',
+                'borderRadius': '8px',
+                'border': f'1px solid {THEME_COLORS["border"]}'
+            }),
+        ])
+    
     def create_market_panel(self) -> html.Div:
         """Create Live Market Watch panel."""
         # Get real market data from price_history
@@ -2298,11 +2383,12 @@ class NextGenDashboard:
     def simulation_loop(self) -> None:
         """Enhanced simulation loop with realistic market dynamics and actual trading."""
         print("🔄 Starting real-time market simulation...")
+        self.log_message("Starting real-time market simulation", "INFO")
         
         # Initialize market state
         if not self.live_mode and isinstance(self.data_ingestion, DataIngestionSim):
             # In demo mode, market simulation is handled by data_ingestion_sim
-            pass
+            self.log_message("Demo mode: Using data_ingestion_sim for market data", "INFO")
         
         while self.running:
             self.iteration_count += 1
@@ -2384,23 +2470,41 @@ class NextGenDashboard:
                     else:
                         final_action = ppo_action
                     
-                    # Execute trade
+                    # Execute trade with proper budget checks
                     execution_result = None
-                    if final_action == 'BUY' and self.portfolio_manager.cash > current_price:
-                        quantity = min(10, self.portfolio_manager.cash / current_price)
-                        execution_result = self.execution_engine.execute_trade({
-                            'symbol': selected_symbol,
-                            'action': 'BUY',
-                            'quantity': quantity,
-                            'current_price': current_price
-                        })
-                        # Publish result to message_bus so portfolio_manager can update
-                        if execution_result and execution_result.get('success'):
-                            self.execution_engine.publish_result(execution_result)
+                    if final_action == 'BUY':
+                        # Calculate how many shares we can afford
+                        max_quantity = min(10, self.portfolio_manager.cash / current_price)
+                        # Account for transaction fees (0.25%)
+                        total_cost_estimate = current_price * max_quantity * 1.0025
+                        
+                        # Only proceed if we have enough cash for at least 1 share
+                        if self.portfolio_manager.cash >= current_price * 1.0025:
+                            # Adjust quantity to fit budget
+                            quantity = int(self.portfolio_manager.cash / (current_price * 1.0025))
+                            quantity = min(quantity, 10)  # Max 10 shares per trade
+                            
+                            if quantity > 0:
+                                self.log_message(f"Executing BUY: {quantity} shares of {selected_symbol} @ ${current_price:.2f}", "INFO")
+                                execution_result = self.execution_engine.execute_trade({
+                                    'symbol': selected_symbol,
+                                    'action': 'BUY',
+                                    'quantity': quantity,
+                                    'current_price': current_price
+                                })
+                                # Publish result to message_bus so portfolio_manager can update
+                                if execution_result and execution_result.get('success'):
+                                    self.execution_engine.publish_result(execution_result)
+                                    self.log_message(f"BUY executed: {quantity} {selected_symbol} for ${execution_result.get('total_cost', 0):.2f}", "SUCCESS")
+                                else:
+                                    self.log_message(f"BUY failed for {selected_symbol}", "WARNING")
+                        else:
+                            self.log_message(f"Insufficient funds for BUY {selected_symbol} (need ${current_price * 1.0025:.2f}, have ${self.portfolio_manager.cash:.2f})", "WARNING")
                     elif final_action == 'SELL':
                         if selected_symbol in self.portfolio_manager.positions:
                             quantity = min(10, self.portfolio_manager.positions[selected_symbol]['quantity'])
                             if quantity > 0:
+                                self.log_message(f"Executing SELL: {quantity} shares of {selected_symbol} @ ${current_price:.2f}", "INFO")
                                 execution_result = self.execution_engine.execute_trade({
                                     'symbol': selected_symbol,
                                     'action': 'SELL',
@@ -2410,8 +2514,14 @@ class NextGenDashboard:
                                 # Publish result to message_bus so portfolio_manager can update
                                 if execution_result and execution_result.get('success'):
                                     self.execution_engine.publish_result(execution_result)
+                                    self.log_message(f"SELL executed: {quantity} {selected_symbol} for ${execution_result.get('total_cost', 0):.2f}", "SUCCESS")
+                                else:
+                                    self.log_message(f"SELL failed for {selected_symbol}", "WARNING")
+                        else:
+                            self.log_message(f"No holdings to SELL for {selected_symbol}", "WARNING")
                     
-                    # Track execution if trade was executed
+                    # Track execution ONLY if trade was actually executed successfully
+                    # This means it went into the portfolio
                     if execution_result and execution_result.get('success'):
                         self.execution_history.append({
                             'timestamp': datetime.now().strftime('%H:%M:%S'),
@@ -2534,6 +2644,7 @@ class NextGenDashboard:
                 print(f"📊 Iteration {self.iteration_count}: Portfolio=${portfolio_value:.2f}, "
                       f"Cash=${self.portfolio_manager.cash:.2f}, "
                       f"Positions={len(self.portfolio_manager.positions)}")
+                self.log_message(f"Iteration {self.iteration_count}: Portfolio=${portfolio_value:.2f}, Cash=${self.portfolio_manager.cash:.2f}, Positions={len(self.portfolio_manager.positions)}", "INFO")
             
             time.sleep(2)  # Update every 2 seconds
     
