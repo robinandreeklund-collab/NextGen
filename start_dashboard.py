@@ -2118,13 +2118,16 @@ class NextGenDashboard:
             'level': level,
             'message': message
         })
-        # Keep only last 200 log entries
+        # Keep only last 200 log entries.
+        # Note: The buffer size (200) is larger than the display size (100) in the System Logs panel.
+        # This allows for retaining more history for potential future features (scrolling, export, debugging).
         if len(self.console_logs) > 200:
             self.console_logs.pop(0)
     
     def create_system_logs_panel(self) -> html.Div:
         """Create System Logs panel showing console output."""
         # Get recent logs
+        # Only the last 100 logs are displayed in the panel, even though the buffer retains up to 200.
         recent_logs = self.console_logs[-100:] if self.console_logs else []
         
         # Define colors for different log levels
