@@ -147,8 +147,7 @@ Dashboard använder ett modernt dark theme inspirerat av "Abstire Dashboard" moc
 
 **Komponenter:**
 - **Top Header:** Systemstatus, mode (Demo/Live), realtidsklocka
-- **Sidebar:** Quick stats, module status, navigation
-- **Control Panel:** Start/Stop knappar, statusindikator
+- **Sidebar:** Quick stats, module status, navigation, Start/Stop knappar, statusindikator
 - **Tab Navigation:** 10 paneler med smooth övergångar
 - **Responsive Design:** Funkar på desktop, tablet och mobile
 
