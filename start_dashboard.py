@@ -387,19 +387,27 @@ class NextGenDashboard:
                     html.Span('Slider Sync', style={'fontSize': '13px', 'fontWeight': '500'}),
                 ], style={'flex': '1'}),
                 html.Div([
-                    # Toggle switch
-                    html.Label([
-                        html.Input(type='checkbox', style={'display': 'none'}),
-                        html.Span(style={
-                            'position': 'relative',
-                            'display': 'inline-block',
-                            'width': '40px',
-                            'height': '20px',
-                            'backgroundColor': THEME_COLORS['primary'],
-                            'borderRadius': '10px',
-                            'cursor': 'pointer',
+                    # Toggle switch (visual only - styled as ON)
+                    html.Div([
+                        html.Div(style={
+                            'position': 'absolute',
+                            'top': '2px',
+                            'right': '2px',
+                            'width': '16px',
+                            'height': '16px',
+                            'backgroundColor': 'white',
+                            'borderRadius': '50%',
+                            'transition': 'transform 0.3s',
                         }),
-                    ]),
+                    ], style={
+                        'position': 'relative',
+                        'display': 'inline-block',
+                        'width': '40px',
+                        'height': '20px',
+                        'backgroundColor': 'rgba(255, 255, 255, 0.3)',
+                        'borderRadius': '10px',
+                        'cursor': 'pointer',
+                    }),
                 ]),
             ], style={
                 'display': 'flex',
