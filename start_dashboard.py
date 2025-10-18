@@ -630,6 +630,8 @@ class NextGenDashboard:
             'padding': '20px',
             'borderRadius': '8px',
             'border': f'1px solid {THEME_COLORS["border"]}',
+            'maxHeight': '300px',
+            'overflow': 'hidden',
         })
     
     def create_reward_trace_chart(self):
@@ -656,7 +658,7 @@ class NextGenDashboard:
             yaxis=dict(gridcolor=THEME_COLORS['border']),
         )
         
-        return dcc.Graph(figure=fig, config={'displayModeBar': False})
+        return dcc.Graph(figure=fig, config={'displayModeBar': False}, style={'height': '200px'})
     
     def create_agent_events_list(self):
         """Create list of recent agent decision events."""
@@ -703,7 +705,7 @@ class NextGenDashboard:
             paper_bgcolor=THEME_COLORS['surface'],
             font=dict(color=THEME_COLORS['text']),
             margin=dict(l=20, r=20, t=40, b=20),
-            height=180,
+            height=200,
             showlegend=False,
             xaxis=dict(showgrid=False, showticklabels=False),
             yaxis=dict(showgrid=False, showticklabels=False),
@@ -713,7 +715,7 @@ class NextGenDashboard:
             ]
         )
         
-        return dcc.Graph(figure=fig, config={'displayModeBar': False})
+        return dcc.Graph(figure=fig, config={'displayModeBar': False}, style={'height': '200px'})
     
     def create_conflict_display(self):
         """Create conflict highlights display."""
@@ -883,36 +885,327 @@ class NextGenDashboard:
         ])
     
     def create_rl_analysis_panel(self) -> html.Div:
-        """Create RL Agent Analysis panel."""
+        """Create RL Agent Analysis panel with PPO vs DQN comparison."""
+        import plotly.graph_objs as go
+        
+        # Sample reward data for PPO vs DQN
+        episodes = list(range(50))
+        ppo_rewards = [100 + i * 2 + random.randint(-10, 10) for i in episodes]
+        dqn_rewards = [90 + i * 2.5 + random.randint(-15, 15) for i in episodes]
+        
+        # Performance comparison chart
+        perf_fig = go.Figure()
+        perf_fig.add_trace(go.Scatter(x=episodes, y=ppo_rewards, mode='lines', name='PPO',
+                                      line=dict(color=THEME_COLORS['primary'], width=2)))
+        perf_fig.add_trace(go.Scatter(x=episodes, y=dqn_rewards, mode='lines', name='DQN',
+                                      line=dict(color=THEME_COLORS['secondary'], width=2)))
+        
+        perf_fig.update_layout(
+            title="PPO vs DQN Performance",
+            plot_bgcolor=THEME_COLORS['background'],
+            paper_bgcolor=THEME_COLORS['surface'],
+            font=dict(color=THEME_COLORS['text']),
+            margin=dict(l=50, r=20, t=50, b=50),
+            height=300,
+            xaxis_title="Episodes",
+            yaxis_title="Cumulative Reward",
+            xaxis=dict(gridcolor=THEME_COLORS['border']),
+            yaxis=dict(gridcolor=THEME_COLORS['border']),
+            legend=dict(x=0, y=1)
+        )
+        
+        # Action distribution chart
+        actions = ['BUY', 'SELL', 'HOLD']
+        ppo_actions = [30, 25, 45]
+        dqn_actions = [35, 30, 35]
+        
+        action_fig = go.Figure(data=[
+            go.Bar(name='PPO', x=actions, y=ppo_actions, marker_color=THEME_COLORS['success']),
+            go.Bar(name='DQN', x=actions, y=dqn_actions, marker_color=THEME_COLORS['warning'])
+        ])
+        
+        action_fig.update_layout(
+            title="Action Distribution",
+            barmode='group',
+            plot_bgcolor=THEME_COLORS['background'],
+            paper_bgcolor=THEME_COLORS['surface'],
+            font=dict(color=THEME_COLORS['text']),
+            margin=dict(l=50, r=20, t=50, b=50),
+            height=300,
+            xaxis=dict(gridcolor=THEME_COLORS['border']),
+            yaxis=dict(gridcolor=THEME_COLORS['border']),
+        )
+        
+        # Epsilon decay schedule
+        steps = list(range(100))
+        epsilon = [max(0.01, 1.0 - i * 0.01) for i in steps]
+        
+        epsilon_fig = go.Figure(data=[
+            go.Scatter(x=steps, y=epsilon, mode='lines', name='Epsilon',
+                      line=dict(color=THEME_COLORS['danger'], width=2))
+        ])
+        
+        epsilon_fig.update_layout(
+            title="DQN Epsilon Decay Schedule",
+            plot_bgcolor=THEME_COLORS['background'],
+            paper_bgcolor=THEME_COLORS['surface'],
+            font=dict(color=THEME_COLORS['text']),
+            margin=dict(l=50, r=20, t=50, b=50),
+            height=300,
+            xaxis_title="Training Steps",
+            yaxis_title="Epsilon",
+            xaxis=dict(gridcolor=THEME_COLORS['border']),
+            yaxis=dict(gridcolor=THEME_COLORS['border']),
+        )
+        
         return html.Div([
-            html.H2("RL Agent Analysis", 
-                   style={'color': THEME_COLORS['primary'], 'marginBottom': '20px'}),
+            html.H2("RL Agent Analysis - Hybrid PPO vs DQN", 
+                   style={'color': THEME_COLORS['primary'], 'marginBottom': '30px', 'fontSize': '28px'}),
             
-            html.Div("Hybrid RL comparison: PPO vs DQN performance"),
-            html.Div("Reward flow visualization"),
-            html.Div("DQN metrics and epsilon schedule"),
+            # Metrics cards
+            html.Div([
+                self.create_metric_card("PPO Avg Reward", f"{sum(ppo_rewards[-10:])/10:.2f}", THEME_COLORS['primary']),
+                self.create_metric_card("DQN Avg Reward", f"{sum(dqn_rewards[-10:])/10:.2f}", THEME_COLORS['secondary']),
+                self.create_metric_card("Current Epsilon", f"{epsilon[-1]:.3f}", THEME_COLORS['danger']),
+                self.create_metric_card("Total Episodes", str(len(episodes)), THEME_COLORS['success']),
+            ], style={'display': 'grid', 'gridTemplateColumns': 'repeat(4, 1fr)', 
+                     'gap': '20px', 'marginBottom': '30px'}),
+            
+            # Charts
+            html.Div([
+                dcc.Graph(figure=perf_fig, config={'displayModeBar': False}, style={'height': '300px'}),
+            ], style={'marginBottom': '30px'}),
+            
+            html.Div([
+                html.Div([
+                    dcc.Graph(figure=action_fig, config={'displayModeBar': False}, style={'height': '300px'}),
+                ], style={'flex': '1'}),
+                html.Div([
+                    dcc.Graph(figure=epsilon_fig, config={'displayModeBar': False}, style={'height': '300px'}),
+                ], style={'flex': '1'}),
+            ], style={'display': 'flex', 'gap': '20px'}),
         ])
     
     def create_agent_evolution_panel(self) -> html.Div:
-        """Create Agent Evolution & GAN panel."""
+        """Create Agent Evolution & GAN panel with generator/discriminator metrics."""
+        import plotly.graph_objs as go
+        
+        # GAN loss data
+        steps = list(range(100))
+        g_loss = [2.0 - i * 0.015 + random.uniform(-0.1, 0.1) for i in steps]
+        d_loss = [1.5 - i * 0.01 + random.uniform(-0.1, 0.1) for i in steps]
+        
+        loss_fig = go.Figure()
+        loss_fig.add_trace(go.Scatter(x=steps, y=g_loss, mode='lines', name='Generator Loss',
+                                      line=dict(color=THEME_COLORS['primary'], width=2)))
+        loss_fig.add_trace(go.Scatter(x=steps, y=d_loss, mode='lines', name='Discriminator Loss',
+                                      line=dict(color=THEME_COLORS['danger'], width=2)))
+        
+        loss_fig.update_layout(
+            title="GAN Training Progress",
+            plot_bgcolor=THEME_COLORS['background'],
+            paper_bgcolor=THEME_COLORS['surface'],
+            font=dict(color=THEME_COLORS['text']),
+            margin=dict(l=50, r=20, t=50, b=50),
+            height=300,
+            xaxis_title="Training Steps",
+            yaxis_title="Loss",
+            xaxis=dict(gridcolor=THEME_COLORS['border']),
+            yaxis=dict(gridcolor=THEME_COLORS['border']),
+            legend=dict(x=0, y=1)
+        )
+        
+        # Candidate acceptance rate gauge
+        acceptance_rate = 0.73
+        
+        gauge_fig = go.Figure(go.Indicator(
+            mode="gauge+number",
+            value=acceptance_rate * 100,
+            domain={'x': [0, 1], 'y': [0, 1]},
+            title={'text': "Acceptance Rate", 'font': {'color': THEME_COLORS['text']}},
+            number={'suffix': "%", 'font': {'color': THEME_COLORS['text']}},
+            gauge={
+                'axis': {'range': [0, 100], 'tickcolor': THEME_COLORS['text']},
+                'bar': {'color': THEME_COLORS['success']},
+                'bgcolor': THEME_COLORS['background'],
+                'borderwidth': 2,
+                'bordercolor': THEME_COLORS['border'],
+                'steps': [
+                    {'range': [0, 30], 'color': THEME_COLORS['danger']},
+                    {'range': [30, 70], 'color': THEME_COLORS['warning']},
+                    {'range': [70, 100], 'color': THEME_COLORS['success']}
+                ],
+                'threshold': {
+                    'line': {'color': "white", 'width': 4},
+                    'thickness': 0.75,
+                    'value': 90
+                }
+            }
+        ))
+        
+        gauge_fig.update_layout(
+            plot_bgcolor=THEME_COLORS['background'],
+            paper_bgcolor=THEME_COLORS['surface'],
+            font=dict(color=THEME_COLORS['text']),
+            height=300,
+            margin=dict(l=20, r=20, t=50, b=20),
+        )
+        
+        # Candidate distribution histogram
+        scores = [random.betavariate(7, 3) for _ in range(100)]
+        
+        hist_fig = go.Figure(data=[
+            go.Histogram(x=scores, nbinsx=20, marker_color=THEME_COLORS['secondary'])
+        ])
+        
+        hist_fig.update_layout(
+            title="Candidate Score Distribution",
+            plot_bgcolor=THEME_COLORS['background'],
+            paper_bgcolor=THEME_COLORS['surface'],
+            font=dict(color=THEME_COLORS['text']),
+            margin=dict(l=50, r=20, t=50, b=50),
+            height=300,
+            xaxis_title="Discriminator Score",
+            yaxis_title="Count",
+            xaxis=dict(gridcolor=THEME_COLORS['border']),
+            yaxis=dict(gridcolor=THEME_COLORS['border']),
+        )
+        
         return html.Div([
-            html.H2("Agent Evolution & GAN", 
-                   style={'color': THEME_COLORS['primary'], 'marginBottom': '20px'}),
+            html.H2("Agent Evolution & GAN Engine", 
+                   style={'color': THEME_COLORS['primary'], 'marginBottom': '30px', 'fontSize': '28px'}),
             
-            html.Div("GAN generator/discriminator loss charts"),
-            html.Div("Agent evolution timeline"),
-            html.Div("Candidate acceptance rate gauge"),
+            # Metrics
+            html.Div([
+                self.create_metric_card("Generated", "243", THEME_COLORS['primary']),
+                self.create_metric_card("Accepted", "178", THEME_COLORS['success']),
+                self.create_metric_card("Deployed", "45", THEME_COLORS['secondary']),
+                self.create_metric_card("Active", "12", THEME_COLORS['warning']),
+            ], style={'display': 'grid', 'gridTemplateColumns': 'repeat(4, 1fr)', 
+                     'gap': '20px', 'marginBottom': '30px'}),
+            
+            # Charts
+            html.Div([
+                dcc.Graph(figure=loss_fig, config={'displayModeBar': False}, style={'height': '300px'}),
+            ], style={'marginBottom': '30px'}),
+            
+            html.Div([
+                html.Div([
+                    dcc.Graph(figure=gauge_fig, config={'displayModeBar': False}, style={'height': '300px'}),
+                ], style={'flex': '1'}),
+                html.Div([
+                    dcc.Graph(figure=hist_fig, config={'displayModeBar': False}, style={'height': '300px'}),
+                ], style={'flex': '1'}),
+            ], style={'display': 'flex', 'gap': '20px'}),
         ])
     
     def create_temporal_gnn_panel(self) -> html.Div:
-        """Create Temporal Drift & GNN panel."""
+        """Create Temporal Drift & GNN panel with pattern detection."""
+        import plotly.graph_objs as go
+        
+        # Pattern detection categories
+        patterns = ['Trend', 'Mean Reversion', 'Breakout', 'Range-bound', 'Volatility Spike', 
+                   'Support/Resistance', 'Volume Surge', 'Divergence']
+        detected = [12, 8, 15, 6, 4, 10, 7, 5]
+        confidence = [0.85, 0.72, 0.91, 0.68, 0.55, 0.88, 0.76, 0.63]
+        
+        pattern_fig = go.Figure(data=[
+            go.Bar(x=patterns, y=detected, marker_color=[
+                THEME_COLORS['success'] if c > 0.8 else 
+                THEME_COLORS['warning'] if c > 0.6 else 
+                THEME_COLORS['danger'] 
+                for c in confidence
+            ])
+        ])
+        
+        pattern_fig.update_layout(
+            title="Pattern Detection Count",
+            plot_bgcolor=THEME_COLORS['background'],
+            paper_bgcolor=THEME_COLORS['surface'],
+            font=dict(color=THEME_COLORS['text']),
+            margin=dict(l=50, r=20, t=50, b=100),
+            height=300,
+            xaxis_title="Pattern Type",
+            yaxis_title="Detections",
+            xaxis=dict(gridcolor=THEME_COLORS['border'], tickangle=-45),
+            yaxis=dict(gridcolor=THEME_COLORS['border']),
+        )
+        
+        # Confidence heatmap
+        confidence_fig = go.Figure(data=[
+            go.Bar(x=patterns, y=[c * 100 for c in confidence], 
+                  marker=dict(color=confidence, colorscale='Viridis', showscale=True,
+                            colorbar=dict(title="Confidence", ticksuffix="%")))
+        ])
+        
+        confidence_fig.update_layout(
+            title="Pattern Confidence Levels",
+            plot_bgcolor=THEME_COLORS['background'],
+            paper_bgcolor=THEME_COLORS['surface'],
+            font=dict(color=THEME_COLORS['text']),
+            margin=dict(l=50, r=20, t=50, b=100),
+            height=300,
+            xaxis_title="Pattern Type",
+            yaxis_title="Confidence (%)",
+            xaxis=dict(gridcolor=THEME_COLORS['border'], tickangle=-45),
+            yaxis=dict(gridcolor=THEME_COLORS['border']),
+        )
+        
+        # Temporal insights timeline
+        timeline_data = [
+            {'time': '10:00', 'pattern': 'Breakout', 'confidence': 0.91},
+            {'time': '10:15', 'pattern': 'Support/Resistance', 'confidence': 0.88},
+            {'time': '10:30', 'pattern': 'Trend', 'confidence': 0.85},
+            {'time': '10:45', 'pattern': 'Volume Surge', 'confidence': 0.76},
+            {'time': '11:00', 'pattern': 'Mean Reversion', 'confidence': 0.72},
+        ]
+        
         return html.Div([
-            html.H2("Temporal Drift & GNN Analysis", 
-                   style={'color': THEME_COLORS['primary'], 'marginBottom': '20px'}),
+            html.H2("Temporal Drift & GNN Pattern Analysis", 
+                   style={'color': THEME_COLORS['primary'], 'marginBottom': '30px', 'fontSize': '28px'}),
             
-            html.Div("GNN pattern detection"),
-            html.Div("Pattern confidence charts"),
-            html.Div("Temporal insights timeline"),
+            # Metrics
+            html.Div([
+                self.create_metric_card("Patterns Detected", "67", THEME_COLORS['primary']),
+                self.create_metric_card("Avg Confidence", "75%", THEME_COLORS['success']),
+                self.create_metric_card("High Confidence", "32", THEME_COLORS['secondary']),
+                self.create_metric_card("Drift Index", "0.02", THEME_COLORS['warning']),
+            ], style={'display': 'grid', 'gridTemplateColumns': 'repeat(4, 1fr)', 
+                     'gap': '20px', 'marginBottom': '30px'}),
+            
+            # Charts
+            html.Div([
+                html.Div([
+                    dcc.Graph(figure=pattern_fig, config={'displayModeBar': False}, style={'height': '300px'}),
+                ], style={'flex': '1'}),
+                html.Div([
+                    dcc.Graph(figure=confidence_fig, config={'displayModeBar': False}, style={'height': '300px'}),
+                ], style={'flex': '1'}),
+            ], style={'display': 'flex', 'gap': '20px', 'marginBottom': '30px'}),
+            
+            # Timeline
+            html.Div([
+                html.H3("Recent Pattern Detections", style={'fontSize': '18px', 'marginBottom': '15px', 
+                                                           'color': THEME_COLORS['text']}),
+                html.Div([
+                    html.Div([
+                        html.Div([
+                            html.Span(item['time'], style={'fontWeight': '600', 'marginRight': '15px'}),
+                            html.Span(item['pattern'], style={'color': THEME_COLORS['primary'], 
+                                                             'marginRight': '15px'}),
+                            html.Span(f"{item['confidence']*100:.0f}%", 
+                                    style={'padding': '4px 12px', 'borderRadius': '12px',
+                                          'backgroundColor': THEME_COLORS['success'] if item['confidence'] > 0.8 
+                                          else THEME_COLORS['warning'],
+                                          'color': 'white', 'fontSize': '12px'}),
+                        ], style={'padding': '12px', 'backgroundColor': THEME_COLORS['surface'],
+                                 'borderRadius': '6px', 'marginBottom': '10px',
+                                 'border': f'1px solid {THEME_COLORS["border"]}'})
+                        for item in timeline_data
+                    ])
+                ])
+            ], style={'backgroundColor': THEME_COLORS['surface'], 'padding': '20px',
+                     'borderRadius': '8px', 'border': f'1px solid {THEME_COLORS["border"]}'}),
         ])
     
     def create_feedback_panel(self) -> html.Div:
