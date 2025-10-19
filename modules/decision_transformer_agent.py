@@ -409,6 +409,42 @@ class DecisionTransformerAgent:
             returns_to_go.insert(0, running_return)
             
         return returns_to_go
+    
+    def finalize_sequence(self) -> None:
+        """Finalize current sequence and add to buffer"""
+        if len(self.current_sequence['states']) < 2:
+            # Not enough data to make a useful sequence
+            return
+        
+        # Calculate return-to-go
+        returns_to_go = self._calculate_returns_to_go(self.current_sequence['rewards'])
+        
+        # Store in buffer
+        seq_len = len(self.current_sequence['states'])
+        self.sequence_buffer.append({
+            'states': np.array(self.current_sequence['states']),
+            'actions': np.array(self.current_sequence['actions']),
+            'rewards': np.array(self.current_sequence['rewards']),
+            'returns_to_go': np.array(returns_to_go),
+            'timesteps': np.arange(seq_len)
+        })
+        
+        # Clear current sequence
+        self.current_sequence = {
+            'states': [],
+            'actions': [],
+            'rewards': []
+        }
+        
+        # Increment episode count
+        self.training_metrics['episodes'] += 1
+        
+        # Calculate average return
+        if len(self.sequence_buffer) > 0:
+            recent_returns = [seq['rewards'].sum() for seq in list(self.sequence_buffer)[-10:]]
+            self.training_metrics['avg_return'] = np.mean(recent_returns)
+            
+        return returns_to_go
         
     def predict_action(self, state: np.ndarray, target_return: float) -> Tuple[np.ndarray, Dict[str, Any]]:
         """
@@ -434,15 +470,16 @@ class DecisionTransformerAgent:
                 returns = np.array([[[target_return]]], dtype=np.float32)
                 timesteps = np.array([[0]], dtype=np.int64)
             else:
-                # Use recent trajectory
+                # Use recent trajectory - CLAMP to max_sequence_length
                 seq_length = min(len(self.current_sequence['states']), self.max_sequence_length)
                 
+                # Take only the last seq_length states (not exceeding max)
                 states = self.current_sequence['states'][-seq_length:]
-                states.append(state)
+                states.append(state.tolist())
                 states = np.array(states).reshape(1, seq_length + 1, -1)
                 
                 actions = self.current_sequence['actions'][-seq_length:]
-                actions.append(np.zeros(self.action_dim))
+                actions.append(np.zeros(self.action_dim).tolist())
                 actions = np.array(actions).reshape(1, seq_length + 1, -1)
                 
                 # Return-to-go decreases over sequence
