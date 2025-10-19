@@ -3736,7 +3736,7 @@ class NextGenDashboard:
                                        style={'padding': '10px', 'textAlign': 'right', 'fontSize': '12px',
                                              'color': THEME_COLORS['success'] if dec.get('reward', 0) >= 0 
                                              else THEME_COLORS['danger'], 'fontWeight': '600'}),
-                                html.Td("PPO, DQN" if dec.get('agent') in ['PPO', 'DQN'] else dec.get('agent', 'N/A'),
+                                html.Td("PPO, DQN, DT",
                                        style={'padding': '10px', 'fontSize': '11px', 'color': THEME_COLORS['text_secondary']}),
                                 html.Td(f"{random.randint(60, 95)}%",
                                        style={'padding': '10px', 'textAlign': 'right', 'fontSize': '12px',
@@ -4927,20 +4927,35 @@ class NextGenDashboard:
                     
                     # Detect conflicts (disagreement among agents)
                     unique_votes = set(normalized_votes.values())
-                    if len(unique_votes) > 1:
+                    
+                    # Determine which agent(s) voted for the final action
+                    agents_for_final = []
+                    if normalized_votes.get('PPO') == normalized_votes.get(final_action.split('_')[0], final_action):
+                        agents_for_final.append('PPO')
+                    if normalized_votes.get('DQN') == normalized_votes.get(final_action.split('_')[0], final_action):
+                        agents_for_final.append('DQN')
+                    if normalized_votes.get('DT') == normalized_votes.get(final_action.split('_')[0], final_action):
+                        agents_for_final.append('DT')
+                    
+                    # Set deciding agent based on votes
+                    if len(agents_for_final) == 1:
+                        deciding_agent = agents_for_final[0]
+                    elif len(agents_for_final) > 1:
+                        deciding_agent = f"{'+'.join(agents_for_final)}"
+                    else:
                         deciding_agent = 'Ensemble'
+                    
+                    if len(unique_votes) > 1:
                         self.conflict_history.append({
                             'timestamp': datetime.now().strftime('%H:%M:%S'),
                             'ppo_action': ppo_action,
                             'dqn_action': dqn_action,
                             'dt_action': dt_action,
-                            'resolution': 'Ensemble',
+                            'resolution': deciding_agent,
                             'final_action': final_action
                         })
                         if len(self.conflict_history) > 50:
                             self.conflict_history.pop(0)
-                    else:
-                        deciding_agent = 'Consensus'
                     
                     # Execute trade with proper budget checks and position sizing
                     execution_result = None
@@ -5264,9 +5279,33 @@ class NextGenDashboard:
                     except Exception as e:
                         print(f"GNN analysis error: {e}")
                     
+                    # Determine which agent made this decision based on which action matched
+                    decision_agent = 'Unknown'
+                    normalized_final = final_action.split('_')[0]  # e.g., "BUY_LARGE" -> "BUY"
+                    normalized_ppo = ppo_action.split('_')[0]
+                    normalized_dqn = dqn_action.split('_')[0]
+                    normalized_dt = dt_action.split('_')[0] if dt_action else None
+                    
+                    # Check which agent's action matches the final decision
+                    matching_agents = []
+                    if normalized_final == normalized_ppo:
+                        matching_agents.append('PPO')
+                    if normalized_final == normalized_dqn:
+                        matching_agents.append('DQN')
+                    if normalized_dt and normalized_final == normalized_dt:
+                        matching_agents.append('DT')
+                    
+                    # Set decision agent name
+                    if len(matching_agents) == 1:
+                        decision_agent = matching_agents[0]
+                    elif len(matching_agents) > 1:
+                        decision_agent = '+'.join(matching_agents)
+                    else:
+                        decision_agent = 'Ensemble'
+                    
                     self.decision_history.append({
                         'timestamp': datetime.now().strftime('%H:%M:%S'),
-                        'agent': 'PPO' if final_action == ppo_action else 'DQN',
+                        'agent': decision_agent,
                         'action': final_action,
                         'symbol': selected_symbol,
                         'price': current_price,
