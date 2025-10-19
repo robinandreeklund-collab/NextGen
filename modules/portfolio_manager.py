@@ -81,6 +81,7 @@ class PortfolioManager:
         self.transaction_fee = transaction_fee
         self.positions: Dict[str, Dict[str, Any]] = {}  # symbol -> {quantity, avg_price}
         self.trade_history: List[Dict[str, Any]] = []
+        self.sold_history: List[Dict[str, Any]] = []  # Track sold stocks with P/L
         self.previous_portfolio_value = start_capital
         
         # Prenumerera på execution_result
@@ -148,7 +149,36 @@ class PortfolioManager:
             # Sälj aktier
             if symbol in self.positions and self.positions[symbol]['quantity'] >= quantity:
                 revenue = trade_value - fee
+                avg_buy_price = self.positions[symbol]['avg_price']
+                
+                # Calculate P/L and return %
+                cost_basis = avg_buy_price * quantity
+                gross_profit = trade_value - cost_basis
+                net_profit = revenue - cost_basis  # After fees
+                return_pct = (net_profit / cost_basis) * 100 if cost_basis > 0 else 0.0
+                
                 self.cash += revenue
+                
+                # Track sold stock with details
+                sold_record = {
+                    'symbol': symbol,
+                    'quantity': quantity,
+                    'avg_buy_price': avg_buy_price,
+                    'sell_price': executed_price,
+                    'cost_basis': cost_basis,
+                    'revenue': revenue,
+                    'gross_profit': gross_profit,
+                    'net_profit': net_profit,
+                    'return_pct': return_pct,
+                    'fee': fee,
+                    'timestamp': execution_result.get('timestamp', time.time()),
+                    'agent_decision': execution_result.get('agent', 'unknown')
+                }
+                self.sold_history.append(sold_record)
+                
+                # Keep only last 100 sold records
+                if len(self.sold_history) > 100:
+                    self.sold_history = self.sold_history[-100:]
                 
                 # Uppdatera position
                 self.positions[symbol]['quantity'] -= quantity
@@ -244,6 +274,21 @@ class PortfolioManager:
         status = self.get_status()
         self.message_bus.publish('portfolio_status', status)
     
+    def get_sold_history(self, limit: int = 20) -> List[Dict[str, Any]]:
+        """
+        Hämtar historik över sålda aktier.
+        
+        Args:
+            limit: Max antal resultat att returnera (default 20)
+            
+        Returns:
+            Lista med sålda aktier (senaste först)
+        """
+        if not hasattr(self, 'sold_history'):
+            self.sold_history = []
+        
+        # Return most recent sells first
+        return list(reversed(self.sold_history[-limit:]))
         
     def register_reward_tuner_callback(self, callback):
         """
