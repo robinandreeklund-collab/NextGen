@@ -218,7 +218,8 @@ class SymbolRotationEngine:
         
         # Remove some randomly as well
         if random_rotate > 0 and len(keep_symbols) > random_rotate:
-            keep_symbols = [s for s in keep_symbols if random.random() > 0.3]
+            to_remove = set(random.sample(keep_symbols, random_rotate))
+            keep_symbols = [s for s in keep_symbols if s not in to_remove]
         
         # Add new symbols
         available = [s for s in self.symbol_pool if s not in keep_symbols]
