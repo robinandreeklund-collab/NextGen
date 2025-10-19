@@ -3514,6 +3514,21 @@ class NextGenDashboard:
             # Start orchestrator
             self.orchestrator.start()
             
+            # Update simulation symbols from orchestrator (demo mode only)
+            if not self.live_mode and hasattr(self, 'data_ingestion'):
+                orch_symbols = getattr(self.orchestrator, 'active_symbols', [])
+                if orch_symbols and len(orch_symbols) > 0:
+                    self.symbols = orch_symbols
+                    if hasattr(self.data_ingestion, 'update_symbols'):
+                        self.data_ingestion.update_symbols(orch_symbols)
+                    # Initialize price/volume history for orchestrator symbols
+                    for symbol in orch_symbols:
+                        if symbol not in self.price_history:
+                            self.price_history[symbol] = []
+                        if symbol not in self.volume_history:
+                            self.volume_history[symbol] = []
+                    print(f"📊 Synchronized simulation with orchestrator: {len(orch_symbols)} active symbols")
+            
             self.simulation_thread = threading.Thread(target=self.simulation_loop, daemon=True)
             self.simulation_thread.start()
             print("✅ Simulation started (with orchestrator)")
@@ -3551,6 +3566,12 @@ class NextGenDashboard:
             
             # Store price history and volume history
             for symbol in self.symbols:
+                # Get price with fallback to generated price for new symbols
+                if symbol not in self.current_prices:
+                    self.current_prices[symbol] = self.base_prices.get(symbol, 100.0 + random.uniform(-20, 20))
+                if symbol not in self.base_prices:
+                    self.base_prices[symbol] = self.current_prices[symbol]
+                    
                 price = self.current_prices.get(symbol, self.base_prices[symbol])
                 self.price_history[symbol].append(price)
                 if len(self.price_history[symbol]) > 100:
