@@ -148,6 +148,8 @@ class NextGenDashboard:
         self.simulation_thread = None
         self.ws = None
         self.ws_thread = None
+        self.single_symbol_mode = False  # Toggle for single symbol mode
+        self.single_symbol = 'AMD'  # Default single symbol
         
         # Data history for charts (update with current symbols)
         self.price_history = {symbol: [] for symbol in self.symbols}
@@ -514,7 +516,29 @@ class NextGenDashboard:
                             'padding': '8px',
                             'backgroundColor': THEME_COLORS['surface_light'],
                             'borderRadius': '4px',
+                            'marginBottom': '10px',
                         }),
+                # Single symbol mode toggle
+                html.Div([
+                    html.Div("Symbol Mode", style={
+                        'fontSize': '13px',
+                        'fontWeight': '600',
+                        'color': THEME_COLORS['text_secondary'],
+                        'marginBottom': '8px',
+                    }),
+                    html.Button('🔀 Multi (49)', id='symbol-mode-btn', n_clicks=0,
+                               style={
+                                   'width': '100%',
+                                   'padding': '10px',
+                                   'backgroundColor': THEME_COLORS['primary'],
+                                   'color': 'white',
+                                   'border': 'none',
+                                   'borderRadius': '6px',
+                                   'cursor': 'pointer',
+                                   'fontSize': '13px',
+                                   'fontWeight': '500',
+                               }),
+                ], style={'marginBottom': '10px'}),
             ], style={'marginBottom': 'auto'}),
             
             # Bottom: Parameter Slider Sync toggle
@@ -789,6 +813,27 @@ class NextGenDashboard:
             status = 'Running' if self.running else 'Stopped'
             mode = f' ({"Live" if self.live_mode else "Demo"})' if self.running else ''
             return f'● {status}{mode}'
+        
+        # Symbol mode toggle callback
+        @self.app.callback(
+            Output('symbol-mode-btn', 'children'),
+            [Input('symbol-mode-btn', 'n_clicks')],
+            prevent_initial_call=True
+        )
+        def toggle_symbol_mode(n_clicks):
+            """Toggle between multi-symbol and single-symbol mode."""
+            if n_clicks is None or n_clicks == 0:
+                return f'🔀 Multi ({len(self.symbols)})'
+            
+            # Toggle mode
+            self.single_symbol_mode = not self.single_symbol_mode
+            
+            if self.single_symbol_mode:
+                # Single symbol mode - use AMD
+                return f'🎯 Single ({self.single_symbol})'
+            else:
+                # Multi symbol mode
+                return f'🔀 Multi ({len(self.symbols)})'
         
         # Orchestrator panel callbacks
         @self.app.callback(
@@ -2432,14 +2477,15 @@ class NextGenDashboard:
             cash = 1000.0
             holdings_value = 0.0
         
-        # Reward transformation data (base vs tuned)
-        base_rewards = self.reward_history.get('base', [0] * 50)[-50:]
-        tuned_rewards = self.reward_history.get('tuned', [0] * 50)[-50:]
+        # Reward transformation data (base vs tuned) - use actual data only
+        base_rewards = self.reward_history.get('base', [])[-50:]
+        tuned_rewards = self.reward_history.get('tuned', [])[-50:]
         
-        if not base_rewards:
-            base_rewards = [random.uniform(-5, 15) for _ in range(50)]
-        if not tuned_rewards:
-            tuned_rewards = [r * 1.2 + random.uniform(-2, 2) for r in base_rewards]
+        # Only use actual data, no fallback mock values
+        if not base_rewards or len(base_rewards) == 0:
+            base_rewards = []
+        if not tuned_rewards or len(tuned_rewards) == 0:
+            tuned_rewards = []
         
         reward_fig = go.Figure()
         reward_fig.add_trace(go.Scatter(
@@ -3613,10 +3659,10 @@ class NextGenDashboard:
             indicator_synth = submodule_details.get('indicator_synth', {})
             module_data.append({
                 'name': 'Indicator Synth Engine',
-                'status': indicator_synth.get('status', 'Active'),
+                'status': indicator_synth.get('status', 'active').capitalize(),
                 'metrics': {
-                    'Combinations': indicator_synth.get('total_combinations', 'N/A'),
-                    'Active': indicator_synth.get('active_combinations', 'N/A'),
+                    'Combinations': indicator_synth.get('recipes_count', 'N/A'),
+                    'Active': indicator_synth.get('cached_symbols', 'N/A'),
                 }
             })
             
@@ -3634,9 +3680,9 @@ class NextGenDashboard:
             symbol_rotation = submodule_details.get('symbol_rotation', {})
             module_data.append({
                 'name': 'Symbol Rotation Engine',
-                'status': symbol_rotation.get('status', 'Active'),
+                'status': symbol_rotation.get('status', 'active').capitalize(),
                 'metrics': {
-                    'Rotations': len(self.orchestrator_metrics['symbol_rotations']),
+                    'Rotations': symbol_rotation.get('rotation_count', len(self.orchestrator_metrics['symbol_rotations'])),
                     'Test Slots': symbol_rotation.get('test_slots', 1),
                 }
             })
@@ -3645,10 +3691,10 @@ class NextGenDashboard:
             rotation_strategy = submodule_details.get('rotation_strategy', {})
             module_data.append({
                 'name': 'Rotation Strategy Engine',
-                'status': rotation_strategy.get('status', 'Active'),
+                'status': rotation_strategy.get('status', 'active').capitalize(),
                 'metrics': {
                     'Strategy': rotation_strategy.get('current_strategy', 'RL-driven'),
-                    'Interval': f"{rotation_strategy.get('rotation_interval', 300)}s",
+                    'Feedback Buffer': rotation_strategy.get('feedback_buffer_size', 'N/A'),
                 }
             })
             
@@ -3656,14 +3702,15 @@ class NextGenDashboard:
             stream_strategy = submodule_details.get('stream_strategy', {})
             module_data.append({
                 'name': 'Stream Strategy Agent',
-                'status': stream_strategy.get('status', 'Active'),
+                'status': stream_strategy.get('status', 'active').capitalize(),
                 'metrics': {
                     'REST Batch': stream_strategy.get('rest_batch_size', 12),
-                    'Buffer Size': stream_strategy.get('buffer_size', 1000),
+                    'Buffer Size': stream_strategy.get('experience_buffer_size', 'N/A'),
                 }
             })
             
             # 6. stream_replay_engine
+            replay_details = submodule_details.get('replay_engine', {})
             replay_status = self.orchestrator.replay_engine.get_replay_status()
             module_data.append({
                 'name': 'Stream Replay Engine',
@@ -3678,10 +3725,10 @@ class NextGenDashboard:
             ontology_mapper = submodule_details.get('ontology_mapper', {})
             module_data.append({
                 'name': 'Stream Ontology Mapper',
-                'status': ontology_mapper.get('status', 'Active'),
+                'status': ontology_mapper.get('status', 'active').capitalize(),
                 'metrics': {
-                    'Mappings': ontology_mapper.get('total_mappings', 'N/A'),
-                    'Formats': ontology_mapper.get('supported_formats', 'N/A'),
+                    'Mappings': ontology_mapper.get('supported_sources', 'N/A'),
+                    'Formats': 'JSON, CSV, Finnhub',
                 }
             })
             
@@ -3966,7 +4013,13 @@ class NextGenDashboard:
                     self.volume_history[symbol].pop(0)
             
             # === TRADING DECISIONS WITH ACTUAL MODULES ===
-            selected_symbol = random.choice(self.symbols)
+            # Select symbol based on mode
+            if self.single_symbol_mode:
+                # Single symbol mode - use configured symbol (AMD)
+                selected_symbol = self.single_symbol if self.single_symbol in self.symbols else self.symbols[0]
+            else:
+                # Multi symbol mode - random selection
+                selected_symbol = random.choice(self.symbols)
             
             try:
                 # Calculate indicators (RSI, MACD, ATR, etc.)
