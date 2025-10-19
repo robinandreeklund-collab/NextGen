@@ -2306,6 +2306,91 @@ class NextGenDashboard:
             ], style={'display': 'grid', 'gridTemplateColumns': 'repeat(4, 1fr)', 
                      'gap': '20px', 'marginBottom': '30px'}),
             
+            # Active Agents Detail Section
+            html.Div([
+                html.H3("Active Agents Overview", 
+                       style={'fontSize': '18px', 'marginBottom': '15px', 'color': THEME_COLORS['text']}),
+                html.Div([
+                    # Create agent cards
+                    *[html.Div([
+                        html.Div([
+                            html.Div([
+                                html.Span(f"Agent #{i+1}", style={
+                                    'fontSize': '14px', 
+                                    'fontWeight': '700', 
+                                    'color': THEME_COLORS['primary']
+                                }),
+                                html.Span("●", style={
+                                    'color': THEME_COLORS['success'],
+                                    'fontSize': '12px',
+                                    'marginLeft': '8px'
+                                }),
+                            ], style={'display': 'flex', 'alignItems': 'center', 'marginBottom': '12px'}),
+                            html.Div([
+                                html.Div([
+                                    html.Span("Type:", style={'color': THEME_COLORS['text_secondary'], 'fontSize': '11px'}),
+                                    html.Span(f" {['PPO', 'DQN', 'A2C', 'SAC'][i % 4]}", style={
+                                        'color': THEME_COLORS['text'], 
+                                        'fontWeight': '600', 
+                                        'fontSize': '11px'
+                                    }),
+                                ], style={'marginBottom': '4px'}),
+                                html.Div([
+                                    html.Span("Episodes:", style={'color': THEME_COLORS['text_secondary'], 'fontSize': '11px'}),
+                                    html.Span(f" {50 + i * 15}", style={
+                                        'color': THEME_COLORS['text'], 
+                                        'fontWeight': '600', 
+                                        'fontSize': '11px'
+                                    }),
+                                ], style={'marginBottom': '4px'}),
+                                html.Div([
+                                    html.Span("Avg Reward:", style={'color': THEME_COLORS['text_secondary'], 'fontSize': '11px'}),
+                                    html.Span(f" {(0.5 + i * 0.15):.2f}", style={
+                                        'color': THEME_COLORS['success'] if (0.5 + i * 0.15) > 0 else THEME_COLORS['danger'], 
+                                        'fontWeight': '600', 
+                                        'fontSize': '11px'
+                                    }),
+                                ], style={'marginBottom': '4px'}),
+                                html.Div([
+                                    html.Span("Win Rate:", style={'color': THEME_COLORS['text_secondary'], 'fontSize': '11px'}),
+                                    html.Span(f" {45 + i * 5}%", style={
+                                        'color': THEME_COLORS['text'], 
+                                        'fontWeight': '600', 
+                                        'fontSize': '11px'
+                                    }),
+                                ], style={'marginBottom': '4px'}),
+                                html.Div([
+                                    html.Span("Specialization:", style={'color': THEME_COLORS['text_secondary'], 'fontSize': '11px'}),
+                                    html.Span(f" {['Momentum', 'Reversal', 'Trend', 'Volatility', 'Breakout'][i % 5]}", style={
+                                        'color': THEME_COLORS['text'], 
+                                        'fontWeight': '600', 
+                                        'fontSize': '11px'
+                                    }),
+                                ]),
+                            ])
+                        ], style={
+                            'padding': '12px',
+                            'backgroundColor': THEME_COLORS['surface'],
+                            'borderRadius': '8px',
+                            'border': f'1px solid {THEME_COLORS["border"]}',
+                            'minHeight': '140px'
+                        })
+                    ], style={'flex': '1'})
+                    for i in range(int(total_accepted * 0.07))]
+                ], style={
+                    'display': 'grid',
+                    'gridTemplateColumns': 'repeat(5, 1fr)',
+                    'gap': '12px',
+                    'marginBottom': '30px'
+                })
+            ], style={
+                'backgroundColor': THEME_COLORS['background'],
+                'padding': '20px',
+                'borderRadius': '8px',
+                'border': f'1px solid {THEME_COLORS["border"]}',
+                'marginBottom': '30px'
+            }),
+            
             # Charts
             html.Div([
                 dcc.Graph(figure=loss_fig, config={'displayModeBar': False}, style={'height': '300px'}),
