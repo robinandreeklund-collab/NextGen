@@ -2501,8 +2501,9 @@ class NextGenDashboard:
         
         # Training loss history chart
         loss_history = self.dt_metrics_history.get('training_loss', [])
+        # No fallback - show empty if no data yet
         if not loss_history:
-            loss_history = [0.5 - i * 0.01 for i in range(50)]
+            loss_history = [0.0]  # Single point at zero to show axis
         
         loss_fig = go.Figure()
         loss_fig.add_trace(go.Scatter(
@@ -2522,9 +2523,10 @@ class NextGenDashboard:
         target_rtg = self.dt_metrics_history.get('target_return', [])
         predicted_rtg = self.dt_metrics_history.get('predicted_return', [])
         
+        # No fallback - show empty if no data yet
         if not target_rtg:
-            target_rtg = [100 - i * 0.5 for i in range(50)]
-            predicted_rtg = [100 - i * 0.5 + random.uniform(-5, 5) for i in range(50)]
+            target_rtg = [100.0]  # Single point to show axis
+            predicted_rtg = [100.0]
         
         rtg_fig = go.Figure()
         rtg_fig.add_trace(go.Scatter(
@@ -2552,8 +2554,11 @@ class NextGenDashboard:
         action_probs = self.dt_metrics_history.get('action_probs', [])
         if action_probs and len(action_probs) > 0:
             latest_probs = action_probs[-1]
+            # Ensure it's a 3-element list
+            if len(latest_probs) != 3:
+                latest_probs = [0.33, 0.33, 0.34]  # Equal distribution fallback
         else:
-            latest_probs = [0.2, 0.5, 0.3]  # Default: HOLD, BUY, SELL
+            latest_probs = [0.33, 0.33, 0.34]  # Equal distribution when no data
         
         action_labels = ['HOLD', 'BUY', 'SELL']
         action_colors = [THEME_COLORS['text_secondary'], THEME_COLORS['success'], THEME_COLORS['danger']]
@@ -2577,8 +2582,9 @@ class NextGenDashboard:
         
         # Confidence history
         confidence_history = self.dt_metrics_history.get('confidence', [])
+        # No fallback - show empty if no data yet
         if not confidence_history:
-            confidence_history = [0.5 + random.uniform(-0.2, 0.3) for _ in range(50)]
+            confidence_history = [0.5]  # Single point to show axis
         
         conf_fig = go.Figure()
         conf_fig.add_trace(go.Scatter(
@@ -5178,11 +5184,22 @@ class NextGenDashboard:
                     self.dt_agent.current_sequence['actions'].append(dt_action_encoded)
                     self.dt_agent.current_sequence['rewards'].append(reward)
                     
+                    # Finalize sequence when it reaches max length to prevent overflow
+                    if len(self.dt_agent.current_sequence['states']) >= self.dt_agent.max_sequence_length:
+                        self.dt_agent.finalize_sequence()
+                    
                     # Train DT every 10 steps if we have enough data
-                    if self.iteration_count % 10 == 0:
-                        train_loss = self.dt_agent.train_step()
-                        if train_loss is not None:
-                            self.log_message(f"DT training loss: {train_loss:.4f}", "INFO")
+                    if self.iteration_count % 10 == 0 and len(self.dt_agent.sequence_buffer) >= 8:
+                        train_result = self.dt_agent.train_step()
+                        if train_result and not train_result.get('skipped', False):
+                            # Publish training metrics to message bus for dashboard
+                            self.message_bus.publish('dt_metrics', {
+                                'avg_loss': train_result['avg_loss'],
+                                'training_steps': train_result['total_steps'],
+                                'buffer_size': train_result['buffer_size'],
+                                'loss': train_result['loss']
+                            })
+                            self.log_message(f"DT training - Loss: {train_result['loss']:.4f}, Steps: {train_result['total_steps']}", "INFO")
                     
                     self.decision_history.append({
                         'timestamp': datetime.now().strftime('%H:%M:%S'),
