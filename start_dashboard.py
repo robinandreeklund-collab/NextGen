@@ -796,8 +796,8 @@ class NextGenDashboard:
         )
         def update_orchestrator_panel(n):
             """Update orchestrator panel with latest data - updates in background."""
-            # Update every 5 intervals (10 seconds)
-            if n % 5 != 0:
+            # Update every 5 intervals (10 seconds) - skip initial and intermediate updates
+            if n is None or n % 5 != 0:
                 raise dash.exceptions.PreventUpdate
             
             try:
@@ -3868,15 +3868,31 @@ class NextGenDashboard:
                     portfolio_value_after = self.portfolio_manager.get_portfolio_value(self.current_prices)
                     
                     # Calculate reward based on actual P/L for this symbol
-                    # For BUY: reward is negative (cost of buying)
                     # For SELL: reward is the actual profit/loss from the trade
+                    # For BUY: reward is negative (cost of buying)
+                    # For HOLD/REBALANCE: reward is portfolio value change
                     reward = 0.0
-                    if final_action == 'SELL' and selected_symbol in self.portfolio_manager.sold_history:
-                        # Get the most recent sale of this symbol
-                        recent_sales = [s for s in self.portfolio_manager.sold_history if s['symbol'] == selected_symbol]
-                        if recent_sales:
-                            last_sale = recent_sales[-1]
-                            reward = last_sale.get('net_profit', 0.0)  # Actual P/L after fees
+                    if final_action in ['SELL', 'SELL_PARTIAL', 'SELL_ALL']:
+                        # For SELL actions, calculate P/L from execution_result
+                        if execution_result and execution_result.get('success'):
+                            # Revenue from sale (execution_result['total_cost'] is actually revenue for SELL)
+                            revenue = execution_result.get('total_cost', 0.0)
+                            quantity = execution_result.get('quantity', 0)
+                            executed_price = execution_result.get('executed_price', 0.0)
+                            
+                            # Get cost basis from portfolio manager (BEFORE the sale happens)
+                            cost_basis = 0.0
+                            avg_buy_price = 0.0
+                            if selected_symbol in self.portfolio_manager.positions:
+                                avg_buy_price = self.portfolio_manager.positions[selected_symbol].get('average_price', 0)
+                                cost_basis = quantity * avg_buy_price
+                            
+                            # Calculate fee (0.25% of revenue)
+                            fee = revenue * 0.0025
+                            
+                            # Net profit = Revenue - Cost Basis - Fee
+                            net_profit = revenue - cost_basis - fee
+                            reward = net_profit
                     elif final_action == 'BUY':
                         # For BUY, reward is negative (money spent)
                         if execution_result and execution_result.get('success'):
