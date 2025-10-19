@@ -446,8 +446,8 @@ class DecisionTransformerAgent:
                 actions = np.array(actions).reshape(1, seq_length + 1, -1)
                 
                 # Return-to-go decreases over sequence
-                returns_to_go = [target_return - sum(self.current_sequence['rewards'][-seq_length:])]
-                returns_to_go = np.array(returns_to_go * (seq_length + 1)).reshape(1, seq_length + 1, 1)
+                returns = [target_return - sum(self.current_sequence['rewards'][-seq_length:])]
+                returns = np.array(returns * (seq_length + 1)).reshape(1, seq_length + 1, 1)
                 
                 timesteps = np.arange(seq_length + 1).reshape(1, -1)
             
