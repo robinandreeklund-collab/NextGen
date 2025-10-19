@@ -1578,7 +1578,9 @@ class NextGenDashboard:
             )
         
         # Replay buffer utilization
-        max_buffer = self.dqn_controller.replay_buffer.buffer.maxlen if hasattr(self.dqn_controller, 'replay_buffer') else 10000
+        rb = getattr(self.dqn_controller, 'replay_buffer', None)
+        buffer = getattr(rb, 'buffer', None)
+        max_buffer = getattr(buffer, 'maxlen', 10000)
         buffer_utilization = (buffer_size / max_buffer * 100) if max_buffer > 0 else 0
         
         return html.Div([
