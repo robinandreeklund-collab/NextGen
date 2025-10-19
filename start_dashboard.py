@@ -4667,7 +4667,7 @@ class NextGenDashboard:
                         if actual_action in ['BUY', 'SELL']:
                             self.execution_history.append({
                                 'timestamp': datetime.now().strftime('%H:%M:%S'),
-                                'agent': 'PPO' if final_action == ppo_action else 'DQN',
+                                'agent': deciding_agent,  # Use actual deciding agent (PPO/DQN/Consensus)
                                 'action': actual_action,  # Use actual action (BUY or SELL)
                                 'symbol': selected_symbol,
                                 'quantity': execution_result.get('quantity', 0),
