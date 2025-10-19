@@ -5201,6 +5201,69 @@ class NextGenDashboard:
                             })
                             self.log_message(f"DT training - Loss: {train_result['loss']:.4f}, Steps: {train_result['total_steps']}", "INFO")
                     
+                    # Train GAN every 20 steps to generate agent parameter candidates
+                    if self.iteration_count % 20 == 0 and len(self.gan_evolution.real_agent_data) >= 16:
+                        try:
+                            g_loss, d_loss = self.gan_evolution.train_step(batch_size=16)
+                            # Publish GAN metrics
+                            gan_metrics = self.gan_evolution.get_metrics()
+                            self.message_bus.publish('gan_metrics', {
+                                'g_loss': g_loss,
+                                'd_loss': d_loss,
+                                'acceptance_rate': gan_metrics['acceptance_rate'],
+                                'candidates_generated': gan_metrics['candidates_generated'],
+                                'candidates_accepted': gan_metrics['candidates_accepted']
+                            })
+                            self.log_message(f"GAN training - G_Loss: {g_loss:.4f}, D_Loss: {d_loss:.4f}, Accept: {gan_metrics['acceptance_rate']:.2%}", "INFO")
+                        except Exception as e:
+                            print(f"GAN training error: {e}")
+                    
+                    # Feed decision data to GNN for pattern analysis
+                    try:
+                        # Publish decision to GNN
+                        self.message_bus.publish('decision', {
+                            'action': final_action,
+                            'price': current_price,
+                            'timestamp': time.time(),
+                            'reward': reward,
+                            'symbol': selected_symbol
+                        })
+                        
+                        # Publish indicators to GNN
+                        self.message_bus.publish('indicator', {
+                            'rsi': rsi,
+                            'macd': macd,
+                            'sma': sma_20,
+                            'volume': volume / 1e6 if volume > 0 else 0,
+                            'timestamp': time.time()
+                        })
+                        
+                        # Publish outcome to GNN
+                        self.message_bus.publish('outcome', {
+                            'success': reward > 0,
+                            'reward': reward,
+                            'timestamp': time.time()
+                        })
+                        
+                        # Analyze patterns every 15 steps
+                        if self.iteration_count % 15 == 0 and len(self.gnn_analyzer.decision_history) >= 5:
+                            patterns = self.gnn_analyzer.analyze_patterns()
+                            insights = self.gnn_analyzer.get_temporal_insights()
+                            
+                            # Publish GNN insights
+                            self.message_bus.publish('gnn_insights', {
+                                'patterns': patterns['patterns'],
+                                'pattern_confidence': patterns.get('avg_confidence', 0.0),
+                                'success_rate': insights.get('success_rate', 0.0),
+                                'recommendations': insights.get('recommendations', [])
+                            })
+                            
+                            if patterns['patterns']:
+                                pattern_types = [p['type'] for p in patterns['patterns'][:3]]
+                                self.log_message(f"GNN patterns detected: {', '.join(pattern_types)}", "INFO")
+                    except Exception as e:
+                        print(f"GNN analysis error: {e}")
+                    
                     self.decision_history.append({
                         'timestamp': datetime.now().strftime('%H:%M:%S'),
                         'agent': 'PPO' if final_action == ppo_action else 'DQN',
@@ -5245,21 +5308,50 @@ class NextGenDashboard:
                 self.reward_history['ppo'].append(ppo_reward)
                 self.reward_history['dqn'].append(dqn_reward)
                 
+                # Feed agent performance to GAN for evolution
+                try:
+                    # Create agent parameter vector (16-dim for GAN)
+                    # Normalize rewards to [-1, 1] range for GAN
+                    agent_params = np.array([
+                        np.clip(ppo_reward / 100, -1, 1),      # PPO performance
+                        np.clip(dqn_reward / 100, -1, 1),      # DQN performance
+                        np.clip(reward / 100, -1, 1),          # Current reward
+                        np.clip(portfolio_value / 50000, -1, 1),  # Portfolio value
+                        np.clip(rsi / 100, -1, 1),             # RSI indicator
+                        np.clip(macd / 10, -1, 1),             # MACD indicator
+                        np.clip(volume / 5e6, -1, 1),          # Volume
+                        np.clip(sma_distance, -1, 1),          # SMA distance
+                        np.clip(price_momentum, -1, 1),        # Price momentum
+                        np.clip(volatility_index / 0.1, -1, 1),  # Volatility
+                        np.clip(atr / current_price, -1, 1),   # ATR normalized
+                        np.clip(bb_position, -1, 1),           # BB position
+                        np.clip(volume_ratio / 3, -1, 1),      # Volume ratio
+                        np.clip(volume_trend, -1, 1),          # Volume trend
+                        np.clip(position_size, -1, 1),         # Position size
+                        np.clip(cash_ratio, -1, 1)             # Cash ratio
+                    ], dtype=np.float32)
+                    
+                    # Publish to GAN via message bus
+                    self.message_bus.publish('agent_performance', {
+                        'parameters': agent_params.tolist(),
+                        'performance_score': float(np.clip((base_reward + 100) / 200, 0, 1)),  # Normalize to [0,1]
+                        'timestamp': time.time()
+                    })
+                except Exception as e:
+                    print(f"Error feeding data to GAN: {e}")
+                
                 for key in self.reward_history:
                     if len(self.reward_history[key]) > 100:
                         self.reward_history[key].pop(0)
             except Exception as e:
                 print(f"Error collecting reward data: {e}")
             
-            # GAN Evolution metrics - get from actual module if available
+            # GAN Evolution metrics - get from actual module
             try:
-                # In production, these would come from gan_evolution module
-                # For now, simulate realistic training progression
-                base_g_loss = 0.5 - (self.iteration_count * 0.001)
-                base_d_loss = 0.4 - (self.iteration_count * 0.0008)
-                self.gan_metrics_history['g_loss'].append(max(0.1, base_g_loss + random.gauss(0, 0.05)))
-                self.gan_metrics_history['d_loss'].append(max(0.1, base_d_loss + random.gauss(0, 0.04)))
-                self.gan_metrics_history['acceptance_rate'].append(min(0.95, 0.60 + (self.iteration_count * 0.002) + random.gauss(0, 0.03)))
+                gan_metrics = self.gan_evolution.get_metrics()
+                self.gan_metrics_history['g_loss'].append(gan_metrics.get('g_loss', 0.0))
+                self.gan_metrics_history['d_loss'].append(gan_metrics.get('d_loss', 0.0))
+                self.gan_metrics_history['acceptance_rate'].append(gan_metrics.get('acceptance_rate', 0.0))
                 
                 for key in self.gan_metrics_history:
                     if len(self.gan_metrics_history[key]) > 100:
@@ -5267,32 +5359,33 @@ class NextGenDashboard:
             except Exception as e:
                 print(f"Error collecting GAN metrics: {e}")
             
-            # GNN Pattern Detection - use actual price trend data
+            # GNN Pattern Detection - use actual GNN module
             try:
-                # Detect patterns based on actual price movements
-                pattern_types = ['Trend', 'Mean Reversion', 'Breakout', 'Support/Resistance', 
-                               'Volatility Spike', 'Volume Anomaly', 'Momentum', 'Seasonal']
+                gnn_metrics = self.gnn_analyzer.get_metrics()
                 
-                # Calculate actual trend from price history
-                if len(prices) >= 10:
+                # Get latest pattern if available
+                if len(self.gnn_analyzer.detected_patterns) > 0:
+                    latest_pattern = self.gnn_analyzer.detected_patterns[-1]
+                    self.gnn_pattern_history.append({
+                        'timestamp': datetime.now().strftime('%H:%M:%S'),
+                        'type': latest_pattern.get('type', 'Unknown'),
+                        'confidence': latest_pattern.get('confidence', 0.5)
+                    })
+                elif len(prices) >= 10:
+                    # Fallback: detect basic trend pattern from price data
                     recent_trend = (prices[-1] - prices[-10]) / prices[-10]
-                    
-                    # Higher confidence for strong trends
                     if abs(recent_trend) > 0.015:
-                        pattern_type = 'Trend'
-                        confidence = 0.80 + min(abs(recent_trend) * 10, 0.15)
+                        pattern_type = 'uptrend' if recent_trend > 0 else 'downtrend'
+                        confidence = 0.70 + min(abs(recent_trend) * 10, 0.20)
                     else:
-                        pattern_type = random.choice(pattern_types)
-                        confidence = 0.60 + random.uniform(0, 0.30)
-                else:
-                    pattern_type = random.choice(pattern_types)
-                    confidence = 0.60 + random.uniform(0, 0.30)
-                
-                self.gnn_pattern_history.append({
-                    'timestamp': datetime.now().strftime('%H:%M:%S'),
-                    'type': pattern_type,
-                    'confidence': confidence
-                })
+                        pattern_type = 'consolidation'
+                        confidence = 0.60
+                    
+                    self.gnn_pattern_history.append({
+                        'timestamp': datetime.now().strftime('%H:%M:%S'),
+                        'type': pattern_type,
+                        'confidence': confidence
+                    })
                 
                 if len(self.gnn_pattern_history) > 50:
                     self.gnn_pattern_history.pop(0)
