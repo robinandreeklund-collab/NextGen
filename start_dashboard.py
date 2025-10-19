@@ -765,7 +765,8 @@ class NextGenDashboard:
              Output('rotation-timeline-chart', 'figure'),
              Output('rl-scores-chart', 'figure'),
              Output('stream-health-gauge', 'figure'),
-             Output('replay-status-display', 'children')],
+             Output('replay-status-display', 'children'),
+             Output('orchestrator-details-display', 'children')],
             [Input('interval-component', 'n_intervals')],
             prevent_initial_call=True
         )
@@ -775,17 +776,31 @@ class NextGenDashboard:
                 # Get orchestrator status
                 orch_status = self.orchestrator.get_status()
                 
-                # Status display
+                # Get detailed metrics from stream_metrics
+                detailed_metrics = {}
+                if 'orchestrator' in self.orchestrator.stream_metrics:
+                    detailed_metrics = self.orchestrator.stream_metrics['orchestrator'].get('detailed_metrics', {})
+                
+                # Status display with more details
+                active_subs = detailed_metrics.get('active_subscriptions', 0)
+                ws_usage = detailed_metrics.get('websocket_usage_pct', 0)
+                hist_symbols = detailed_metrics.get('historical_symbols_used', [])
+                
                 status_text = [
                     html.Div(f"Running: {'✅ Yes' if orch_status.get('is_running') else '❌ No'}"),
                     html.Div(f"Mode: {'🔴 Live' if orch_status.get('live_mode') else '🟢 Demo'}"),
-                    html.Div(f"Active Symbols: {len(orch_status.get('active_symbols', []))}"),
+                    html.Div(f"Active Subscriptions: {active_subs}"),
+                    html.Div(f"WebSocket Usage: {ws_usage:.1f}%"),
+                    html.Div(f"Historical Symbols: {len(hist_symbols)}"),
                 ]
                 
                 # Active symbols display
                 active_symbols = orch_status.get('active_symbols', [])
                 symbols_text = [html.Div(f"• {sym}", style={'marginBottom': '5px'}) 
                                for sym in active_symbols[:10]]  # Show first 10
+                if len(active_symbols) > 10:
+                    symbols_text.append(html.Div(f"... and {len(active_symbols) - 10} more", 
+                                                 style={'fontStyle': 'italic', 'color': THEME_COLORS['text_secondary']}))
                 
                 # Rotation stats
                 rotation_count = len(self.orchestrator_metrics['symbol_rotations'])
@@ -837,14 +852,18 @@ class NextGenDashboard:
                     yaxis_title="Priority Score"
                 )
                 
-                # Stream health gauge
+                # Stream health gauge - Fixed to not grow
+                health_value = 95  # Could be calculated from metrics
+                if 'orchestrator' in self.orchestrator.stream_metrics:
+                    health_value = self.orchestrator.stream_metrics['orchestrator'].get('stream_health', 0.95) * 100
+                
                 health_fig = go.Figure(go.Indicator(
                     mode="gauge+number",
-                    value=95,  # Placeholder - would come from orchestrator metrics
+                    value=health_value,
                     domain={'x': [0, 1], 'y': [0, 1]},
                     title={'text': "Health %"},
                     gauge={
-                        'axis': {'range': [None, 100]},
+                        'axis': {'range': [0, 100]},  # Fixed range
                         'bar': {'color': THEME_COLORS['success']},
                         'threshold': {
                             'line': {'color': "red", 'width': 4},
@@ -857,7 +876,8 @@ class NextGenDashboard:
                     paper_bgcolor=THEME_COLORS['surface'],
                     font=dict(color=THEME_COLORS['text']),
                     height=200,
-                    margin=dict(l=20, r=20, t=40, b=20)
+                    margin=dict(l=20, r=20, t=40, b=20),
+                    autosize=False  # Fixed size to prevent growing
                 )
                 
                 # Replay status
@@ -866,21 +886,38 @@ class NextGenDashboard:
                     html.Div(f"Active: {'✅ Yes' if replay_status.get('is_replaying') else '❌ No'}"),
                     html.Div(f"Mode: {replay_status.get('mode', 'N/A')}"),
                     html.Div(f"Speed: {replay_status.get('speed', 1.0)}x"),
+                    html.Div(f"Position: {replay_status.get('position', 0)}"),
                 ]
                 
+                # Detailed orchestrator info
+                submodule_details = detailed_metrics.get('submodule_details', {})
+                details_text = []
+                
+                if submodule_details:
+                    details_text.append(html.H4("Submodule Details:", style={'marginTop': '10px', 'marginBottom': '10px'}))
+                    
+                    for module_name, details in submodule_details.items():
+                        module_info = [html.B(f"{module_name}:")]
+                        for key, value in details.items():
+                            if key != 'status':
+                                module_info.append(html.Div(f"  {key}: {value}", style={'fontSize': '12px'}))
+                        details_text.append(html.Div(module_info, style={'marginBottom': '10px'}))
+                
                 return (status_text, symbols_text, stats_text, 
-                       rotation_fig, rl_fig, health_fig, replay_text)
+                       rotation_fig, rl_fig, health_fig, replay_text, details_text)
                 
             except Exception as e:
                 # Return empty/error state
                 empty_fig = go.Figure()
                 empty_fig.update_layout(
                     paper_bgcolor=THEME_COLORS['surface'],
-                    plot_bgcolor=THEME_COLORS['surface']
+                    plot_bgcolor=THEME_COLORS['surface'],
+                    autosize=False,
+                    height=200
                 )
                 error_text = [html.Div(f"Error: {str(e)}", style={'color': THEME_COLORS['danger']})]
                 return (error_text, error_text, error_text, 
-                       empty_fig, empty_fig, empty_fig, error_text)
+                       empty_fig, empty_fig, empty_fig, error_text, error_text)
         
     
     def create_dashboard_view(self) -> html.Div:
@@ -3378,7 +3415,7 @@ class NextGenDashboard:
                     # Stream Health
                     html.Div([
                         html.H3("Stream Health", style={'fontSize': '16px', 'marginBottom': '15px'}),
-                        dcc.Graph(id='stream-health-gauge', config={'displayModeBar': False})
+                        dcc.Graph(id='stream-health-gauge', config={'displayModeBar': False}, style={'height': '200px'})
                     ], style={'flex': '1', 'marginRight': '10px'}),
                     
                     # Replay Status
@@ -3387,6 +3424,19 @@ class NextGenDashboard:
                         html.Div(id='replay-status-display', style={'fontSize': '14px'})
                     ], style={'flex': '1'})
                 ], style={'display': 'flex'})
+            ], style={
+                'backgroundColor': THEME_COLORS['surface'],
+                'padding': '20px',
+                'borderRadius': '8px',
+                'border': f'1px solid {THEME_COLORS["border"]}',
+                'marginBottom': '20px'
+            }),
+            
+            # Detailed Orchestrator Information
+            html.Div([
+                html.H3("Detailed Component Information", 
+                       style={'fontSize': '16px', 'marginBottom': '15px', 'color': THEME_COLORS['text']}),
+                html.Div(id='orchestrator-details-display', style={'fontSize': '13px'})
             ], style={
                 'backgroundColor': THEME_COLORS['surface'],
                 'padding': '20px',

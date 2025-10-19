@@ -286,6 +286,43 @@ class TestFinnhubOrchestrator:
         assert not orchestrator.live_mode
         assert orchestrator.message_bus == bus
     
+    def test_nasdaq_symbols_loading(self):
+        """Test that NASDAQ 100 symbols are loaded"""
+        bus = MessageBus()
+        orchestrator = FinnhubOrchestrator(
+            api_key='test_key',
+            message_bus=bus,
+            live_mode=False
+        )
+        
+        # Check that default_symbols has been populated
+        default_symbols = orchestrator.config.get('default_symbols', [])
+        assert len(default_symbols) > 0
+        
+        # If NASDAQ file exists, should have many symbols
+        # Otherwise falls back to 7 default symbols
+        assert len(default_symbols) >= 7
+    
+    def test_detailed_metrics_tracking(self):
+        """Test detailed metrics tracking"""
+        bus = MessageBus()
+        orchestrator = FinnhubOrchestrator(
+            api_key='test_key',
+            message_bus=bus,
+            live_mode=False
+        )
+        
+        orchestrator.start()
+        time.sleep(1)
+        
+        # Check that detailed metrics are being tracked
+        assert 'active_subscriptions' in orchestrator.detailed_metrics
+        assert 'websocket_usage_pct' in orchestrator.detailed_metrics
+        assert 'historical_symbols_used' in orchestrator.detailed_metrics
+        assert 'submodule_details' in orchestrator.detailed_metrics
+        
+        orchestrator.stop()
+    
     def test_start_stop(self):
         """Test starting and stopping orchestrator"""
         bus = MessageBus()
