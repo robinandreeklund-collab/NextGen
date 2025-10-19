@@ -5604,3 +5604,8 @@ ValueError: Sample larger than population or is negative
 2025-10-19 20:32:02,370 - FinnhubOrchestrator - INFO - Orchestrator stopped
 2025-10-19 20:32:02,370 - FinnhubOrchestrator - INFO - Orchestrator stopped
 2025-10-19 20:32:02,370 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 22:33:56,676 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 22:33:56,676 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 22:33:56,922 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 22:33:56,922 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 22:33:56,925 - FinnhubOrchestrator - INFO - Orchestrator started
