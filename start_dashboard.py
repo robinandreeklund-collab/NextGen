@@ -3888,26 +3888,28 @@ class NextGenDashboard:
                     # For HOLD/REBALANCE: reward is portfolio value change
                     reward = 0.0
                     if final_action in ['SELL', 'SELL_PARTIAL', 'SELL_ALL']:
-                        # For SELL actions, calculate P/L from execution_result
+                        # For SELL actions, use the ACTUAL net_profit from sold_history
+                        # This is the most accurate since it's calculated by portfolio_manager
+                        # and accounts for all edge cases (partial sells, rounding, etc.)
                         if execution_result and execution_result.get('success'):
-                            # Revenue from sale (execution_result['total_cost'] is actually revenue for SELL)
-                            revenue = execution_result.get('total_cost', 0.0)
-                            quantity = execution_result.get('quantity', 0)
-                            executed_price = execution_result.get('executed_price', 0.0)
-                            
-                            # Get cost basis from portfolio manager (BEFORE the sale happens)
-                            cost_basis = 0.0
-                            avg_buy_price = 0.0
-                            if selected_symbol in self.portfolio_manager.positions:
-                                avg_buy_price = self.portfolio_manager.positions[selected_symbol].get('average_price', 0)
-                                cost_basis = quantity * avg_buy_price
-                            
-                            # Calculate fee (0.25% of revenue)
-                            fee = revenue * 0.0025
-                            
-                            # Net profit = Revenue - Cost Basis - Fee
-                            net_profit = revenue - cost_basis - fee
-                            reward = net_profit
+                            # Check if this symbol appears in sold_history (should be the last entry)
+                            sold_history = self.portfolio_manager.get_sold_history(limit=1)
+                            if sold_history and sold_history[0]['symbol'] == selected_symbol:
+                                # Use the actual net_profit from the sale
+                                reward = sold_history[0].get('net_profit', 0.0)
+                            else:
+                                # Fallback: calculate manually (should rarely happen)
+                                revenue = execution_result.get('total_cost', 0.0)
+                                quantity = execution_result.get('quantity', 0)
+                                
+                                cost_basis = 0.0
+                                if selected_symbol in self.portfolio_manager.positions:
+                                    avg_buy_price = self.portfolio_manager.positions[selected_symbol].get('avg_price', 0)
+                                    cost_basis = quantity * avg_buy_price
+                                
+                                fee = revenue * 0.0025
+                                net_profit = revenue - cost_basis - fee
+                                reward = net_profit
                     elif final_action == 'BUY':
                         # For BUY, reward is negative (money spent)
                         if execution_result and execution_result.get('success'):
