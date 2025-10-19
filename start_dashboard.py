@@ -1526,6 +1526,10 @@ class NextGenDashboard:
             pnl_color = THEME_COLORS['success'] if sale['net_profit'] >= 0 else THEME_COLORS['danger']
             return_color = THEME_COLORS['success'] if sale['return_pct'] >= 0 else THEME_COLORS['danger']
             
+            # Reward is the net_profit (for RL agents)
+            reward = sale['net_profit']
+            reward_color = THEME_COLORS['success'] if reward >= 0 else THEME_COLORS['danger']
+            
             sold_rows.append(html.Tr([
                 html.Td(sale['symbol'], 
                        style={'padding': '10px', 'color': THEME_COLORS['text'], 'fontWeight': '600'}),
@@ -1539,6 +1543,8 @@ class NextGenDashboard:
                        style={'padding': '10px', 'textAlign': 'right', 'color': pnl_color, 'fontWeight': '600'}),
                 html.Td(f"{sale['return_pct']:.2f}%",
                        style={'padding': '10px', 'textAlign': 'right', 'color': return_color, 'fontWeight': '600'}),
+                html.Td(f"{reward:+.2f}",
+                       style={'padding': '10px', 'textAlign': 'right', 'color': reward_color, 'fontWeight': '600'}),
                 html.Td(sale.get('agent_decision', 'N/A'),
                        style={'padding': '10px', 'color': THEME_COLORS['text']}),
             ], style={'borderBottom': f'1px solid {THEME_COLORS["border"]}'}))
@@ -1566,11 +1572,14 @@ class NextGenDashboard:
                         html.Th("Return %", style={'padding': '10px', 'textAlign': 'right', 
                                                   'color': THEME_COLORS['text_secondary'], 'fontSize': '12px',
                                                   'borderBottom': f'1px solid {THEME_COLORS["border"]}'}),
+                        html.Th("Reward", style={'padding': '10px', 'textAlign': 'right', 
+                                                'color': THEME_COLORS['text_secondary'], 'fontSize': '12px',
+                                                'borderBottom': f'1px solid {THEME_COLORS["border"]}'}),
                         html.Th("Agent", style={'padding': '10px', 'color': THEME_COLORS['text_secondary'], 
                                                'fontSize': '12px', 'borderBottom': f'1px solid {THEME_COLORS["border"]}'}),
                     ])),
                     html.Tbody(sold_rows if sold_rows else [
-                        html.Tr([html.Td("No sales yet", colSpan=7, 
+                        html.Tr([html.Td("No sales yet", colSpan=8, 
                                         style={'padding': '20px', 'textAlign': 'center', 
                                               'color': THEME_COLORS['text_secondary']})])
                     ])
