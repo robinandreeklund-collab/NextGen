@@ -5609,3 +5609,17 @@ ValueError: Sample larger than population or is negative
 2025-10-19 22:33:56,922 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
 2025-10-19 22:33:56,922 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
 2025-10-19 22:33:56,925 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 22:39:00,529 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 22:39:00,529 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 22:39:00,698 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 22:39:00,698 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 22:39:00,698 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 22:44:01,607 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-19 22:44:01,607 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-19 22:46:12,642 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 22:46:12,642 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 22:46:12,829 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 22:46:12,829 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 22:46:12,831 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 22:51:13,673 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-19 22:51:13,673 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
