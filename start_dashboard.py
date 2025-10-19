@@ -99,8 +99,8 @@ class NextGenDashboard:
         self.live_mode = live_mode
         self.api_key = "d3in10hr01qmn7fkr2a0d3in10hr01qmn7fkr2ag"
         
-        # Symbols for tracking
-        self.symbols = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA']
+        # Symbols for tracking (will be updated by orchestrator)
+        self.symbols = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA']  # Initial fallback
         
         # Base prices for simulation
         self.base_prices = {
@@ -117,13 +117,30 @@ class NextGenDashboard:
         # Initialize modules
         self.message_bus = MessageBus()
         
-        # Initialize data ingestion based on mode
+        # Setup modules (including orchestrator)
+        self.setup_modules()
+        
+        # Get active symbols from orchestrator for simulation
+        if not live_mode and hasattr(self, 'orchestrator'):
+            orch_symbols = getattr(self.orchestrator, 'active_symbols', [])
+            if orch_symbols and len(orch_symbols) > 0:
+                self.symbols = orch_symbols
+                # Initialize missing price tracking
+                for symbol in self.symbols:
+                    if symbol not in self.base_prices:
+                        self.base_prices[symbol] = 100.0 + random.uniform(-20, 20)
+                    if symbol not in self.current_prices:
+                        self.current_prices[symbol] = self.base_prices[symbol]
+                    if symbol not in self.price_trends:
+                        self.price_trends[symbol] = 0.0
+                print(f"📊 Using orchestrator symbols for simulation: {len(self.symbols)} active symbols")
+        
+        # Initialize data ingestion based on mode (after orchestrator symbols are set)
         if live_mode:
             self.data_ingestion = DataIngestion(self.api_key, self.message_bus)
         else:
             self.data_ingestion = DataIngestionSim(self.message_bus, self.symbols)
-        
-        self.setup_modules()
+            print(f"📊 Simulated data ingestion initialized for {len(self.symbols)} symbols")
         
         # Dashboard state
         self.running = False
@@ -132,7 +149,7 @@ class NextGenDashboard:
         self.ws = None
         self.ws_thread = None
         
-        # Data history for charts
+        # Data history for charts (update with current symbols)
         self.price_history = {symbol: [] for symbol in self.symbols}
         self.volume_history = {symbol: [] for symbol in self.symbols}  # Track volume for expanded state
         self.reward_history = {'base': [], 'tuned': [], 'ppo': [], 'dqn': []}
@@ -269,6 +286,20 @@ class NextGenDashboard:
         # Keep only last 50 rotations
         if len(self.orchestrator_metrics['symbol_rotations']) > 50:
             self.orchestrator_metrics['symbol_rotations'].pop(0)
+        
+        # Update simulation symbols if in demo mode
+        if not self.live_mode and hasattr(self, 'data_ingestion'):
+            new_symbols = event.get('new_symbols', [])
+            if new_symbols and hasattr(self.data_ingestion, 'update_symbols'):
+                self.data_ingestion.update_symbols(new_symbols)
+                # Update dashboard tracking
+                self.symbols = new_symbols
+                # Initialize price/volume history for new symbols
+                for symbol in new_symbols:
+                    if symbol not in self.price_history:
+                        self.price_history[symbol] = []
+                    if symbol not in self.volume_history:
+                        self.volume_history[symbol] = []
     
     def _handle_rl_scores(self, scores: Dict[str, Any]):
         """Handle RL score updates."""
@@ -772,6 +803,10 @@ class NextGenDashboard:
         )
         def update_orchestrator_panel(n):
             """Update orchestrator panel with latest data."""
+            # Only update every 5 intervals (10 seconds) to reduce flickering
+            if n % 5 != 0:
+                raise dash.exceptions.PreventUpdate
+            
             try:
                 # Get orchestrator status
                 orch_status = self.orchestrator.get_status()
