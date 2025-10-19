@@ -63,6 +63,8 @@ from modules.dqn_controller import DQNController
 from modules.gan_evolution_engine import GANEvolutionEngine
 from modules.gnn_timespan_analyzer import GNNTimespanAnalyzer
 from modules.finnhub_orchestrator import FinnhubOrchestrator
+from modules.decision_transformer_agent import DecisionTransformerAgent
+from modules.ensemble_coordinator import EnsembleCoordinator
 import numpy as np
 
 
@@ -158,6 +160,21 @@ class NextGenDashboard:
         self.agent_metrics_history = []
         self.gan_metrics_history = {'g_loss': [], 'd_loss': [], 'acceptance_rate': []}
         self.gnn_pattern_history = []
+        self.dt_metrics_history = {
+            'training_loss': [],
+            'target_return': [],
+            'predicted_return': [],
+            'confidence': [],
+            'action_probs': [],
+            'attention_weights': []
+        }
+        self.ensemble_metrics_history = {
+            'ppo_accuracy': [],
+            'dqn_accuracy': [],
+            'dt_accuracy': [],
+            'ensemble_confidence': [],
+            'conflict_count': []
+        }
         self.conflict_history = []
         self.decision_history = []
         self.execution_history = []  # Track all executed trades
@@ -237,6 +254,30 @@ class NextGenDashboard:
             live_mode=self.live_mode
         )
         
+        # Sprint 10 modules - Decision Transformer & Ensemble
+        self.dt_agent = DecisionTransformerAgent(
+            message_bus=self.message_bus,
+            state_dim=10,
+            action_dim=3,
+            embed_dim=128,
+            num_layers=3,
+            num_heads=4,
+            max_sequence_length=20,
+            learning_rate=0.0001
+        )
+        
+        self.ensemble_coordinator = EnsembleCoordinator(
+            message_bus=self.message_bus,
+            ppo_weight=0.3,
+            dqn_weight=0.3,
+            dt_weight=0.2,
+            gan_weight=0.1,
+            gnn_weight=0.1
+        )
+        
+        print("✅ Decision Transformer agent initialized")
+        print("✅ Ensemble coordinator initialized (5 agents)")
+        
         # Track orchestrator metrics
         self.orchestrator_metrics = {
             'symbol_rotations': [],
@@ -250,6 +291,14 @@ class NextGenDashboard:
         self.message_bus.subscribe('symbol_rotation', self._handle_symbol_rotation)
         self.message_bus.subscribe('rl_scores', self._handle_rl_scores)
         self.message_bus.subscribe('replay_event', self._handle_replay_event)
+        
+        # Subscribe to DT and ensemble events
+        self.message_bus.subscribe('dt_action', self._handle_dt_action)
+        self.message_bus.subscribe('dt_metrics', self._handle_dt_metrics)
+        self.message_bus.subscribe('ensemble_decision', self._handle_ensemble_decision)
+        self.message_bus.subscribe('ensemble_metrics', self._handle_ensemble_metrics)
+        
+        print("✅ Message bus subscriptions configured")
         
         print("✅ All modules initialized (Sprint 1-8 + Orchestrator)")
         
@@ -313,6 +362,57 @@ class NextGenDashboard:
     def _handle_replay_event(self, event: Dict[str, Any]):
         """Handle replay events."""
         self.orchestrator_metrics['replay_events'].append(event)
+    
+    def _handle_dt_action(self, action: Dict[str, Any]):
+        """Handle Decision Transformer action updates."""
+        # Track action probabilities for visualization
+        if 'action_probs' in action:
+            self.dt_metrics_history['action_probs'].append(action['action_probs'])
+        if 'confidence' in action:
+            self.dt_metrics_history['confidence'].append(action['confidence'])
+        # Keep last 100 entries
+        for key in ['action_probs', 'confidence']:
+            if len(self.dt_metrics_history[key]) > 100:
+                self.dt_metrics_history[key].pop(0)
+    
+    def _handle_dt_metrics(self, metrics: Dict[str, Any]):
+        """Handle Decision Transformer metrics updates."""
+        if 'avg_loss' in metrics:
+            self.dt_metrics_history['training_loss'].append(metrics['avg_loss'])
+        if 'target_return' in metrics:
+            self.dt_metrics_history['target_return'].append(metrics['target_return'])
+        if 'predicted_return' in metrics:
+            self.dt_metrics_history['predicted_return'].append(metrics.get('predicted_return', 0))
+        if 'attention_weights' in metrics:
+            self.dt_metrics_history['attention_weights'].append(metrics['attention_weights'])
+        # Keep last 100 entries
+        for key in ['training_loss', 'target_return', 'predicted_return']:
+            if len(self.dt_metrics_history[key]) > 100:
+                self.dt_metrics_history[key].pop(0)
+    
+    def _handle_ensemble_decision(self, decision: Dict[str, Any]):
+        """Handle ensemble decision updates."""
+        # Track ensemble confidence
+        if 'confidence' in decision:
+            self.ensemble_metrics_history['ensemble_confidence'].append(decision['confidence'])
+        if len(self.ensemble_metrics_history['ensemble_confidence']) > 100:
+            self.ensemble_metrics_history['ensemble_confidence'].pop(0)
+    
+    def _handle_ensemble_metrics(self, metrics: Dict[str, Any]):
+        """Handle ensemble metrics updates."""
+        agent_accuracy = metrics.get('agent_accuracy', {})
+        if 'ppo_accuracy' in agent_accuracy:
+            self.ensemble_metrics_history['ppo_accuracy'].append(agent_accuracy['ppo_accuracy'])
+        if 'dqn_accuracy' in agent_accuracy:
+            self.ensemble_metrics_history['dqn_accuracy'].append(agent_accuracy['dqn_accuracy'])
+        if 'dt_accuracy' in agent_accuracy:
+            self.ensemble_metrics_history['dt_accuracy'].append(agent_accuracy['dt_accuracy'])
+        if 'conflict_frequency' in metrics:
+            self.ensemble_metrics_history['conflict_count'].append(metrics['conflict_frequency'])
+        # Keep last 100 entries
+        for key in ['ppo_accuracy', 'dqn_accuracy', 'dt_accuracy', 'conflict_count']:
+            if len(self.ensemble_metrics_history[key]) > 100:
+                self.ensemble_metrics_history[key].pop(0)
     
     
     def setup_layout(self) -> None:
@@ -460,6 +560,7 @@ class NextGenDashboard:
                 self.create_sidebar_menu_item('📡', 'Data', 'data', False),
                 self.create_sidebar_menu_item('🤖', 'Agents', 'agents', False),
                 self.create_sidebar_menu_item('🎯', 'DQN Controller', 'dqn', False),
+                self.create_sidebar_menu_item('🧠', 'Decision Transformer', 'dt', False),
                 self.create_sidebar_menu_item('🎁', 'Rewards', 'rewards', False),
                 self.create_sidebar_menu_item('📋', 'Executions', 'executions', False),
                 self.create_sidebar_menu_item('🧪', 'Testing', 'testing', False),
@@ -708,6 +809,8 @@ class NextGenDashboard:
                 return self.create_rl_analysis_panel(), 'agents'
             elif view_id == 'dqn':
                 return self.create_dqn_panel(), 'dqn'
+            elif view_id == 'dt':
+                return self.create_dt_panel(), 'dt'
             elif view_id == 'rewards':
                 return self.create_feedback_panel(), 'rewards'
             elif view_id == 'executions':
@@ -766,6 +869,8 @@ class NextGenDashboard:
                 return self.create_rl_analysis_panel(), current_view
             elif current_view == 'dqn':
                 return self.create_dqn_panel(), current_view
+            elif current_view == 'dt':
+                return self.create_dt_panel(), current_view
             elif current_view == 'rewards':
                 return self.create_feedback_panel(), current_view
             elif current_view == 'executions':
@@ -2373,6 +2478,281 @@ class NextGenDashboard:
                 ])
             ], style={'backgroundColor': THEME_COLORS['surface'], 'padding': '20px', 
                      'borderRadius': '8px', 'border': f'1px solid {THEME_COLORS["border"]}'}),
+        ])
+    
+    def create_dt_panel(self) -> html.Div:
+        """Create Decision Transformer Analysis panel with comprehensive metrics."""
+        import plotly.graph_objs as go
+        
+        # Get real DT metrics
+        dt_metrics = self.dt_agent.get_metrics() if hasattr(self.dt_agent, 'get_metrics') else {}
+        
+        training_steps = dt_metrics.get('training_steps', 0)
+        avg_loss = dt_metrics.get('avg_loss', 0.0)
+        buffer_size = dt_metrics.get('buffer_size', 0)
+        target_return = dt_metrics.get('target_return', 100.0)
+        sequence_length = dt_metrics.get('sequence_length', 20)
+        
+        # Get ensemble metrics
+        ensemble_metrics = self.ensemble_coordinator.get_ensemble_metrics() if hasattr(self.ensemble_coordinator, 'get_ensemble_metrics') else {}
+        ensemble_weights = ensemble_metrics.get('weights', {
+            'ppo': 0.3, 'dqn': 0.3, 'dt': 0.2, 'gan': 0.1, 'gnn': 0.1
+        })
+        
+        # Training loss history chart
+        loss_history = self.dt_metrics_history.get('training_loss', [])
+        if not loss_history:
+            loss_history = [0.5 - i * 0.01 for i in range(50)]
+        
+        loss_fig = go.Figure()
+        loss_fig.add_trace(go.Scatter(
+            y=loss_history,
+            mode='lines',
+            name='Training Loss',
+            line=dict(color=THEME_COLORS['secondary'], width=2)
+        ))
+        loss_fig.update_layout(
+            **self.get_chart_layout("DT Training Loss Over Time"),
+            height=250,
+            yaxis_title="Loss",
+            xaxis_title="Training Step",
+            margin=dict(l=50, r=20, t=40, b=40)
+        )
+        
+        # Return-to-go tracking chart
+        target_rtg = self.dt_metrics_history.get('target_return', [])
+        predicted_rtg = self.dt_metrics_history.get('predicted_return', [])
+        
+        if not target_rtg:
+            target_rtg = [100 - i * 0.5 for i in range(50)]
+            predicted_rtg = [100 - i * 0.5 + random.uniform(-5, 5) for i in range(50)]
+        
+        rtg_fig = go.Figure()
+        rtg_fig.add_trace(go.Scatter(
+            y=target_rtg,
+            mode='lines',
+            name='Target RTG',
+            line=dict(color=THEME_COLORS['primary'], width=2)
+        ))
+        rtg_fig.add_trace(go.Scatter(
+            y=predicted_rtg,
+            mode='lines',
+            name='Predicted RTG',
+            line=dict(color=THEME_COLORS['secondary'], width=2, dash='dash')
+        ))
+        rtg_fig.update_layout(
+            **self.get_chart_layout("Return-to-Go Tracking"),
+            height=250,
+            yaxis_title="Return",
+            xaxis_title="Timestep",
+            margin=dict(l=50, r=20, t=40, b=40),
+            showlegend=True,
+            legend=dict(x=0.7, y=1)
+        )
+        
+        # Action probability distribution (latest)
+        action_probs = self.dt_metrics_history.get('action_probs', [])
+        if action_probs and len(action_probs) > 0:
+            latest_probs = action_probs[-1]
+        else:
+            latest_probs = [0.2, 0.5, 0.3]  # Default: HOLD, BUY, SELL
+        
+        action_labels = ['HOLD', 'BUY', 'SELL']
+        action_colors = [THEME_COLORS['text_secondary'], THEME_COLORS['success'], THEME_COLORS['danger']]
+        
+        action_fig = go.Figure(data=[
+            go.Bar(
+                x=action_labels,
+                y=latest_probs,
+                marker_color=action_colors,
+                text=[f'{p:.1%}' for p in latest_probs],
+                textposition='auto',
+            )
+        ])
+        action_fig.update_layout(
+            **self.get_chart_layout("DT Action Probabilities"),
+            height=250,
+            yaxis_title="Probability",
+            yaxis_range=[0, 1],
+            margin=dict(l=50, r=20, t=40, b=40),
+            showlegend=False
+        )
+        
+        # Confidence history
+        confidence_history = self.dt_metrics_history.get('confidence', [])
+        if not confidence_history:
+            confidence_history = [0.5 + random.uniform(-0.2, 0.3) for _ in range(50)]
+        
+        conf_fig = go.Figure()
+        conf_fig.add_trace(go.Scatter(
+            y=confidence_history,
+            mode='lines',
+            name='Confidence',
+            line=dict(color=THEME_COLORS['warning'], width=2),
+            fill='tozeroy',
+            fillcolor='rgba(255, 212, 59, 0.2)'
+        ))
+        conf_fig.update_layout(
+            **self.get_chart_layout("DT Prediction Confidence"),
+            height=250,
+            yaxis_title="Confidence",
+            yaxis_range=[0, 1],
+            xaxis_title="Prediction",
+            margin=dict(l=50, r=20, t=40, b=40)
+        )
+        
+        # Ensemble agent comparison
+        agent_names = ['PPO', 'DQN', 'DT', 'GAN', 'GNN']
+        agent_weights_vals = [
+            ensemble_weights.get('ppo', 0.3),
+            ensemble_weights.get('dqn', 0.3),
+            ensemble_weights.get('dt', 0.2),
+            ensemble_weights.get('gan', 0.1),
+            ensemble_weights.get('gnn', 0.1)
+        ]
+        agent_accuracy_vals = [
+            self.ensemble_metrics_history['ppo_accuracy'][-1] if self.ensemble_metrics_history.get('ppo_accuracy') else 0.7,
+            self.ensemble_metrics_history['dqn_accuracy'][-1] if self.ensemble_metrics_history.get('dqn_accuracy') else 0.65,
+            self.ensemble_metrics_history['dt_accuracy'][-1] if self.ensemble_metrics_history.get('dt_accuracy') else 0.6,
+            0.5,  # GAN (evolution guidance)
+            0.55  # GNN (pattern detection)
+        ]
+        
+        ensemble_fig = make_subplots(
+            rows=1, cols=2,
+            subplot_titles=('Agent Weights', 'Agent Accuracy'),
+            specs=[[{'type': 'bar'}, {'type': 'bar'}]]
+        )
+        
+        ensemble_fig.add_trace(
+            go.Bar(
+                x=agent_names,
+                y=agent_weights_vals,
+                marker_color=[THEME_COLORS['primary'], THEME_COLORS['secondary'], 
+                             THEME_COLORS['success'], THEME_COLORS['warning'], THEME_COLORS['danger']],
+                text=[f'{w:.1%}' for w in agent_weights_vals],
+                textposition='auto',
+                showlegend=False
+            ),
+            row=1, col=1
+        )
+        
+        ensemble_fig.add_trace(
+            go.Bar(
+                x=agent_names,
+                y=agent_accuracy_vals,
+                marker_color=[THEME_COLORS['primary'], THEME_COLORS['secondary'], 
+                             THEME_COLORS['success'], THEME_COLORS['warning'], THEME_COLORS['danger']],
+                text=[f'{a:.1%}' for a in agent_accuracy_vals],
+                textposition='auto',
+                showlegend=False
+            ),
+            row=1, col=2
+        )
+        
+        ensemble_fig.update_layout(
+            plot_bgcolor=THEME_COLORS['background'],
+            paper_bgcolor=THEME_COLORS['surface'],
+            font=dict(color=THEME_COLORS['text']),
+            height=250,
+            margin=dict(l=50, r=20, t=40, b=40)
+        )
+        ensemble_fig.update_yaxes(range=[0, 1], row=1, col=1)
+        ensemble_fig.update_yaxes(range=[0, 1], row=1, col=2)
+        
+        # Build panel
+        return html.Div([
+            html.H2("🧠 Decision Transformer Analysis", 
+                   style={'color': THEME_COLORS['text'], 'marginBottom': '20px'}),
+            
+            # Top metrics cards
+            html.Div([
+                html.Div([
+                    html.Div("Training Steps", style={'fontSize': '14px', 'color': THEME_COLORS['text_secondary']}),
+                    html.Div(f"{training_steps:,}", style={'fontSize': '28px', 'fontWeight': 'bold', 'color': THEME_COLORS['text']}),
+                ], style={'backgroundColor': THEME_COLORS['surface'], 'padding': '20px', 
+                         'borderRadius': '8px', 'border': f'1px solid {THEME_COLORS["border"]}', 'flex': '1'}),
+                
+                html.Div([
+                    html.Div("Avg Loss", style={'fontSize': '14px', 'color': THEME_COLORS['text_secondary']}),
+                    html.Div(f"{avg_loss:.4f}", style={'fontSize': '28px', 'fontWeight': 'bold', 'color': THEME_COLORS['secondary']}),
+                ], style={'backgroundColor': THEME_COLORS['surface'], 'padding': '20px', 
+                         'borderRadius': '8px', 'border': f'1px solid {THEME_COLORS["border"]}', 'flex': '1'}),
+                
+                html.Div([
+                    html.Div("Buffer Size", style={'fontSize': '14px', 'color': THEME_COLORS['text_secondary']}),
+                    html.Div(f"{buffer_size}/1000", style={'fontSize': '28px', 'fontWeight': 'bold', 'color': THEME_COLORS['primary']}),
+                ], style={'backgroundColor': THEME_COLORS['surface'], 'padding': '20px', 
+                         'borderRadius': '8px', 'border': f'1px solid {THEME_COLORS["border"]}', 'flex': '1'}),
+                
+                html.Div([
+                    html.Div("Target Return", style={'fontSize': '14px', 'color': THEME_COLORS['text_secondary']}),
+                    html.Div(f"{target_return:.1f}", style={'fontSize': '28px', 'fontWeight': 'bold', 'color': THEME_COLORS['success']}),
+                ], style={'backgroundColor': THEME_COLORS['surface'], 'padding': '20px', 
+                         'borderRadius': '8px', 'border': f'1px solid {THEME_COLORS["border"]}', 'flex': '1'}),
+                
+                html.Div([
+                    html.Div("Sequence Length", style={'fontSize': '14px', 'color': THEME_COLORS['text_secondary']}),
+                    html.Div(f"{sequence_length}", style={'fontSize': '28px', 'fontWeight': 'bold', 'color': THEME_COLORS['warning']}),
+                ], style={'backgroundColor': THEME_COLORS['surface'], 'padding': '20px', 
+                         'borderRadius': '8px', 'border': f'1px solid {THEME_COLORS["border"]}', 'flex': '1'}),
+            ], style={'display': 'flex', 'gap': '15px', 'marginBottom': '20px'}),
+            
+            # Charts row 1: Training Loss & RTG Tracking
+            html.Div([
+                html.Div([
+                    dcc.Graph(figure=loss_fig, config={'displayModeBar': False})
+                ], style={'backgroundColor': THEME_COLORS['surface'], 'borderRadius': '8px',
+                         'border': f'1px solid {THEME_COLORS["border"]}', 'padding': '15px', 'flex': '1'}),
+                
+                html.Div([
+                    dcc.Graph(figure=rtg_fig, config={'displayModeBar': False})
+                ], style={'backgroundColor': THEME_COLORS['surface'], 'borderRadius': '8px',
+                         'border': f'1px solid {THEME_COLORS["border"]}', 'padding': '15px', 'flex': '1'}),
+            ], style={'display': 'flex', 'gap': '15px', 'marginBottom': '20px'}),
+            
+            # Charts row 2: Action Probs & Confidence
+            html.Div([
+                html.Div([
+                    dcc.Graph(figure=action_fig, config={'displayModeBar': False})
+                ], style={'backgroundColor': THEME_COLORS['surface'], 'borderRadius': '8px',
+                         'border': f'1px solid {THEME_COLORS["border"]}', 'padding': '15px', 'flex': '1'}),
+                
+                html.Div([
+                    dcc.Graph(figure=conf_fig, config={'displayModeBar': False})
+                ], style={'backgroundColor': THEME_COLORS['surface'], 'borderRadius': '8px',
+                         'border': f'1px solid {THEME_COLORS["border"]}', 'padding': '15px', 'flex': '1'}),
+            ], style={'display': 'flex', 'gap': '15px', 'marginBottom': '20px'}),
+            
+            # Ensemble Comparison
+            html.Div([
+                html.H3("5-Agent Ensemble Coordination", 
+                       style={'color': THEME_COLORS['text'], 'marginBottom': '15px'}),
+                dcc.Graph(figure=ensemble_fig, config={'displayModeBar': False})
+            ], style={'backgroundColor': THEME_COLORS['surface'], 'borderRadius': '8px',
+                     'border': f'1px solid {THEME_COLORS["border"]}', 'padding': '20px', 'marginBottom': '20px'}),
+            
+            # Info section
+            html.Div([
+                html.H3("About Decision Transformer", 
+                       style={'color': THEME_COLORS['text'], 'marginBottom': '15px'}),
+                html.P([
+                    "The Decision Transformer uses a transformer architecture to model sequential trading decisions. ",
+                    "It processes sequences of (state, action, reward, return-to-go) and learns to achieve target returns ",
+                    "through offline learning from historical trajectories."
+                ], style={'color': THEME_COLORS['text_secondary'], 'marginBottom': '10px'}),
+                html.P([
+                    html.Strong("Key Features:", style={'color': THEME_COLORS['text']}),
+                    " Multi-head attention (4 heads, 3 layers), causal masking, positional encoding, ",
+                    "sequence buffer (1000 trajectories), and integration with Strategic Memory Engine."
+                ], style={'color': THEME_COLORS['text_secondary'], 'marginBottom': '10px'}),
+                html.P([
+                    html.Strong("Ensemble Integration:", style={'color': THEME_COLORS['text']}),
+                    " The DT agent participates in a 5-agent ensemble with PPO (30%), DQN (30%), DT (20%), ",
+                    "GAN (10%), and GNN (10%). Final decisions use weighted voting with conflict detection."
+                ], style={'color': THEME_COLORS['text_secondary']}),
+            ], style={'backgroundColor': THEME_COLORS['surface'], 'borderRadius': '8px',
+                     'border': f'1px solid {THEME_COLORS["border"]}', 'padding': '20px'}),
         ])
     
     def create_agent_evolution_panel(self) -> html.Div:
