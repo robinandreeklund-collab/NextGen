@@ -105,6 +105,18 @@ class AgentManager:
                 'uses_rl': True,
                 'version': '1.0.0',
                 'created_at': time.strftime('%Y-%m-%d %H:%M:%S')
+            },
+            'dt_agent': {
+                'name': 'Decision Transformer Agent',
+                'module': 'decision_transformer_agent',
+                'role': 'Sequence-based decision making with transformer architecture',
+                'state_dim': 10,
+                'action_dim': 3,
+                'uses_rl': True,
+                'architecture': 'transformer',
+                'sequence_length': 20,
+                'version': '1.0.0',
+                'created_at': time.strftime('%Y-%m-%d %H:%M:%S')
             }
         }
         
