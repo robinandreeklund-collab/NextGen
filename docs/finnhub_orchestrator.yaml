@@ -1,0 +1,195 @@
+finnhub_orchestrator:
+  description: |
+    Central orchestration module for REST/WebSocket data flow from Finnhub.
+    Coordinates all data ingestion, symbol rotation, indicator synthesis, 
+    stream management, and RL-driven optimization for market data.
+  
+  version: "1.0.0"
+  
+  inputs:
+    - api_key: Finnhub API key for authentication
+    - config: Dynamic configuration for orchestrator behavior
+    - policy: Policy settings for RL-driven decisions
+    
+  outputs:
+    - orchestrated_data: Coordinated market data stream
+    - rotation_events: Symbol rotation notifications
+    - synthetic_indicators: Generated indicator combinations
+    - replay_data: Historical/simulated data for testing
+    
+  publishes:
+    - orchestrator_status: Orchestrator health and metrics
+    - symbol_rotation: Symbol rotation events
+    - stream_metrics: Stream performance data
+    - rl_scores: RL-driven symbol priorities
+    
+  subscribes:
+    - rl_feedback: Feedback from RL controllers
+    - market_conditions: Market state changes
+    - module_requests: Data requests from downstream modules
+    
+  uses_rl: true
+  receives_feedback: true
+  
+  architecture:
+    mode: plug-n-play
+    isolation: Can run standalone or integrated
+    config_type: dynamic
+    
+  submodules:
+    indicator_synth_engine:
+      description: Synthesizes indicator combinations and derived metrics
+      inputs: [raw_indicators, symbol_data]
+      outputs: [synthetic_indicators]
+      publishes: [indicator_synth_data]
+      uses_rl: false
+      
+    symbol_rotation_engine:
+      description: Manages symbol rotation based on RL priorities and market conditions
+      inputs: [symbol_list, rl_scores, market_conditions]
+      outputs: [active_symbols, rotation_schedule]
+      publishes: [symbol_rotation_event]
+      uses_rl: true
+      
+    rotation_strategy_engine:
+      description: Determines rotation strategies based on performance and RL feedback
+      inputs: [historical_performance, rl_feedback, market_state]
+      outputs: [rotation_strategy, priority_scores]
+      publishes: [strategy_update]
+      uses_rl: true
+      
+    stream_strategy_agent:
+      description: RL agent that optimizes streaming strategies and resource allocation
+      inputs: [stream_metrics, performance_data]
+      outputs: [stream_strategy, resource_allocation]
+      publishes: [strategy_decision]
+      uses_rl: true
+      receives_feedback: true
+      
+    stream_replay_engine:
+      description: Replays historical data for simulation and testing
+      inputs: [replay_config, historical_data]
+      outputs: [replayed_data]
+      publishes: [replay_event, replay_data]
+      uses_rl: false
+      
+    stream_ontology_mapper:
+      description: Maps and normalizes data from different sources and formats
+      inputs: [raw_stream_data, ontology_config]
+      outputs: [normalized_data]
+      publishes: [mapped_data]
+      uses_rl: false
+      
+    rl_engine_integration:
+      description: Integrates RL controllers for orchestrator optimization
+      inputs: [orchestrator_state, feedback]
+      outputs: [rl_actions, priority_updates]
+      publishes: [rl_metrics]
+      uses_rl: true
+      receives_feedback: true
+      
+  features:
+    rl_driven_prioritization:
+      description: RL-based symbol prioritization and selection
+      enabled: true
+      
+    adaptive_batching:
+      description: Dynamic batch sizing based on load and performance
+      enabled: true
+      min_batch_size: 1
+      max_batch_size: 100
+      
+    rotation_triggers:
+      description: Automatic rotation based on performance and feedback
+      enabled: true
+      triggers:
+        - performance_drop
+        - market_regime_change
+        - rl_recommendation
+        - time_based
+        
+    feedback_triggers:
+      description: Feedback-driven adjustments
+      enabled: true
+      sources:
+        - rl_controller
+        - portfolio_manager
+        - risk_manager
+        
+    replay_simulation:
+      description: Replay mode for testing and simulation
+      enabled: true
+      modes:
+        - historical: Replay actual historical data
+        - synthetic: Generate synthetic data
+        - hybrid: Mix of real and synthetic
+        
+  infrastructure:
+    audit_logging:
+      enabled: true
+      log_level: INFO
+      log_file: logs/orchestrator_audit.json
+      
+    rate_limiting:
+      enabled: true
+      requests_per_second: 10
+      burst_size: 20
+      backoff_strategy: exponential
+      
+    failover:
+      enabled: true
+      retry_attempts: 3
+      retry_delay: 2
+      fallback_mode: cached_data
+      
+    monitoring:
+      health_checks: true
+      metrics_collection: true
+      alert_thresholds:
+        error_rate: 0.05
+        latency_p95: 500
+        
+  integration:
+    message_bus:
+      topics:
+        - orchestrator_status
+        - symbol_rotation
+        - stream_data
+        - rl_scores
+        - replay_data
+        
+    downstream_modules:
+      - indicator_registry
+      - strategy_engine
+      - data_ingestion
+      - data_ingestion_sim
+      - rl_controller
+      - dqn_controller
+      
+  configuration:
+    default_symbols: ["AAPL", "TSLA", "MSFT", "GOOGL", "AMZN"]
+    rotation_interval: 300  # seconds
+    max_concurrent_streams: 10
+    buffer_size: 1000
+    priority_update_interval: 60
+    
+  adaptive_parameters:
+    rotation_threshold:
+      min: 0.1
+      max: 0.9
+      default: 0.5
+      
+    batch_size:
+      min: 1
+      max: 100
+      default: 10
+      
+    priority_weight:
+      min: 0.0
+      max: 1.0
+      default: 0.7
+      
+    replay_speed:
+      min: 0.1
+      max: 10.0
+      default: 1.0

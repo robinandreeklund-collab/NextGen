@@ -38,6 +38,7 @@ Thumbs.db
 
 # Logs
 *.log
+logs/orchestrator_audit.json
 
 # Temporary files
 *.tmp
