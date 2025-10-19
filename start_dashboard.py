@@ -811,7 +811,7 @@ class NextGenDashboard:
                 
                 # Status display with more details
                 active_subs = detailed_metrics.get('active_subscriptions', 0)
-                ws_usage = min(detailed_metrics.get('websocket_usage_pct', 0), 100)  # Cap at 100%
+                ws_usage = detailed_metrics.get('websocket_usage_pct', 0)
                 hist_symbols = detailed_metrics.get('historical_symbols_used', [])
                 
                 # Get WebSocket limit from submodule details
