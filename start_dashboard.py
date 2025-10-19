@@ -62,6 +62,7 @@ from modules.system_monitor import SystemMonitor
 from modules.dqn_controller import DQNController
 from modules.gan_evolution_engine import GANEvolutionEngine
 from modules.gnn_timespan_analyzer import GNNTimespanAnalyzer
+from modules.finnhub_orchestrator import FinnhubOrchestrator
 import numpy as np
 
 
@@ -210,7 +211,28 @@ class NextGenDashboard:
         self.gan_evolution = GANEvolutionEngine(self.message_bus, latent_dim=64, param_dim=16)
         self.gnn_analyzer = GNNTimespanAnalyzer(self.message_bus, input_dim=32, temporal_window=20)
         
-        print("✅ All modules initialized (Sprint 1-8)")
+        # Finnhub Orchestrator (Sprint 9)
+        self.orchestrator = FinnhubOrchestrator(
+            api_key=self.api_key,
+            message_bus=self.message_bus,
+            live_mode=self.live_mode
+        )
+        
+        # Track orchestrator metrics
+        self.orchestrator_metrics = {
+            'symbol_rotations': [],
+            'rl_scores_history': [],
+            'replay_events': [],
+            'stream_metrics': []
+        }
+        
+        # Subscribe to orchestrator events
+        self.message_bus.subscribe('orchestrator_status', self._handle_orchestrator_status)
+        self.message_bus.subscribe('symbol_rotation', self._handle_symbol_rotation)
+        self.message_bus.subscribe('rl_scores', self._handle_rl_scores)
+        self.message_bus.subscribe('replay_event', self._handle_replay_event)
+        
+        print("✅ All modules initialized (Sprint 1-8 + Orchestrator)")
         
         # Load adaptive parameters configuration
         self.load_adaptive_parameters()
@@ -229,6 +251,36 @@ class NextGenDashboard:
             print(f"⚠️  Failed to load adaptive_parameters.yaml: {e}")
             # Fallback to empty config
             self.adaptive_params_config = {'adaptive_parameters': {}, 'reward_tuner_parameters': {}}
+    
+    def _handle_orchestrator_status(self, status: Dict[str, Any]):
+        """Handle orchestrator status updates."""
+        if 'metrics' in status:
+            self.orchestrator_metrics['stream_metrics'].append({
+                'timestamp': status.get('timestamp'),
+                'metrics': status['metrics']
+            })
+            # Keep only last 100 entries
+            if len(self.orchestrator_metrics['stream_metrics']) > 100:
+                self.orchestrator_metrics['stream_metrics'].pop(0)
+    
+    def _handle_symbol_rotation(self, event: Dict[str, Any]):
+        """Handle symbol rotation events."""
+        self.orchestrator_metrics['symbol_rotations'].append(event)
+        # Keep only last 50 rotations
+        if len(self.orchestrator_metrics['symbol_rotations']) > 50:
+            self.orchestrator_metrics['symbol_rotations'].pop(0)
+    
+    def _handle_rl_scores(self, scores: Dict[str, Any]):
+        """Handle RL score updates."""
+        self.orchestrator_metrics['rl_scores_history'].append(scores)
+        # Keep only last 100 entries
+        if len(self.orchestrator_metrics['rl_scores_history']) > 100:
+            self.orchestrator_metrics['rl_scores_history'].pop(0)
+    
+    def _handle_replay_event(self, event: Dict[str, Any]):
+        """Handle replay events."""
+        self.orchestrator_metrics['replay_events'].append(event)
+    
     
     def setup_layout(self) -> None:
         """Create comprehensive dashboard layout."""
@@ -372,6 +424,7 @@ class NextGenDashboard:
             html.Div([
                 self.create_sidebar_menu_item('📊', 'Dashboard', 'dashboard', True),
                 self.create_sidebar_menu_item('💼', 'Portfolio', 'portfolio', False),
+                self.create_sidebar_menu_item('🎯', 'Orchestrator', 'orchestrator', False),
                 self.create_sidebar_menu_item('🤖', 'Agents', 'agents', False),
                 self.create_sidebar_menu_item('🎯', 'DQN Controller', 'dqn', False),
                 self.create_sidebar_menu_item('🎁', 'Rewards', 'rewards', False),
@@ -650,6 +703,8 @@ class NextGenDashboard:
             # Route to appropriate view based on current_view
             if current_view == 'portfolio':
                 return self.create_portfolio_panel(), current_view
+            elif current_view == 'orchestrator':
+                return self.create_orchestrator_panel(), current_view
             elif current_view == 'agents':
                 return self.create_rl_analysis_panel(), current_view
             elif current_view == 'dqn':
@@ -702,6 +757,132 @@ class NextGenDashboard:
             mode = f' ({"Live" if self.live_mode else "Demo"})' if self.running else ''
             return f'● {status}{mode}'
         
+        # Orchestrator panel callbacks
+        @self.app.callback(
+            [Output('orchestrator-status-display', 'children'),
+             Output('active-symbols-display', 'children'),
+             Output('rotation-stats-display', 'children'),
+             Output('rotation-timeline-chart', 'figure'),
+             Output('rl-scores-chart', 'figure'),
+             Output('stream-health-gauge', 'figure'),
+             Output('replay-status-display', 'children')],
+            [Input('interval-component', 'n_intervals')],
+            prevent_initial_call=True
+        )
+        def update_orchestrator_panel(n):
+            """Update orchestrator panel with latest data."""
+            try:
+                # Get orchestrator status
+                orch_status = self.orchestrator.get_status()
+                
+                # Status display
+                status_text = [
+                    html.Div(f"Running: {'✅ Yes' if orch_status.get('is_running') else '❌ No'}"),
+                    html.Div(f"Mode: {'🔴 Live' if orch_status.get('live_mode') else '🟢 Demo'}"),
+                    html.Div(f"Active Symbols: {len(orch_status.get('active_symbols', []))}"),
+                ]
+                
+                # Active symbols display
+                active_symbols = orch_status.get('active_symbols', [])
+                symbols_text = [html.Div(f"• {sym}", style={'marginBottom': '5px'}) 
+                               for sym in active_symbols[:10]]  # Show first 10
+                
+                # Rotation stats
+                rotation_count = len(self.orchestrator_metrics['symbol_rotations'])
+                last_rotation = orch_status.get('last_rotation')
+                stats_text = [
+                    html.Div(f"Total Rotations: {rotation_count}"),
+                    html.Div(f"Last: {time.strftime('%H:%M:%S', time.localtime(last_rotation)) if last_rotation else 'N/A'}"),
+                ]
+                
+                # Rotation timeline chart
+                rotation_fig = go.Figure()
+                if self.orchestrator_metrics['symbol_rotations']:
+                    timestamps = [r.get('timestamp', '') for r in self.orchestrator_metrics['symbol_rotations'][-20:]]
+                    rotation_fig.add_trace(go.Scatter(
+                        x=list(range(len(timestamps))),
+                        y=[1] * len(timestamps),
+                        mode='markers',
+                        marker=dict(size=10, color=THEME_COLORS['primary']),
+                        name='Rotations'
+                    ))
+                rotation_fig.update_layout(
+                    paper_bgcolor=THEME_COLORS['surface'],
+                    plot_bgcolor=THEME_COLORS['surface'],
+                    font=dict(color=THEME_COLORS['text']),
+                    height=200,
+                    margin=dict(l=20, r=20, t=20, b=20),
+                    showlegend=False
+                )
+                
+                # RL scores chart
+                rl_fig = go.Figure()
+                if self.orchestrator_metrics['rl_scores_history']:
+                    latest_scores = self.orchestrator_metrics['rl_scores_history'][-1].get('scores', {})
+                    symbols = list(latest_scores.keys())[:10]
+                    scores = [latest_scores.get(s, 0) for s in symbols]
+                    
+                    rl_fig.add_trace(go.Bar(
+                        x=symbols,
+                        y=scores,
+                        marker=dict(color=THEME_COLORS['primary'])
+                    ))
+                rl_fig.update_layout(
+                    paper_bgcolor=THEME_COLORS['surface'],
+                    plot_bgcolor=THEME_COLORS['surface'],
+                    font=dict(color=THEME_COLORS['text']),
+                    height=300,
+                    margin=dict(l=20, r=20, t=20, b=40),
+                    xaxis_title="Symbol",
+                    yaxis_title="Priority Score"
+                )
+                
+                # Stream health gauge
+                health_fig = go.Figure(go.Indicator(
+                    mode="gauge+number",
+                    value=95,  # Placeholder - would come from orchestrator metrics
+                    domain={'x': [0, 1], 'y': [0, 1]},
+                    title={'text': "Health %"},
+                    gauge={
+                        'axis': {'range': [None, 100]},
+                        'bar': {'color': THEME_COLORS['success']},
+                        'threshold': {
+                            'line': {'color': "red", 'width': 4},
+                            'thickness': 0.75,
+                            'value': 70
+                        }
+                    }
+                ))
+                health_fig.update_layout(
+                    paper_bgcolor=THEME_COLORS['surface'],
+                    font=dict(color=THEME_COLORS['text']),
+                    height=200,
+                    margin=dict(l=20, r=20, t=40, b=20)
+                )
+                
+                # Replay status
+                replay_status = self.orchestrator.replay_engine.get_replay_status()
+                replay_text = [
+                    html.Div(f"Active: {'✅ Yes' if replay_status.get('is_replaying') else '❌ No'}"),
+                    html.Div(f"Mode: {replay_status.get('mode', 'N/A')}"),
+                    html.Div(f"Speed: {replay_status.get('speed', 1.0)}x"),
+                ]
+                
+                return (status_text, symbols_text, stats_text, 
+                       rotation_fig, rl_fig, health_fig, replay_text)
+                
+            except Exception as e:
+                # Return empty/error state
+                empty_fig = go.Figure()
+                empty_fig.update_layout(
+                    paper_bgcolor=THEME_COLORS['surface'],
+                    plot_bgcolor=THEME_COLORS['surface']
+                )
+                error_text = [html.Div(f"Error: {str(e)}", style={'color': THEME_COLORS['danger']})]
+                return (error_text, error_text, error_text, 
+                       empty_fig, empty_fig, empty_fig, error_text)
+        
+    
     def create_dashboard_view(self) -> html.Div:
         """Create main dashboard view with all key metrics and charts."""
         # Get live data
@@ -3117,6 +3298,104 @@ class NextGenDashboard:
             ]),
         ])
     
+    
+    def create_orchestrator_panel(self) -> html.Div:
+        """Create Finnhub Orchestrator monitoring panel."""
+        return html.Div([
+            html.H2("🎯 Finnhub Orchestrator", 
+                   style={'color': THEME_COLORS['primary'], 'marginBottom': '20px'}),
+            
+            # Status Row
+            html.Div([
+                # Orchestrator Status Card
+                html.Div([
+                    html.H3("Orchestrator Status", style={'fontSize': '16px', 'marginBottom': '15px'}),
+                    html.Div(id='orchestrator-status-display', style={'fontSize': '14px'})
+                ], style={
+                    'backgroundColor': THEME_COLORS['surface'],
+                    'padding': '20px',
+                    'borderRadius': '8px',
+                    'border': f'1px solid {THEME_COLORS["border"]}',
+                    'flex': '1',
+                    'marginRight': '10px'
+                }),
+                
+                # Active Symbols Card
+                html.Div([
+                    html.H3("Active Symbols", style={'fontSize': '16px', 'marginBottom': '15px'}),
+                    html.Div(id='active-symbols-display', style={'fontSize': '14px'})
+                ], style={
+                    'backgroundColor': THEME_COLORS['surface'],
+                    'padding': '20px',
+                    'borderRadius': '8px',
+                    'border': f'1px solid {THEME_COLORS["border"]}',
+                    'flex': '1',
+                    'marginRight': '10px'
+                }),
+                
+                # Rotation Stats Card
+                html.Div([
+                    html.H3("Rotation Stats", style={'fontSize': '16px', 'marginBottom': '15px'}),
+                    html.Div(id='rotation-stats-display', style={'fontSize': '14px'})
+                ], style={
+                    'backgroundColor': THEME_COLORS['surface'],
+                    'padding': '20px',
+                    'borderRadius': '8px',
+                    'border': f'1px solid {THEME_COLORS["border"]}',
+                    'flex': '1'
+                })
+            ], style={'display': 'flex', 'marginBottom': '20px'}),
+            
+            # Symbol Rotation Timeline
+            html.Div([
+                html.H3("Symbol Rotation Timeline", 
+                       style={'fontSize': '16px', 'marginBottom': '15px', 'color': THEME_COLORS['text']}),
+                dcc.Graph(id='rotation-timeline-chart', config={'displayModeBar': False})
+            ], style={
+                'backgroundColor': THEME_COLORS['surface'],
+                'padding': '20px',
+                'borderRadius': '8px',
+                'border': f'1px solid {THEME_COLORS["border"]}',
+                'marginBottom': '20px'
+            }),
+            
+            # RL Scores Visualization
+            html.Div([
+                html.H3("RL-Driven Symbol Priorities", 
+                       style={'fontSize': '16px', 'marginBottom': '15px', 'color': THEME_COLORS['text']}),
+                dcc.Graph(id='rl-scores-chart', config={'displayModeBar': False})
+            ], style={
+                'backgroundColor': THEME_COLORS['surface'],
+                'padding': '20px',
+                'borderRadius': '8px',
+                'border': f'1px solid {THEME_COLORS["border"]}',
+                'marginBottom': '20px'
+            }),
+            
+            # Stream Metrics
+            html.Div([
+                html.Div([
+                    # Stream Health
+                    html.Div([
+                        html.H3("Stream Health", style={'fontSize': '16px', 'marginBottom': '15px'}),
+                        dcc.Graph(id='stream-health-gauge', config={'displayModeBar': False})
+                    ], style={'flex': '1', 'marginRight': '10px'}),
+                    
+                    # Replay Status
+                    html.Div([
+                        html.H3("Replay Engine", style={'fontSize': '16px', 'marginBottom': '15px'}),
+                        html.Div(id='replay-status-display', style={'fontSize': '14px'})
+                    ], style={'flex': '1'})
+                ], style={'display': 'flex'})
+            ], style={
+                'backgroundColor': THEME_COLORS['surface'],
+                'padding': '20px',
+                'borderRadius': '8px',
+                'border': f'1px solid {THEME_COLORS["border"]}',
+            })
+            
+        ], style={'padding': '20px'})
+    
     def create_market_watch_panel(self) -> html.Div:
         """Create Live Market Watch panel (wrapper for create_market_panel)."""
         return self.create_market_panel()
@@ -3138,13 +3417,21 @@ class NextGenDashboard:
         """Start simulation thread."""
         if not self.running:
             self.running = True
+            
+            # Start orchestrator
+            self.orchestrator.start()
+            
             self.simulation_thread = threading.Thread(target=self.simulation_loop, daemon=True)
             self.simulation_thread.start()
-            print("✅ Simulation started")
+            print("✅ Simulation started (with orchestrator)")
     
     def stop_simulation(self) -> None:
         """Stop simulation thread."""
         self.running = False
+        
+        # Stop orchestrator
+        self.orchestrator.stop()
+        
         if self.simulation_thread:
             self.simulation_thread.join(timeout=2)
         print("🛑 Simulation stopped")
