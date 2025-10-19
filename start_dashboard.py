@@ -3733,8 +3733,10 @@ class NextGenDashboard:
                             self.conflict_history.pop(0)
                         
                         final_action = ppo_action if resolution == 'PPO' else dqn_action
+                        deciding_agent = resolution
                     else:
                         final_action = ppo_action
+                        deciding_agent = 'PPO'
                     
                     # Execute trade with proper budget checks and position sizing
                     execution_result = None
@@ -3765,7 +3767,8 @@ class NextGenDashboard:
                                 'symbol': selected_symbol,
                                 'action': 'BUY',
                                 'quantity': quantity,
-                                'current_price': current_price
+                                'current_price': current_price,
+                                'agent': deciding_agent
                             })
                             # Publish result to message_bus so portfolio_manager can update
                             if execution_result and execution_result.get('success'):
@@ -3797,7 +3800,8 @@ class NextGenDashboard:
                                     'symbol': selected_symbol,
                                     'action': 'SELL',
                                     'quantity': quantity,
-                                    'current_price': current_price
+                                    'current_price': current_price,
+                                    'agent': deciding_agent
                                 })
                                 # Publish result to message_bus so portfolio_manager can update
                                 if execution_result and execution_result.get('success'):
@@ -3827,7 +3831,8 @@ class NextGenDashboard:
                                         'symbol': selected_symbol,
                                         'action': 'BUY',
                                         'quantity': quantity,
-                                        'current_price': current_price
+                                        'current_price': current_price,
+                                        'agent': deciding_agent
                                     })
                                     if execution_result and execution_result.get('success'):
                                         self.execution_engine.publish_result(execution_result)
@@ -3843,7 +3848,8 @@ class NextGenDashboard:
                                         'symbol': selected_symbol,
                                         'action': 'SELL',
                                         'quantity': quantity,
-                                        'current_price': current_price
+                                        'current_price': current_price,
+                                        'agent': deciding_agent
                                     })
                                     if execution_result and execution_result.get('success'):
                                         self.execution_engine.publish_result(execution_result)
