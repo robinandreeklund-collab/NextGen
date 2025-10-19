@@ -3613,10 +3613,10 @@ class NextGenDashboard:
             indicator_synth = submodule_details.get('indicator_synth', {})
             module_data.append({
                 'name': 'Indicator Synth Engine',
-                'status': indicator_synth.get('status', 'Active'),
+                'status': indicator_synth.get('status', 'active').capitalize(),
                 'metrics': {
-                    'Combinations': indicator_synth.get('total_combinations', 'N/A'),
-                    'Active': indicator_synth.get('active_combinations', 'N/A'),
+                    'Combinations': indicator_synth.get('recipes_count', 'N/A'),
+                    'Active': indicator_synth.get('cached_symbols', 'N/A'),
                 }
             })
             
@@ -3634,9 +3634,9 @@ class NextGenDashboard:
             symbol_rotation = submodule_details.get('symbol_rotation', {})
             module_data.append({
                 'name': 'Symbol Rotation Engine',
-                'status': symbol_rotation.get('status', 'Active'),
+                'status': symbol_rotation.get('status', 'active').capitalize(),
                 'metrics': {
-                    'Rotations': len(self.orchestrator_metrics['symbol_rotations']),
+                    'Rotations': symbol_rotation.get('rotation_count', len(self.orchestrator_metrics['symbol_rotations'])),
                     'Test Slots': symbol_rotation.get('test_slots', 1),
                 }
             })
@@ -3645,10 +3645,10 @@ class NextGenDashboard:
             rotation_strategy = submodule_details.get('rotation_strategy', {})
             module_data.append({
                 'name': 'Rotation Strategy Engine',
-                'status': rotation_strategy.get('status', 'Active'),
+                'status': rotation_strategy.get('status', 'active').capitalize(),
                 'metrics': {
                     'Strategy': rotation_strategy.get('current_strategy', 'RL-driven'),
-                    'Interval': f"{rotation_strategy.get('rotation_interval', 300)}s",
+                    'Feedback Buffer': rotation_strategy.get('feedback_buffer_size', 'N/A'),
                 }
             })
             
@@ -3656,14 +3656,15 @@ class NextGenDashboard:
             stream_strategy = submodule_details.get('stream_strategy', {})
             module_data.append({
                 'name': 'Stream Strategy Agent',
-                'status': stream_strategy.get('status', 'Active'),
+                'status': stream_strategy.get('status', 'active').capitalize(),
                 'metrics': {
                     'REST Batch': stream_strategy.get('rest_batch_size', 12),
-                    'Buffer Size': stream_strategy.get('buffer_size', 1000),
+                    'Buffer Size': stream_strategy.get('experience_buffer_size', 'N/A'),
                 }
             })
             
             # 6. stream_replay_engine
+            replay_details = submodule_details.get('replay_engine', {})
             replay_status = self.orchestrator.replay_engine.get_replay_status()
             module_data.append({
                 'name': 'Stream Replay Engine',
@@ -3678,10 +3679,10 @@ class NextGenDashboard:
             ontology_mapper = submodule_details.get('ontology_mapper', {})
             module_data.append({
                 'name': 'Stream Ontology Mapper',
-                'status': ontology_mapper.get('status', 'Active'),
+                'status': ontology_mapper.get('status', 'active').capitalize(),
                 'metrics': {
-                    'Mappings': ontology_mapper.get('total_mappings', 'N/A'),
-                    'Formats': ontology_mapper.get('supported_formats', 'N/A'),
+                    'Mappings': ontology_mapper.get('supported_sources', 'N/A'),
+                    'Formats': 'JSON, CSV, Finnhub',
                 }
             })
             
