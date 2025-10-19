@@ -4809,3 +4809,798 @@ ValueError: Sample larger than population or is negative
 2025-10-19 20:21:09,784 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
 2025-10-19 20:21:09,784 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
 2025-10-19 20:21:09,784 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,144 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,144 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,240 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,240 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,240 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=True)
+2025-10-19 20:31:55,240 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=True)
+2025-10-19 20:31:55,297 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,297 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,297 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,297 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,297 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,297 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,354 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,354 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,354 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,354 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,354 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,354 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,354 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,354 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,410 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,410 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,410 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,410 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,410 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,411 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,411 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,411 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,411 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,411 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,479 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,479 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,479 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,479 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,479 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,479 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,479 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,479 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,479 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,479 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,479 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,479 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,553 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,553 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,553 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,553 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,553 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,553 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,553 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,553 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,553 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,553 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,553 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,553 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,553 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,553 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,609 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,609 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,609 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,609 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,609 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,609 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,609 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,609 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,609 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,609 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,609 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,609 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,609 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,609 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,609 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,609 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,664 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,664 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,664 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,664 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,664 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,664 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,664 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,664 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,664 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,664 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,664 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,664 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,664 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,664 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,664 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,664 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,664 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,664 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,720 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,720 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,720 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,720 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,720 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,720 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,720 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,720 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,720 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,720 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,720 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,720 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,720 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,720 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,720 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,720 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,720 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,720 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,720 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,720 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,776 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,776 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,776 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,776 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,776 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,776 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,776 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,776 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,776 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,776 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,776 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,776 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,776 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,776 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,776 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,776 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,776 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,776 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,776 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,776 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,776 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,776 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,968 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,968 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,968 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,968 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,968 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,968 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,968 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,968 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,968 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,968 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,968 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,968 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:55,968 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,968 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,968 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,968 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,968 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,968 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,968 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,968 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,968 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,968 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,968 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:55,968 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:56,023 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:56,023 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:56,023 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:56,023 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:56,023 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:56,023 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:56,023 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:56,023 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:56,023 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:56,023 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:56,023 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:56,023 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:56,023 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:56,024 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:56,024 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:56,024 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:56,024 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:56,024 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:56,024 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:56,024 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:56,024 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:56,024 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:56,024 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:56,024 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:56,024 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:56,024 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:56,081 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:56,081 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:56,081 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:56,081 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:56,081 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:56,081 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:56,081 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:56,081 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:56,081 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:56,081 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:56,081 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:56,081 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:56,081 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:56,081 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:56,081 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:56,081 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:56,081 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:56,081 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:56,081 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:56,081 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:56,081 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:56,081 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:56,081 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:56,081 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:56,081 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:56,081 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:56,081 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:56,081 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,281 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,281 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,281 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,281 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,281 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,281 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,281 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,281 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,281 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,281 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,281 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,281 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,281 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,281 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,281 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,281 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,281 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,281 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,281 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,281 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,281 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,281 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,281 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,281 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,281 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,281 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,281 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,281 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,281 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,281 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,290 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,290 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,290 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,290 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,290 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,290 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,290 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,290 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,290 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,290 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,290 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,290 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,290 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,290 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,290 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,290 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,290 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,290 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,290 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,290 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,290 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,290 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,290 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,290 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,290 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,290 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,290 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,290 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,290 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,290 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,290 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,290 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:31:58,299 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:31:58,300 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:31:58,300 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:31:58,300 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:31:58,300 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:31:58,300 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:31:58,300 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:31:58,300 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:31:58,300 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:31:58,300 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:31:58,300 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:31:58,300 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:31:58,300 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:31:58,300 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:31:58,300 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:31:58,300 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:31:58,300 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:31:58,300 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:31:58,300 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:31:58,300 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:31:58,300 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:31:58,300 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:31:58,300 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:31:58,300 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:31:58,300 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:31:58,300 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:31:58,300 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:31:58,300 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:31:58,300 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:31:58,300 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:31:58,300 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:31:58,300 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:31:58,300 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:31:58,300 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:31:58,300 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:31:59,304 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:31:59,304 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:31:59,304 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:31:59,304 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:31:59,304 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:31:59,304 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:31:59,304 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:31:59,304 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:31:59,304 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:31:59,304 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:31:59,304 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:31:59,304 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:31:59,304 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:31:59,304 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:31:59,304 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:31:59,304 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:31:59,304 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:31:59,313 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:59,313 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:59,313 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:59,313 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:59,313 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:59,313 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:59,313 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:59,313 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:59,313 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:59,313 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:59,313 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:59,313 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:59,313 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:59,313 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:59,313 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:59,313 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:59,313 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:59,313 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:31:59,313 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:59,313 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:59,313 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:59,313 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:59,313 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:59,313 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:59,313 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:59,313 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:59,313 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:59,313 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:59,313 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:59,313 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:59,313 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:59,313 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:59,313 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:59,313 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:59,313 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:59,313 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:31:59,314 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:32:00,318 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:32:00,318 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:32:00,318 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:32:00,318 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:32:00,318 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:32:00,318 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:32:00,318 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:32:00,318 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:32:00,318 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:32:00,318 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:32:00,318 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:32:00,318 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:32:00,318 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:32:00,318 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:32:00,318 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:32:00,318 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:32:00,318 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:32:00,318 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:32:00,327 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,327 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,327 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,327 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,327 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,327 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,327 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,327 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,327 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,327 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,327 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,327 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,327 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,327 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,327 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,327 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,327 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,327 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,327 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,328 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,328 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,328 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,328 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,328 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,328 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,328 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,328 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,328 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,328 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,328 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,328 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,328 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,328 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,328 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,328 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,328 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,328 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,328 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,328 - FinnhubOrchestrator - INFO - Configuration updated: {'rotation_interval': 600, 'max_concurrent_streams': 15}
+2025-10-19 20:32:00,328 - FinnhubOrchestrator - INFO - Configuration updated: {'rotation_interval': 600, 'max_concurrent_streams': 15}
+2025-10-19 20:32:00,328 - FinnhubOrchestrator - INFO - Configuration updated: {'rotation_interval': 600, 'max_concurrent_streams': 15}
+2025-10-19 20:32:00,328 - FinnhubOrchestrator - INFO - Configuration updated: {'rotation_interval': 600, 'max_concurrent_streams': 15}
+2025-10-19 20:32:00,328 - FinnhubOrchestrator - INFO - Configuration updated: {'rotation_interval': 600, 'max_concurrent_streams': 15}
+2025-10-19 20:32:00,328 - FinnhubOrchestrator - INFO - Configuration updated: {'rotation_interval': 600, 'max_concurrent_streams': 15}
+2025-10-19 20:32:00,328 - FinnhubOrchestrator - INFO - Configuration updated: {'rotation_interval': 600, 'max_concurrent_streams': 15}
+2025-10-19 20:32:00,328 - FinnhubOrchestrator - INFO - Configuration updated: {'rotation_interval': 600, 'max_concurrent_streams': 15}
+2025-10-19 20:32:00,328 - FinnhubOrchestrator - INFO - Configuration updated: {'rotation_interval': 600, 'max_concurrent_streams': 15}
+2025-10-19 20:32:00,328 - FinnhubOrchestrator - INFO - Configuration updated: {'rotation_interval': 600, 'max_concurrent_streams': 15}
+2025-10-19 20:32:00,328 - FinnhubOrchestrator - INFO - Configuration updated: {'rotation_interval': 600, 'max_concurrent_streams': 15}
+2025-10-19 20:32:00,328 - FinnhubOrchestrator - INFO - Configuration updated: {'rotation_interval': 600, 'max_concurrent_streams': 15}
+2025-10-19 20:32:00,328 - FinnhubOrchestrator - INFO - Configuration updated: {'rotation_interval': 600, 'max_concurrent_streams': 15}
+2025-10-19 20:32:00,328 - FinnhubOrchestrator - INFO - Configuration updated: {'rotation_interval': 600, 'max_concurrent_streams': 15}
+2025-10-19 20:32:00,328 - FinnhubOrchestrator - INFO - Configuration updated: {'rotation_interval': 600, 'max_concurrent_streams': 15}
+2025-10-19 20:32:00,328 - FinnhubOrchestrator - INFO - Configuration updated: {'rotation_interval': 600, 'max_concurrent_streams': 15}
+2025-10-19 20:32:00,328 - FinnhubOrchestrator - INFO - Configuration updated: {'rotation_interval': 600, 'max_concurrent_streams': 15}
+2025-10-19 20:32:00,328 - FinnhubOrchestrator - INFO - Configuration updated: {'rotation_interval': 600, 'max_concurrent_streams': 15}
+2025-10-19 20:32:00,328 - FinnhubOrchestrator - INFO - Configuration updated: {'rotation_interval': 600, 'max_concurrent_streams': 15}
+2025-10-19 20:32:00,337 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,337 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,337 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,337 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,337 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,337 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,337 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,337 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,337 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,337 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,337 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,337 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,337 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,337 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,337 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,337 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,337 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,337 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,337 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,337 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,337 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,337 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,337 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,337 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,337 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,337 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,337 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,337 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,337 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,337 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,337 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,337 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,337 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,337 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,337 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,337 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,337 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,337 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,337 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,337 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - Replay mode enabled
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - Replay mode enabled
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - Replay mode enabled
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - Replay mode enabled
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - Replay mode enabled
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - Replay mode enabled
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - Replay mode enabled
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - Replay mode enabled
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - Replay mode enabled
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - Replay mode enabled
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - Replay mode enabled
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - Replay mode enabled
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - Replay mode enabled
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - Replay mode enabled
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - Replay mode enabled
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - Replay mode enabled
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - Replay mode enabled
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - Replay mode enabled
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - Replay mode enabled
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - Replay mode enabled
+2025-10-19 20:32:00,346 - FinnhubOrchestrator - INFO - Replay mode enabled
+2025-10-19 20:32:01,356 - FinnhubOrchestrator - INFO - Replay mode disabled
+2025-10-19 20:32:01,356 - FinnhubOrchestrator - INFO - Replay mode disabled
+2025-10-19 20:32:01,356 - FinnhubOrchestrator - INFO - Replay mode disabled
+2025-10-19 20:32:01,356 - FinnhubOrchestrator - INFO - Replay mode disabled
+2025-10-19 20:32:01,356 - FinnhubOrchestrator - INFO - Replay mode disabled
+2025-10-19 20:32:01,356 - FinnhubOrchestrator - INFO - Replay mode disabled
+2025-10-19 20:32:01,356 - FinnhubOrchestrator - INFO - Replay mode disabled
+2025-10-19 20:32:01,356 - FinnhubOrchestrator - INFO - Replay mode disabled
+2025-10-19 20:32:01,356 - FinnhubOrchestrator - INFO - Replay mode disabled
+2025-10-19 20:32:01,356 - FinnhubOrchestrator - INFO - Replay mode disabled
+2025-10-19 20:32:01,356 - FinnhubOrchestrator - INFO - Replay mode disabled
+2025-10-19 20:32:01,356 - FinnhubOrchestrator - INFO - Replay mode disabled
+2025-10-19 20:32:01,356 - FinnhubOrchestrator - INFO - Replay mode disabled
+2025-10-19 20:32:01,356 - FinnhubOrchestrator - INFO - Replay mode disabled
+2025-10-19 20:32:01,356 - FinnhubOrchestrator - INFO - Replay mode disabled
+2025-10-19 20:32:01,356 - FinnhubOrchestrator - INFO - Replay mode disabled
+2025-10-19 20:32:01,356 - FinnhubOrchestrator - INFO - Replay mode disabled
+2025-10-19 20:32:01,356 - FinnhubOrchestrator - INFO - Replay mode disabled
+2025-10-19 20:32:01,356 - FinnhubOrchestrator - INFO - Replay mode disabled
+2025-10-19 20:32:01,356 - FinnhubOrchestrator - INFO - Replay mode disabled
+2025-10-19 20:32:01,356 - FinnhubOrchestrator - INFO - Replay mode disabled
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:32:01,366 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 20:32:01,367 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:32:01,367 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:32:01,367 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:32:01,367 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:32:01,367 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:32:01,367 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:32:01,367 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:32:01,367 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:32:01,367 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:32:01,367 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:32:01,367 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:32:01,367 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:32:01,367 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:32:01,367 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:32:01,367 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:32:01,367 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:32:01,367 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:32:01,367 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:32:01,367 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:32:01,367 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:32:01,367 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:32:01,367 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 20:32:02,370 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:32:02,370 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:32:02,370 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:32:02,370 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:32:02,370 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:32:02,370 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:32:02,370 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:32:02,370 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:32:02,370 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:32:02,370 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:32:02,370 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:32:02,370 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:32:02,370 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:32:02,370 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:32:02,370 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:32:02,370 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:32:02,370 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:32:02,370 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:32:02,370 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:32:02,370 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:32:02,370 - FinnhubOrchestrator - INFO - Orchestrator stopped
+2025-10-19 20:32:02,370 - FinnhubOrchestrator - INFO - Orchestrator stopped
