@@ -792,12 +792,12 @@ class NextGenDashboard:
         @self.app.callback(
             Output('orchestrator-content-container', 'children'),
             [Input('interval-component', 'n_intervals')],
-            prevent_initial_call=False  # Load immediately when panel is selected
+            prevent_initial_call=True  # Update in background like other panels
         )
         def update_orchestrator_panel(n):
-            """Update orchestrator panel with latest data - single output to prevent flickering."""
-            # Update every 5 intervals (10 seconds) after initial load
-            if n is not None and n > 0 and n % 5 != 0:
+            """Update orchestrator panel with latest data - updates in background."""
+            # Update every 5 intervals (10 seconds)
+            if n % 5 != 0:
                 raise dash.exceptions.PreventUpdate
             
             try:
@@ -3866,7 +3866,24 @@ class NextGenDashboard:
                     
                     # Record decision with actual reward from portfolio
                     portfolio_value_after = self.portfolio_manager.get_portfolio_value(self.current_prices)
-                    reward = portfolio_value_after - portfolio_value
+                    
+                    # Calculate reward based on actual P/L for this symbol
+                    # For BUY: reward is negative (cost of buying)
+                    # For SELL: reward is the actual profit/loss from the trade
+                    reward = 0.0
+                    if final_action == 'SELL' and selected_symbol in self.portfolio_manager.sold_history:
+                        # Get the most recent sale of this symbol
+                        recent_sales = [s for s in self.portfolio_manager.sold_history if s['symbol'] == selected_symbol]
+                        if recent_sales:
+                            last_sale = recent_sales[-1]
+                            reward = last_sale.get('net_profit', 0.0)  # Actual P/L after fees
+                    elif final_action == 'BUY':
+                        # For BUY, reward is negative (money spent)
+                        if execution_result and execution_result.get('success'):
+                            reward = -execution_result.get('total_cost', 0)
+                    elif final_action in ['HOLD', 'REBALANCE']:
+                        # For HOLD/REBALANCE, reward is portfolio value change
+                        reward = portfolio_value_after - portfolio_value
                     
                     # Train DQN with experience (Sprint 8)
                     # Recalculate next state after action (using same 12-dimensional structure)
