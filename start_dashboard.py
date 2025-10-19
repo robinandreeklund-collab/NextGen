@@ -2293,6 +2293,11 @@ class NextGenDashboard:
         total_generated = self.iteration_count
         total_accepted = int(total_generated * current_acceptance_rate)
         
+        # Cap active agents display to a reasonable number (max 20 for UI)
+        # The actual active count can be higher, but we only show details for top performers
+        active_agents_actual = int(total_accepted * 0.07)
+        active_agents_display = min(active_agents_actual, 20)  # Display max 20 agent cards
+        
         return html.Div([
             html.H2("Agent Evolution & GAN Engine", 
                    style={'color': THEME_COLORS['primary'], 'marginBottom': '30px', 'fontSize': '28px'}),
@@ -2302,13 +2307,13 @@ class NextGenDashboard:
                 self.create_metric_card("Generated", str(total_generated), THEME_COLORS['primary']),
                 self.create_metric_card("Accepted", str(total_accepted), THEME_COLORS['success']),
                 self.create_metric_card("Deployed", str(int(total_accepted * 0.25)), THEME_COLORS['secondary']),
-                self.create_metric_card("Active", str(int(total_accepted * 0.07)), THEME_COLORS['warning']),
+                self.create_metric_card("Active", str(active_agents_actual), THEME_COLORS['warning']),
             ], style={'display': 'grid', 'gridTemplateColumns': 'repeat(4, 1fr)', 
                      'gap': '20px', 'marginBottom': '30px'}),
             
             # Active Agents Detail Section
             html.Div([
-                html.H3("Active Agents Overview", 
+                html.H3(f"Active Agents Overview (Top {active_agents_display} of {active_agents_actual})", 
                        style={'fontSize': '18px', 'marginBottom': '15px', 'color': THEME_COLORS['text']}),
                 html.Div([
                     # Create agent cards
@@ -2376,7 +2381,7 @@ class NextGenDashboard:
                             'minHeight': '140px'
                         })
                     ], style={'flex': '1'})
-                    for i in range(int(total_accepted * 0.07))]
+                    for i in range(active_agents_display)]
                 ], style={
                     'display': 'grid',
                     'gridTemplateColumns': 'repeat(5, 1fr)',
