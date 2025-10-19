@@ -178,7 +178,8 @@ class ExecutionEngine:
             'success': True,
             'timestamp': self._get_timestamp(),
             'execution_delay': self.execution_delay,  # Sprint 4.3
-            'slippage_tolerance': self.slippage_tolerance  # Sprint 4.3
+            'slippage_tolerance': self.slippage_tolerance,  # Sprint 4.3
+            'agent': decision.get('agent', 'unknown')  # Pass through agent info
         }
         
         # Generera feedback för feedback_loop

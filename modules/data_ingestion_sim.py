@@ -82,7 +82,25 @@ class DataIngestionSim:
         # Iteration counter
         self.iteration = 0
         
-        print(f"📊 Simulated data ingestion initialized for symbols: {', '.join(self.symbols)}")
+        print(f"📊 Simulated data ingestion initialized for symbols: {', '.join(self.symbols[:5])}{'...' if len(self.symbols) > 5 else ''}")
+    
+    def update_symbols(self, new_symbols: List[str]) -> None:
+        """
+        Uppdaterar lista av symboler att simulera.
+        Används när orchestrator roterar symboler.
+        
+        Args:
+            new_symbols: Ny lista av symboler att simulera
+        """
+        if new_symbols and new_symbols != self.symbols:
+            self.symbols = new_symbols
+            # Initialize new symbols if needed
+            for symbol in new_symbols:
+                if symbol not in self.current_prices:
+                    self.current_prices[symbol] = self.base_prices.get(symbol, 100.0 + random.uniform(-20, 20))
+                    self.price_trends[symbol] = 0.0
+                    self.base_prices[symbol] = self.current_prices[symbol]
+            print(f"📊 Updated simulation symbols: {len(new_symbols)} symbols")
     
     def simulate_market_tick(self) -> None:
         """
@@ -94,14 +112,22 @@ class DataIngestionSim:
         - Mean reversion
         - Random volatility
         - Volume variations
+        
+        Dynamiskt hanterar nya symboler från orchestrator-rotation.
         """
         self.iteration += 1
         
         for symbol in self.symbols:
+            # Initialize new symbols dynamically if not yet tracked
+            if symbol not in self.current_prices:
+                self.current_prices[symbol] = self.base_prices.get(symbol, 100.0 + random.uniform(-20, 20))
+                self.price_trends[symbol] = 0.0
+                self.base_prices[symbol] = self.current_prices[symbol]
+            
             # Get current state
             current_price = self.current_prices[symbol]
-            base_price = self.base_prices[symbol]
-            trend = self.price_trends[symbol]
+            base_price = self.base_prices.get(symbol, current_price)
+            trend = self.price_trends.get(symbol, 0.0)
             
             # Market dynamics
             # 1. Trend/momentum (0.3 weight)

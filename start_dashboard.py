@@ -62,6 +62,7 @@ from modules.system_monitor import SystemMonitor
 from modules.dqn_controller import DQNController
 from modules.gan_evolution_engine import GANEvolutionEngine
 from modules.gnn_timespan_analyzer import GNNTimespanAnalyzer
+from modules.finnhub_orchestrator import FinnhubOrchestrator
 import numpy as np
 
 
@@ -98,8 +99,8 @@ class NextGenDashboard:
         self.live_mode = live_mode
         self.api_key = "d3in10hr01qmn7fkr2a0d3in10hr01qmn7fkr2ag"
         
-        # Symbols for tracking
-        self.symbols = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA']
+        # Symbols for tracking (will be updated by orchestrator)
+        self.symbols = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA']  # Initial fallback
         
         # Base prices for simulation
         self.base_prices = {
@@ -116,13 +117,30 @@ class NextGenDashboard:
         # Initialize modules
         self.message_bus = MessageBus()
         
-        # Initialize data ingestion based on mode
+        # Setup modules (including orchestrator)
+        self.setup_modules()
+        
+        # Get active symbols from orchestrator for simulation
+        if not live_mode and hasattr(self, 'orchestrator'):
+            orch_symbols = getattr(self.orchestrator, 'active_symbols', [])
+            if orch_symbols and len(orch_symbols) > 0:
+                self.symbols = orch_symbols
+                # Initialize missing price tracking
+                for symbol in self.symbols:
+                    if symbol not in self.base_prices:
+                        self.base_prices[symbol] = 100.0 + random.uniform(-20, 20)
+                    if symbol not in self.current_prices:
+                        self.current_prices[symbol] = self.base_prices[symbol]
+                    if symbol not in self.price_trends:
+                        self.price_trends[symbol] = 0.0
+                print(f"📊 Using orchestrator symbols for simulation: {len(self.symbols)} active symbols")
+        
+        # Initialize data ingestion based on mode (after orchestrator symbols are set)
         if live_mode:
             self.data_ingestion = DataIngestion(self.api_key, self.message_bus)
         else:
             self.data_ingestion = DataIngestionSim(self.message_bus, self.symbols)
-        
-        self.setup_modules()
+            print(f"📊 Simulated data ingestion initialized for {len(self.symbols)} symbols")
         
         # Dashboard state
         self.running = False
@@ -131,7 +149,7 @@ class NextGenDashboard:
         self.ws = None
         self.ws_thread = None
         
-        # Data history for charts
+        # Data history for charts (update with current symbols)
         self.price_history = {symbol: [] for symbol in self.symbols}
         self.volume_history = {symbol: [] for symbol in self.symbols}  # Track volume for expanded state
         self.reward_history = {'base': [], 'tuned': [], 'ppo': [], 'dqn': []}
@@ -210,7 +228,28 @@ class NextGenDashboard:
         self.gan_evolution = GANEvolutionEngine(self.message_bus, latent_dim=64, param_dim=16)
         self.gnn_analyzer = GNNTimespanAnalyzer(self.message_bus, input_dim=32, temporal_window=20)
         
-        print("✅ All modules initialized (Sprint 1-8)")
+        # Finnhub Orchestrator (Sprint 9)
+        self.orchestrator = FinnhubOrchestrator(
+            api_key=self.api_key,
+            message_bus=self.message_bus,
+            live_mode=self.live_mode
+        )
+        
+        # Track orchestrator metrics
+        self.orchestrator_metrics = {
+            'symbol_rotations': [],
+            'rl_scores_history': [],
+            'replay_events': [],
+            'stream_metrics': []
+        }
+        
+        # Subscribe to orchestrator events
+        self.message_bus.subscribe('orchestrator_status', self._handle_orchestrator_status)
+        self.message_bus.subscribe('symbol_rotation', self._handle_symbol_rotation)
+        self.message_bus.subscribe('rl_scores', self._handle_rl_scores)
+        self.message_bus.subscribe('replay_event', self._handle_replay_event)
+        
+        print("✅ All modules initialized (Sprint 1-8 + Orchestrator)")
         
         # Load adaptive parameters configuration
         self.load_adaptive_parameters()
@@ -229,6 +268,50 @@ class NextGenDashboard:
             print(f"⚠️  Failed to load adaptive_parameters.yaml: {e}")
             # Fallback to empty config
             self.adaptive_params_config = {'adaptive_parameters': {}, 'reward_tuner_parameters': {}}
+    
+    def _handle_orchestrator_status(self, status: Dict[str, Any]):
+        """Handle orchestrator status updates."""
+        if 'metrics' in status:
+            self.orchestrator_metrics['stream_metrics'].append({
+                'timestamp': status.get('timestamp'),
+                'metrics': status['metrics']
+            })
+            # Keep only last 100 entries
+            if len(self.orchestrator_metrics['stream_metrics']) > 100:
+                self.orchestrator_metrics['stream_metrics'].pop(0)
+    
+    def _handle_symbol_rotation(self, event: Dict[str, Any]):
+        """Handle symbol rotation events."""
+        self.orchestrator_metrics['symbol_rotations'].append(event)
+        # Keep only last 50 rotations
+        if len(self.orchestrator_metrics['symbol_rotations']) > 50:
+            self.orchestrator_metrics['symbol_rotations'].pop(0)
+        
+        # Update simulation symbols if in demo mode
+        if not self.live_mode and hasattr(self, 'data_ingestion'):
+            new_symbols = event.get('new_symbols', [])
+            if new_symbols and hasattr(self.data_ingestion, 'update_symbols'):
+                self.data_ingestion.update_symbols(new_symbols)
+                # Update dashboard tracking
+                self.symbols = new_symbols
+                # Initialize price/volume history for new symbols
+                for symbol in new_symbols:
+                    if symbol not in self.price_history:
+                        self.price_history[symbol] = []
+                    if symbol not in self.volume_history:
+                        self.volume_history[symbol] = []
+    
+    def _handle_rl_scores(self, scores: Dict[str, Any]):
+        """Handle RL score updates."""
+        self.orchestrator_metrics['rl_scores_history'].append(scores)
+        # Keep only last 100 entries
+        if len(self.orchestrator_metrics['rl_scores_history']) > 100:
+            self.orchestrator_metrics['rl_scores_history'].pop(0)
+    
+    def _handle_replay_event(self, event: Dict[str, Any]):
+        """Handle replay events."""
+        self.orchestrator_metrics['replay_events'].append(event)
+    
     
     def setup_layout(self) -> None:
         """Create comprehensive dashboard layout."""
@@ -372,6 +455,7 @@ class NextGenDashboard:
             html.Div([
                 self.create_sidebar_menu_item('📊', 'Dashboard', 'dashboard', True),
                 self.create_sidebar_menu_item('💼', 'Portfolio', 'portfolio', False),
+                self.create_sidebar_menu_item('🎯', 'Orchestrator', 'orchestrator', False),
                 self.create_sidebar_menu_item('🤖', 'Agents', 'agents', False),
                 self.create_sidebar_menu_item('🎯', 'DQN Controller', 'dqn', False),
                 self.create_sidebar_menu_item('🎁', 'Rewards', 'rewards', False),
@@ -650,6 +734,8 @@ class NextGenDashboard:
             # Route to appropriate view based on current_view
             if current_view == 'portfolio':
                 return self.create_portfolio_panel(), current_view
+            elif current_view == 'orchestrator':
+                return self.create_orchestrator_panel(), current_view
             elif current_view == 'agents':
                 return self.create_rl_analysis_panel(), current_view
             elif current_view == 'dqn':
@@ -702,6 +788,272 @@ class NextGenDashboard:
             mode = f' ({"Live" if self.live_mode else "Demo"})' if self.running else ''
             return f'● {status}{mode}'
         
+        # Orchestrator panel callbacks
+        @self.app.callback(
+            Output('orchestrator-content-container', 'children'),
+            [Input('interval-component', 'n_intervals')],
+            prevent_initial_call=True  # Update in background like other panels
+        )
+        def update_orchestrator_panel(n):
+            """Update orchestrator panel with latest data - updates in background."""
+            # Update every 5 intervals (10 seconds) - skip initial and intermediate updates
+            if n is None or n % 5 != 0:
+                raise dash.exceptions.PreventUpdate
+            
+            try:
+                # Get orchestrator status
+                orch_status = self.orchestrator.get_status()
+                
+                # Get detailed metrics from stream_metrics
+                detailed_metrics = {}
+                if 'orchestrator' in self.orchestrator.stream_metrics:
+                    detailed_metrics = self.orchestrator.stream_metrics['orchestrator'].get('detailed_metrics', {})
+                
+                # Status display with more details
+                active_subs = detailed_metrics.get('active_subscriptions', 0)
+                ws_usage = detailed_metrics.get('websocket_usage_pct', 0)
+                hist_symbols = detailed_metrics.get('historical_symbols_used', [])
+                
+                # Get WebSocket limit from submodule details
+                submodule_details = detailed_metrics.get('submodule_details', {})
+                ws_limit = submodule_details.get('symbol_rotation', {}).get('websocket_limit', 50)
+                test_slots = submodule_details.get('symbol_rotation', {}).get('test_slots', 1)
+                rest_batch = submodule_details.get('stream_strategy', {}).get('rest_batch_size', 12)
+                
+                # Active symbols display
+                active_symbols = orch_status.get('active_symbols', [])
+                
+                # Rotation stats
+                rotation_count = len(self.orchestrator_metrics['symbol_rotations'])
+                last_rotation = orch_status.get('last_rotation')
+                
+                # Build rotation timeline chart
+                rotation_fig = go.Figure()
+                if self.orchestrator_metrics['symbol_rotations']:
+                    timestamps = [r.get('timestamp', '') for r in self.orchestrator_metrics['symbol_rotations'][-20:]]
+                    rotation_fig.add_trace(go.Scatter(
+                        x=list(range(len(timestamps))),
+                        y=[1] * len(timestamps),
+                        mode='markers',
+                        marker=dict(size=10, color=THEME_COLORS['primary']),
+                        name='Rotations'
+                    ))
+                rotation_fig.update_layout(
+                    paper_bgcolor=THEME_COLORS['surface'],
+                    plot_bgcolor=THEME_COLORS['surface'],
+                    font=dict(color=THEME_COLORS['text']),
+                    height=200,
+                    margin=dict(l=20, r=20, t=20, b=20),
+                    showlegend=False
+                )
+                
+                # Build RL scores chart
+                rl_fig = go.Figure()
+                if self.orchestrator_metrics['rl_scores_history']:
+                    latest_scores = self.orchestrator_metrics['rl_scores_history'][-1].get('scores', {})
+                    symbols = list(latest_scores.keys())[:10]
+                    scores = [latest_scores.get(s, 0) for s in symbols]
+                    
+                    rl_fig.add_trace(go.Bar(
+                        x=symbols,
+                        y=scores,
+                        marker=dict(color=THEME_COLORS['primary'])
+                    ))
+                rl_fig.update_layout(
+                    paper_bgcolor=THEME_COLORS['surface'],
+                    plot_bgcolor=THEME_COLORS['surface'],
+                    font=dict(color=THEME_COLORS['text']),
+                    height=300,
+                    margin=dict(l=20, r=20, t=20, b=40),
+                    xaxis_title="Symbol",
+                    yaxis_title="Priority Score"
+                )
+                
+                # Build stream health gauge
+                health_value = 95  # Default
+                if 'orchestrator' in self.orchestrator.stream_metrics:
+                    health_value = self.orchestrator.stream_metrics['orchestrator'].get('stream_health', 0.95) * 100
+                
+                health_fig = go.Figure(go.Indicator(
+                    mode="gauge+number",
+                    value=health_value,
+                    domain={'x': [0, 1], 'y': [0, 1]},
+                    title={'text': "Health %"},
+                    gauge={
+                        'axis': {'range': [0, 100]},
+                        'bar': {'color': THEME_COLORS['success']},
+                        'threshold': {
+                            'line': {'color': "red", 'width': 4},
+                            'thickness': 0.75,
+                            'value': 70
+                        }
+                    }
+                ))
+                health_fig.update_layout(
+                    paper_bgcolor=THEME_COLORS['surface'],
+                    font=dict(color=THEME_COLORS['text']),
+                    height=200,
+                    margin=dict(l=20, r=20, t=40, b=20),
+                    autosize=False
+                )
+                
+                # Build replay status
+                replay_status = self.orchestrator.replay_engine.get_replay_status()
+                
+                # Build complete panel content as single div
+                panel_content = html.Div([
+                    # Status Row
+                    html.Div([
+                        # Orchestrator Status Card
+                        html.Div([
+                            html.H3("Orchestrator Status", style={'fontSize': '16px', 'marginBottom': '15px'}),
+                            html.Div([
+                                html.Div(f"Running: {'✅ Yes' if orch_status.get('is_running') else '❌ No'}"),
+                                html.Div(f"Mode: {'🔴 Live' if orch_status.get('live_mode') else '🟢 Demo'}"),
+                                html.Div(f"Active Streams: {active_subs}/{ws_limit} (WebSocket)"),
+                                html.Div(f"WebSocket Usage: {ws_usage:.1f}%"),
+                                html.Div(f"Test Slots Reserved: {test_slots}"),
+                                html.Div(f"REST Batch Size: {rest_batch}"),
+                                html.Div(f"Historical Symbols: {len(hist_symbols)}"),
+                            ], style={'fontSize': '14px'})
+                        ], style={
+                            'backgroundColor': THEME_COLORS['surface'],
+                            'padding': '20px',
+                            'borderRadius': '8px',
+                            'border': f'1px solid {THEME_COLORS["border"]}',
+                            'flex': '1',
+                            'marginRight': '10px'
+                        }),
+                        
+                        # Active Symbols Card
+                        html.Div([
+                            html.H3("Active Symbols", style={'fontSize': '16px', 'marginBottom': '15px'}),
+                            html.Div([
+                                *[html.Div(f"• {sym}", style={'marginBottom': '5px'}) 
+                                  for sym in active_symbols[:10]],
+                                html.Div(f"... and {len(active_symbols) - 10} more", 
+                                        style={'fontStyle': 'italic', 'color': THEME_COLORS['text_secondary']}) 
+                                        if len(active_symbols) > 10 else None
+                            ], style={'fontSize': '14px'})
+                        ], style={
+                            'backgroundColor': THEME_COLORS['surface'],
+                            'padding': '20px',
+                            'borderRadius': '8px',
+                            'border': f'1px solid {THEME_COLORS["border"]}',
+                            'flex': '1',
+                            'marginRight': '10px'
+                        }),
+                        
+                        # Rotation Stats Card
+                        html.Div([
+                            html.H3("Rotation Stats", style={'fontSize': '16px', 'marginBottom': '15px'}),
+                            html.Div([
+                                html.Div(f"Total Rotations: {rotation_count}"),
+                                html.Div(f"Last: {time.strftime('%H:%M:%S', time.localtime(last_rotation)) if last_rotation else 'N/A'}"),
+                            ], style={'fontSize': '14px'})
+                        ], style={
+                            'backgroundColor': THEME_COLORS['surface'],
+                            'padding': '20px',
+                            'borderRadius': '8px',
+                            'border': f'1px solid {THEME_COLORS["border"]}',
+                            'flex': '1'
+                        })
+                    ], style={'display': 'flex', 'marginBottom': '20px'}),
+                    
+                    # Symbol Rotation Timeline
+                    html.Div([
+                        html.H3("Symbol Rotation Timeline", 
+                               style={'fontSize': '16px', 'marginBottom': '15px', 'color': THEME_COLORS['text']}),
+                        dcc.Graph(figure=rotation_fig, config={'displayModeBar': False})
+                    ], style={
+                        'backgroundColor': THEME_COLORS['surface'],
+                        'padding': '20px',
+                        'borderRadius': '8px',
+                        'border': f'1px solid {THEME_COLORS["border"]}',
+                        'marginBottom': '20px'
+                    }),
+                    
+                    # RL Scores Visualization
+                    html.Div([
+                        html.H3("RL-Driven Symbol Priorities", 
+                               style={'fontSize': '16px', 'marginBottom': '15px', 'color': THEME_COLORS['text']}),
+                        dcc.Graph(figure=rl_fig, config={'displayModeBar': False})
+                    ], style={
+                        'backgroundColor': THEME_COLORS['surface'],
+                        'padding': '20px',
+                        'borderRadius': '8px',
+                        'border': f'1px solid {THEME_COLORS["border"]}',
+                        'marginBottom': '20px'
+                    }),
+                    
+                    # Stream Metrics
+                    html.Div([
+                        html.Div([
+                            # Stream Health
+                            html.Div([
+                                html.H3("Stream Health", style={'fontSize': '16px', 'marginBottom': '15px'}),
+                                dcc.Graph(figure=health_fig, config={'displayModeBar': False}, style={'height': '200px'})
+                            ], style={'flex': '1', 'marginRight': '10px'}),
+                            
+                            # Replay Status
+                            html.Div([
+                                html.H3("Replay Engine", style={'fontSize': '16px', 'marginBottom': '15px'}),
+                                html.Div([
+                                    html.Div(f"Active: {'✅ Yes' if replay_status.get('is_replaying') else '❌ No'}"),
+                                    html.Div(f"Mode: {replay_status.get('mode', 'N/A')}"),
+                                    html.Div(f"Speed: {replay_status.get('speed', 1.0)}x"),
+                                    html.Div(f"Position: {replay_status.get('position', 0)}"),
+                                ], style={'fontSize': '14px'})
+                            ], style={'flex': '1'})
+                        ], style={'display': 'flex'})
+                    ], style={
+                        'backgroundColor': THEME_COLORS['surface'],
+                        'padding': '20px',
+                        'borderRadius': '8px',
+                        'border': f'1px solid {THEME_COLORS["border"]}',
+                        'marginBottom': '20px'
+                    }),
+                    
+                    # Detailed Orchestrator Information
+                    html.Div([
+                        html.H3("Detailed Component Information", 
+                               style={'fontSize': '16px', 'marginBottom': '15px', 'color': THEME_COLORS['text']}),
+                        html.Div([
+                            html.H4("Submodule Details:", style={'marginTop': '10px', 'marginBottom': '10px'}),
+                            *[html.Div([
+                                html.B(f"{module_name}:"),
+                                *[html.Div(f"  {key}: {value}", style={'fontSize': '12px'}) 
+                                  for key, value in details.items() if key != 'status']
+                            ], style={'marginBottom': '10px'}) 
+                            for module_name, details in submodule_details.items()]
+                        ] if submodule_details else [html.Div("No submodule data available", 
+                                                              style={'color': THEME_COLORS['text_secondary']})], 
+                        style={'fontSize': '13px'})
+                    ], style={
+                        'backgroundColor': THEME_COLORS['surface'],
+                        'padding': '20px',
+                        'borderRadius': '8px',
+                        'border': f'1px solid {THEME_COLORS["border"]}',
+                    })
+                ])
+                
+                return panel_content
+                
+            except Exception as e:
+                print(f"⚠️ Error updating orchestrator panel: {e}")
+                import traceback
+                traceback.print_exc()
+                # Return error state
+                return html.Div([
+                    html.Div("⚠️ Error loading orchestrator data", 
+                            style={'padding': '40px', 'textAlign': 'center', 
+                                   'color': THEME_COLORS['error'], 'fontSize': '16px'}),
+                    html.Div(str(e), 
+                            style={'padding': '20px', 'textAlign': 'center', 
+                                   'color': THEME_COLORS['text_secondary'], 'fontSize': '12px'})
+                ])
+        
+    
     def create_dashboard_view(self) -> html.Div:
         """Create main dashboard view with all key metrics and charts."""
         # Get live data
@@ -1174,6 +1526,10 @@ class NextGenDashboard:
             pnl_color = THEME_COLORS['success'] if sale['net_profit'] >= 0 else THEME_COLORS['danger']
             return_color = THEME_COLORS['success'] if sale['return_pct'] >= 0 else THEME_COLORS['danger']
             
+            # Reward is the net_profit (for RL agents)
+            reward = sale['net_profit']
+            reward_color = THEME_COLORS['success'] if reward >= 0 else THEME_COLORS['danger']
+            
             sold_rows.append(html.Tr([
                 html.Td(sale['symbol'], 
                        style={'padding': '10px', 'color': THEME_COLORS['text'], 'fontWeight': '600'}),
@@ -1187,6 +1543,8 @@ class NextGenDashboard:
                        style={'padding': '10px', 'textAlign': 'right', 'color': pnl_color, 'fontWeight': '600'}),
                 html.Td(f"{sale['return_pct']:.2f}%",
                        style={'padding': '10px', 'textAlign': 'right', 'color': return_color, 'fontWeight': '600'}),
+                html.Td(f"{reward:+.2f}",
+                       style={'padding': '10px', 'textAlign': 'right', 'color': reward_color, 'fontWeight': '600'}),
                 html.Td(sale.get('agent_decision', 'N/A'),
                        style={'padding': '10px', 'color': THEME_COLORS['text']}),
             ], style={'borderBottom': f'1px solid {THEME_COLORS["border"]}'}))
@@ -1214,11 +1572,14 @@ class NextGenDashboard:
                         html.Th("Return %", style={'padding': '10px', 'textAlign': 'right', 
                                                   'color': THEME_COLORS['text_secondary'], 'fontSize': '12px',
                                                   'borderBottom': f'1px solid {THEME_COLORS["border"]}'}),
+                        html.Th("Reward", style={'padding': '10px', 'textAlign': 'right', 
+                                                'color': THEME_COLORS['text_secondary'], 'fontSize': '12px',
+                                                'borderBottom': f'1px solid {THEME_COLORS["border"]}'}),
                         html.Th("Agent", style={'padding': '10px', 'color': THEME_COLORS['text_secondary'], 
                                                'fontSize': '12px', 'borderBottom': f'1px solid {THEME_COLORS["border"]}'}),
                     ])),
                     html.Tbody(sold_rows if sold_rows else [
-                        html.Tr([html.Td("No sales yet", colSpan=7, 
+                        html.Tr([html.Td("No sales yet", colSpan=8, 
                                         style={'padding': '20px', 'textAlign': 'center', 
                                               'color': THEME_COLORS['text_secondary']})])
                     ])
@@ -3117,6 +3478,22 @@ class NextGenDashboard:
             ]),
         ])
     
+    
+    def create_orchestrator_panel(self) -> html.Div:
+        """Create Finnhub Orchestrator monitoring panel - rebuilt from scratch."""
+        return html.Div([
+            html.H2("🎯 Finnhub Orchestrator", 
+                   style={'color': THEME_COLORS['primary'], 'marginBottom': '20px'}),
+            
+            # Single update container - all content refreshed together
+            html.Div(id='orchestrator-content-container', children=[
+                html.Div("Loading orchestrator data...", 
+                        style={'padding': '40px', 'textAlign': 'center', 
+                               'color': THEME_COLORS['text_secondary']})
+            ])
+            
+        ], style={'padding': '20px'})
+    
     def create_market_watch_panel(self) -> html.Div:
         """Create Live Market Watch panel (wrapper for create_market_panel)."""
         return self.create_market_panel()
@@ -3138,13 +3515,36 @@ class NextGenDashboard:
         """Start simulation thread."""
         if not self.running:
             self.running = True
+            
+            # Start orchestrator
+            self.orchestrator.start()
+            
+            # Update simulation symbols from orchestrator (demo mode only)
+            if not self.live_mode and hasattr(self, 'data_ingestion'):
+                orch_symbols = getattr(self.orchestrator, 'active_symbols', [])
+                if orch_symbols and len(orch_symbols) > 0:
+                    self.symbols = orch_symbols
+                    if hasattr(self.data_ingestion, 'update_symbols'):
+                        self.data_ingestion.update_symbols(orch_symbols)
+                    # Initialize price/volume history for orchestrator symbols
+                    for symbol in orch_symbols:
+                        if symbol not in self.price_history:
+                            self.price_history[symbol] = []
+                        if symbol not in self.volume_history:
+                            self.volume_history[symbol] = []
+                    print(f"📊 Synchronized simulation with orchestrator: {len(orch_symbols)} active symbols")
+            
             self.simulation_thread = threading.Thread(target=self.simulation_loop, daemon=True)
             self.simulation_thread.start()
-            print("✅ Simulation started")
+            print("✅ Simulation started (with orchestrator)")
     
     def stop_simulation(self) -> None:
         """Stop simulation thread."""
         self.running = False
+        
+        # Stop orchestrator
+        self.orchestrator.stop()
+        
         if self.simulation_thread:
             self.simulation_thread.join(timeout=2)
         print("🛑 Simulation stopped")
@@ -3171,6 +3571,12 @@ class NextGenDashboard:
             
             # Store price history and volume history
             for symbol in self.symbols:
+                # Get price with fallback to generated price for new symbols
+                if symbol not in self.current_prices:
+                    self.current_prices[symbol] = self.base_prices.get(symbol, 100.0 + random.uniform(-20, 20))
+                if symbol not in self.base_prices:
+                    self.base_prices[symbol] = self.current_prices[symbol]
+                    
                 price = self.current_prices.get(symbol, self.base_prices[symbol])
                 self.price_history[symbol].append(price)
                 if len(self.price_history[symbol]) > 100:
@@ -3327,8 +3733,10 @@ class NextGenDashboard:
                             self.conflict_history.pop(0)
                         
                         final_action = ppo_action if resolution == 'PPO' else dqn_action
+                        deciding_agent = resolution
                     else:
                         final_action = ppo_action
+                        deciding_agent = 'PPO'
                     
                     # Execute trade with proper budget checks and position sizing
                     execution_result = None
@@ -3359,7 +3767,8 @@ class NextGenDashboard:
                                 'symbol': selected_symbol,
                                 'action': 'BUY',
                                 'quantity': quantity,
-                                'current_price': current_price
+                                'current_price': current_price,
+                                'agent': deciding_agent
                             })
                             # Publish result to message_bus so portfolio_manager can update
                             if execution_result and execution_result.get('success'):
@@ -3391,7 +3800,8 @@ class NextGenDashboard:
                                     'symbol': selected_symbol,
                                     'action': 'SELL',
                                     'quantity': quantity,
-                                    'current_price': current_price
+                                    'current_price': current_price,
+                                    'agent': deciding_agent
                                 })
                                 # Publish result to message_bus so portfolio_manager can update
                                 if execution_result and execution_result.get('success'):
@@ -3421,7 +3831,8 @@ class NextGenDashboard:
                                         'symbol': selected_symbol,
                                         'action': 'BUY',
                                         'quantity': quantity,
-                                        'current_price': current_price
+                                        'current_price': current_price,
+                                        'agent': deciding_agent
                                     })
                                     if execution_result and execution_result.get('success'):
                                         self.execution_engine.publish_result(execution_result)
@@ -3437,7 +3848,8 @@ class NextGenDashboard:
                                         'symbol': selected_symbol,
                                         'action': 'SELL',
                                         'quantity': quantity,
-                                        'current_price': current_price
+                                        'current_price': current_price,
+                                        'agent': deciding_agent
                                     })
                                     if execution_result and execution_result.get('success'):
                                         self.execution_engine.publish_result(execution_result)
@@ -3469,7 +3881,42 @@ class NextGenDashboard:
                     
                     # Record decision with actual reward from portfolio
                     portfolio_value_after = self.portfolio_manager.get_portfolio_value(self.current_prices)
-                    reward = portfolio_value_after - portfolio_value
+                    
+                    # Calculate reward based on actual P/L for this symbol
+                    # For SELL: reward is the actual profit/loss from the trade
+                    # For BUY: reward is negative (cost of buying)
+                    # For HOLD/REBALANCE: reward is portfolio value change
+                    reward = 0.0
+                    if final_action in ['SELL', 'SELL_PARTIAL', 'SELL_ALL']:
+                        # For SELL actions, use the ACTUAL net_profit from sold_history
+                        # This is the most accurate since it's calculated by portfolio_manager
+                        # and accounts for all edge cases (partial sells, rounding, etc.)
+                        if execution_result and execution_result.get('success'):
+                            # Check if this symbol appears in sold_history (should be the last entry)
+                            sold_history = self.portfolio_manager.get_sold_history(limit=1)
+                            if sold_history and sold_history[0]['symbol'] == selected_symbol:
+                                # Use the actual net_profit from the sale
+                                reward = sold_history[0].get('net_profit', 0.0)
+                            else:
+                                # Fallback: calculate manually (should rarely happen)
+                                revenue = execution_result.get('total_cost', 0.0)
+                                quantity = execution_result.get('quantity', 0)
+                                
+                                cost_basis = 0.0
+                                if selected_symbol in self.portfolio_manager.positions:
+                                    avg_buy_price = self.portfolio_manager.positions[selected_symbol].get('avg_price', 0)
+                                    cost_basis = quantity * avg_buy_price
+                                
+                                fee = revenue * 0.0025
+                                net_profit = revenue - cost_basis - fee
+                                reward = net_profit
+                    elif final_action == 'BUY':
+                        # For BUY, reward is negative (money spent)
+                        if execution_result and execution_result.get('success'):
+                            reward = -execution_result.get('total_cost', 0)
+                    elif final_action in ['HOLD', 'REBALANCE']:
+                        # For HOLD/REBALANCE, reward is portfolio value change
+                        reward = portfolio_value_after - portfolio_value
                     
                     # Train DQN with experience (Sprint 8)
                     # Recalculate next state after action (using same 12-dimensional structure)
