@@ -1532,19 +1532,30 @@ class NextGenDashboard:
         
         # Q-values distribution (for latest actions)
         if q_values_sample:
-            # Extract Q-values for each action
-            q_buy = [qvals[0] for qvals in q_values_sample[-30:]]
-            q_sell = [qvals[1] for qvals in q_values_sample[-30:]]
-            q_hold = [qvals[2] for qvals in q_values_sample[-30:]]
-            
+            # Expanded action set and colors
+            action_labels = [
+                "BUY_SMALL", "BUY_MEDIUM", "BUY_LARGE",
+                "SELL_PARTIAL", "SELL_ALL", "HOLD", "REBALANCE"
+            ]
+            action_colors = [
+                THEME_COLORS.get('success', '#28a745'),      # BUY_SMALL
+                THEME_COLORS.get('info', '#17a2b8'),         # BUY_MEDIUM
+                THEME_COLORS.get('primary', '#007bff'),      # BUY_LARGE
+                THEME_COLORS.get('warning', '#ffd43b'),      # SELL_PARTIAL
+                THEME_COLORS.get('danger', '#dc3545'),       # SELL_ALL
+                THEME_COLORS.get('secondary', '#6c757d'),    # HOLD
+                THEME_COLORS.get('dark', '#343a40'),         # REBALANCE
+            ]
             q_values_fig = go.Figure()
-            q_values_fig.add_trace(go.Scatter(y=q_buy, mode='lines', name='Q(BUY)', 
-                                             line=dict(color=THEME_COLORS['success'], width=2)))
-            q_values_fig.add_trace(go.Scatter(y=q_sell, mode='lines', name='Q(SELL)', 
-                                             line=dict(color=THEME_COLORS['danger'], width=2)))
-            q_values_fig.add_trace(go.Scatter(y=q_hold, mode='lines', name='Q(HOLD)', 
-                                             line=dict(color=THEME_COLORS['primary'], width=2)))
-            
+            num_actions = min(len(action_labels), len(q_values_sample[0]))
+            for i in range(num_actions):
+                q_series = [qvals[i] for qvals in q_values_sample[-30:]]
+                q_values_fig.add_trace(go.Scatter(
+                    y=q_series,
+                    mode='lines',
+                    name=f"Q({action_labels[i]})",
+                    line=dict(color=action_colors[i], width=2)
+                ))
             q_values_fig.update_layout(
                 **self.get_chart_layout("Q-Values per Action"),
                 height=300,
