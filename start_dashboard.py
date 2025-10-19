@@ -1492,7 +1492,8 @@ class NextGenDashboard:
             q_values_sample = self.dqn_controller.q_values_history[-50:]
         else:
             # Simulate Q-values for demo
-            q_values_sample = [[random.uniform(-1, 5) for _ in range(3)] for _ in range(50)]
+            action_dim = getattr(self.dqn_controller, "action_dim", 3)
+            q_values_sample = [[random.uniform(-1, 5) for _ in range(action_dim)] for _ in range(50)]
         
         # Loss history chart
         loss_history = recent_losses if recent_losses else [0.5 - i * 0.01 for i in range(50)]
