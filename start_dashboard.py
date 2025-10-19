@@ -2515,8 +2515,7 @@ class NextGenDashboard:
             **self.get_chart_layout("DT Training Loss Over Time"),
             height=250,
             yaxis_title="Loss",
-            xaxis_title="Training Step",
-            margin=dict(l=50, r=20, t=40, b=40)
+            xaxis_title="Training Step"
         )
         
         # Return-to-go tracking chart
@@ -2545,7 +2544,6 @@ class NextGenDashboard:
             height=250,
             yaxis_title="Return",
             xaxis_title="Timestep",
-            margin=dict(l=50, r=20, t=40, b=40),
             showlegend=True,
             legend=dict(x=0.7, y=1)
         )
@@ -2574,7 +2572,6 @@ class NextGenDashboard:
             height=250,
             yaxis_title="Probability",
             yaxis_range=[0, 1],
-            margin=dict(l=50, r=20, t=40, b=40),
             showlegend=False
         )
         
@@ -2597,8 +2594,7 @@ class NextGenDashboard:
             height=250,
             yaxis_title="Confidence",
             yaxis_range=[0, 1],
-            xaxis_title="Prediction",
-            margin=dict(l=50, r=20, t=40, b=40)
+            xaxis_title="Prediction"
         )
         
         # Ensemble agent comparison
@@ -2654,8 +2650,7 @@ class NextGenDashboard:
             plot_bgcolor=THEME_COLORS['background'],
             paper_bgcolor=THEME_COLORS['surface'],
             font=dict(color=THEME_COLORS['text']),
-            height=250,
-            margin=dict(l=50, r=20, t=40, b=40)
+            height=250
         )
         ensemble_fig.update_yaxes(range=[0, 1], row=1, col=1)
         ensemble_fig.update_yaxes(range=[0, 1], row=1, col=2)
