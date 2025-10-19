@@ -158,7 +158,8 @@ class NextGenDashboard:
         self.volume_history = {symbol: [] for symbol in self.symbols}  # Track volume for expanded state
         self.reward_history = {'base': [], 'tuned': [], 'ppo': [], 'dqn': []}
         self.agent_metrics_history = []
-        self.gan_metrics_history = {'g_loss': [], 'd_loss': [], 'acceptance_rate': []}
+        self.gan_metrics_history = {'g_loss': [], 'd_loss': [], 'acceptance_rate': [], 
+                                    'candidates_generated': 0, 'candidates_accepted': 0}
         self.gnn_pattern_history = []
         self.dt_metrics_history = {
             'training_loss': [],
@@ -166,7 +167,10 @@ class NextGenDashboard:
             'predicted_return': [],
             'confidence': [],
             'action_probs': [],
-            'attention_weights': []
+            'attention_weights': [],
+            'training_steps': 0,  # Current training step count
+            'buffer_size': 0,      # Current buffer size
+            'sequence_length': 20  # Sequence length
         }
         self.ensemble_metrics_history = {
             'ppo_accuracy': [],
@@ -385,7 +389,12 @@ class NextGenDashboard:
             self.dt_metrics_history['predicted_return'].append(metrics.get('predicted_return', 0))
         if 'attention_weights' in metrics:
             self.dt_metrics_history['attention_weights'].append(metrics['attention_weights'])
-        # Keep last 100 entries
+        # Update current state metrics
+        if 'training_steps' in metrics:
+            self.dt_metrics_history['training_steps'] = metrics['training_steps']
+        if 'buffer_size' in metrics:
+            self.dt_metrics_history['buffer_size'] = metrics['buffer_size']
+        # Keep last 100 entries for lists
         for key in ['training_loss', 'target_return', 'predicted_return']:
             if len(self.dt_metrics_history[key]) > 100:
                 self.dt_metrics_history[key].pop(0)
@@ -1275,9 +1284,12 @@ class NextGenDashboard:
         # Success rate (executions vs decisions)
         success_rate = (total_executions / total_decisions * 100) if total_decisions > 0 else 0
         
-        # Calculate win rate from execution history (positive rewards)
-        profitable_trades = sum(1 for e in self.execution_history if e.get('reward', 0) > 0)
-        win_rate = (profitable_trades / total_executions * 100) if total_executions > 0 else 0
+        # Calculate win rate from SOLD trades only (not active holdings)
+        # Use sold_history which only contains completed trades with realized P/L
+        sold_trades = self.portfolio_manager.get_sold_history(limit=1000)  # Get all sold trades
+        profitable_sold_trades = sum(1 for trade in sold_trades if trade.get('net_profit', 0) > 0)
+        total_sold_trades = len(sold_trades)
+        win_rate = (profitable_sold_trades / total_sold_trades * 100) if total_sold_trades > 0 else 0
         
         # Average reward trend (last 50 vs first 50)
         if len(self.decision_history) >= 100:
@@ -1415,7 +1427,7 @@ class NextGenDashboard:
                     ], style={'marginBottom': '10px'}),
                     html.Div([
                         html.Span("🎯 ", style={'fontSize': '20px', 'marginRight': '10px'}),
-                        html.Span(f"Win rate at {win_rate:.1f}% ({profitable_trades}/{total_executions} profitable trades)", 
+                        html.Span(f"Win rate at {win_rate:.1f}% ({profitable_sold_trades}/{total_sold_trades} profitable sold trades)", 
                                  style={'fontSize': '13px', 'color': THEME_COLORS['text']})
                     ], style={'marginBottom': '10px'}),
                     html.Div([
@@ -2484,14 +2496,18 @@ class NextGenDashboard:
         """Create Decision Transformer Analysis panel with comprehensive metrics."""
         import plotly.graph_objs as go
         
-        # Get real DT metrics
-        dt_metrics = self.dt_agent.get_metrics() if hasattr(self.dt_agent, 'get_metrics') else {}
+        # Get real DT metrics from message bus history
+        training_steps = self.dt_metrics_history.get('training_steps', 0)
+        buffer_size = self.dt_metrics_history.get('buffer_size', 0)
+        sequence_length = self.dt_metrics_history.get('sequence_length', 20)
         
-        training_steps = dt_metrics.get('training_steps', 0)
-        avg_loss = dt_metrics.get('avg_loss', 0.0)
-        buffer_size = dt_metrics.get('buffer_size', 0)
-        target_return = dt_metrics.get('target_return', 100.0)
-        sequence_length = dt_metrics.get('sequence_length', 20)
+        # Calculate current avg loss from recent training
+        loss_history = self.dt_metrics_history.get('training_loss', [])
+        avg_loss = loss_history[-1] if loss_history else 0.0
+        
+        # Calculate target return (starts at 100, decreases over sequence)
+        target_rtg_list = self.dt_metrics_history.get('target_return', [])
+        target_return = target_rtg_list[-1] if target_rtg_list else 100.0
         
         # Get ensemble metrics
         ensemble_metrics = self.ensemble_coordinator.get_ensemble_metrics() if hasattr(self.ensemble_coordinator, 'get_ensemble_metrics') else {}
@@ -2851,13 +2867,11 @@ class NextGenDashboard:
             yaxis=dict(gridcolor=THEME_COLORS['border']),
         )
         
-        # Calculate metrics from actual data
-        total_generated = self.iteration_count
-        total_accepted = int(total_generated * current_acceptance_rate)
-        
-        # Cap active agents display to a reasonable number (max 20 for UI)
-        # The actual active count can be higher, but we only show details for top performers
-        active_agents_actual = int(total_accepted * 0.07)
+        # Calculate metrics from actual GAN data
+        total_generated = self.gan_metrics_history.get('candidates_generated', self.iteration_count)
+        total_accepted = self.gan_metrics_history.get('candidates_accepted', int(total_generated * current_acceptance_rate))
+        total_deployed = int(total_accepted * 0.25)  # Estimated 25% of accepted are deployed
+        active_agents_actual = int(total_accepted * 0.07)  # Estimated 7% are currently active
         active_agents_display = min(active_agents_actual, 20)  # Display max 20 agent cards
         
         return html.Div([
@@ -2868,7 +2882,7 @@ class NextGenDashboard:
             html.Div([
                 self.create_metric_card("Generated", str(total_generated), THEME_COLORS['primary']),
                 self.create_metric_card("Accepted", str(total_accepted), THEME_COLORS['success']),
-                self.create_metric_card("Deployed", str(int(total_accepted * 0.25)), THEME_COLORS['secondary']),
+                self.create_metric_card("Deployed", str(total_deployed), THEME_COLORS['secondary']),
                 self.create_metric_card("Active", str(active_agents_actual), THEME_COLORS['warning']),
             ], style={'display': 'grid', 'gridTemplateColumns': 'repeat(4, 1fr)', 
                      'gap': '20px', 'marginBottom': '30px'}),
@@ -5207,12 +5221,19 @@ class NextGenDashboard:
                     if self.iteration_count % 10 == 0 and len(self.dt_agent.sequence_buffer) >= 8:
                         train_result = self.dt_agent.train_step()
                         if train_result and not train_result.get('skipped', False):
+                            # Update target return based on current portfolio performance
+                            # Decay from initial target based on actual returns
+                            current_reward_sum = sum(self.dt_agent.current_sequence['rewards']) if self.dt_agent.current_sequence['rewards'] else 0
+                            self.dt_agent.target_return = max(50.0, 100.0 - abs(current_reward_sum * 10))  # Dynamic target
+                            
                             # Publish training metrics to message bus for dashboard
                             self.message_bus.publish('dt_metrics', {
                                 'avg_loss': train_result['avg_loss'],
                                 'training_steps': train_result['total_steps'],
                                 'buffer_size': train_result['buffer_size'],
-                                'loss': train_result['loss']
+                                'loss': train_result['loss'],
+                                'target_return': self.dt_agent.target_return,
+                                'predicted_return': self.dt_agent.target_return - current_reward_sum  # Predicted remaining return
                             })
                             self.log_message(f"DT training - Loss: {train_result['loss']:.4f}, Steps: {train_result['total_steps']}", "INFO")
                     
@@ -5392,7 +5413,13 @@ class NextGenDashboard:
                 self.gan_metrics_history['d_loss'].append(gan_metrics.get('d_loss', 0.0))
                 self.gan_metrics_history['acceptance_rate'].append(gan_metrics.get('acceptance_rate', 0.0))
                 
-                for key in self.gan_metrics_history:
+                # Update cumulative counts
+                self.gan_metrics_history['candidates_generated'] = gan_metrics.get('candidates_generated', 
+                                                                                  self.gan_metrics_history['candidates_generated'])
+                self.gan_metrics_history['candidates_accepted'] = gan_metrics.get('candidates_accepted', 
+                                                                                 self.gan_metrics_history['candidates_accepted'])
+                
+                for key in ['g_loss', 'd_loss', 'acceptance_rate']:
                     if len(self.gan_metrics_history[key]) > 100:
                         self.gan_metrics_history[key].pop(0)
             except Exception as e:
