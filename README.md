@@ -115,6 +115,297 @@ Alla dashboardpaneler använder **ENDAST** data från:
 
 **Inga hårdkodade värden eller mockup-data används!**
 
+---
+
+## 🎯 Finnhub Orchestrator
+
+**Ny i Sprint 9** - Central orchestrator för koordination av dataflöden från Finnhub.
+
+### Översikt
+
+Finnhub Orchestrator är en central modul som koordinerar alla aspekter av datainsamling, symbolrotation, indikatorsyntes och RL-driven optimering. Designad för skalbarhet och flexibilitet med plug-n-play-arkitektur.
+
+### Huvudfunktioner
+
+1. **RL-Driven Symbolprioritering**
+   - Automatisk prioritering av symboler baserat på RL-feedback
+   - Dynamisk justering av symbolval för optimal portföljprestanda
+   - Integration med PPO och DQN controllers
+
+2. **Adaptiv Symbolrotation**
+   - Tid-baserad rotation
+   - Prestanda-baserad rotation
+   - RL-rekommenderad rotation
+   - Marknadsregim-driven rotation
+
+3. **Indikatorsyntes**
+   - Kombinerar flera indikatorer till syntetiska metrics
+   - Momentum composite (RSI + MACD + Stochastic)
+   - Volatilitet composite (ATR + Bollinger Width)
+   - Trend strength (ADX + MACD histogram)
+   - Divergens-detektering
+
+4. **Stream Replay Engine**
+   - Historisk datareprisering för test
+   - Syntetisk datagenerering
+   - Hybrid-läge (mix av verklig och syntetisk data)
+   - Konfigurerbar replay-hastighet (0.1x - 10x)
+
+5. **Stream Ontology Mapper**
+   - Normaliserar data från olika källor (Finnhub, Yahoo, Alpha Vantage)
+   - Enhetlig dataschema för downstream-moduler
+   - Datavalidering och typkonvertering
+
+6. **Infrastruktur**
+   - Audit logging till `logs/orchestrator_audit.json`
+   - Rate limiting (10 req/s med burst support)
+   - Failover med retry-logik
+   - Health monitoring
+
+### Submoduler
+
+#### 1. **IndicatorSynthEngine**
+Synthesiserar indikatorkombinationer och härledda metrics.
+
+```python
+from modules.indicator_synth_engine import IndicatorSynthEngine
+
+engine = IndicatorSynthEngine(message_bus)
+synthetic_indicators = engine.synthesize(['AAPL', 'TSLA'])
+```
+
+#### 2. **SymbolRotationEngine**
+Hanterar symbolrotation baserat på prioriteringar och strategier.
+
+```python
+from modules.symbol_rotation_engine import SymbolRotationEngine
+
+rotation_engine = SymbolRotationEngine(message_bus, rotation_interval=300)
+new_symbols = rotation_engine.rotate_symbols(
+    current_symbols=['AAPL', 'TSLA'],
+    priorities={'AAPL': 0.8, 'TSLA': 0.3},
+    strategy={'type': 'top_priority', 'rotation_rate': 0.3},
+    max_symbols=10
+)
+```
+
+#### 3. **RotationStrategyEngine**
+Bestämmer rotationsstrategier baserat på RL-feedback och prestanda.
+
+```python
+from modules.rotation_strategy_engine import RotationStrategyEngine
+
+strategy_engine = RotationStrategyEngine(message_bus)
+strategy = strategy_engine.compute_rotation_strategy(
+    priorities={'AAPL': 0.6, 'TSLA': 0.4},
+    metrics={},
+    current_symbols=['AAPL', 'TSLA']
+)
+```
+
+#### 4. **StreamStrategyAgent**
+RL-agent som optimerar streaming-strategier och resursallokering.
+
+```python
+from modules.stream_strategy_agent import StreamStrategyAgent
+
+agent = StreamStrategyAgent(message_bus)
+scores = agent.get_symbol_scores(['AAPL', 'TSLA'], metrics={})
+strategy = agent.update_strategy(metrics={}, priorities={'AAPL': 0.7})
+```
+
+#### 5. **StreamReplayEngine**
+Repriserar historisk eller syntetisk data för simulering och testning.
+
+```python
+from modules.stream_replay_engine import StreamReplayEngine
+
+replay_engine = StreamReplayEngine(message_bus)
+replay_engine.start_replay({
+    'mode': 'historical',  # eller 'synthetic', 'hybrid'
+    'speed': 2.0,
+    'symbols': ['AAPL', 'TSLA']
+})
+```
+
+#### 6. **StreamOntologyMapper**
+Mappar och normaliserar data från olika källor.
+
+```python
+from modules.stream_ontology_mapper import StreamOntologyMapper
+
+mapper = StreamOntologyMapper(message_bus)
+normalized_data = mapper.map_data(
+    {'p': 150.5, 's': 'AAPL', 't': 1234567890000, 'v': 1000000},
+    source='finnhub'
+)
+```
+
+### Användning
+
+#### Starta Orchestrator
+
+```python
+from modules.finnhub_orchestrator import FinnhubOrchestrator
+from modules.message_bus import MessageBus
+
+message_bus = MessageBus()
+orchestrator = FinnhubOrchestrator(
+    api_key='your_finnhub_api_key',
+    message_bus=message_bus,
+    live_mode=False  # False för demo, True för live
+)
+
+# Starta orchestrator
+orchestrator.start()
+
+# Orchestratorn kör nu i bakgrunden och:
+# - Roterar symboler automatiskt
+# - Uppdaterar RL-prioriteringar
+# - Synthesiserar indikatorer
+# - Publicerar metrics till message_bus
+```
+
+#### Dynamisk Konfiguration
+
+```python
+# Uppdatera konfiguration under körning
+orchestrator.update_config({
+    'rotation_interval': 600,  # 10 minuter
+    'max_concurrent_streams': 15,
+    'adaptive_params': {
+        'rotation_threshold': 0.7,
+        'batch_size': 20
+    }
+})
+```
+
+#### Replay-Läge
+
+```python
+# Aktivera replay för test/simulering
+orchestrator.enable_replay_mode({
+    'mode': 'synthetic',
+    'speed': 5.0,  # 5x hastighet
+    'symbols': ['AAPL', 'TSLA', 'GOOGL']
+})
+
+# Stäng av replay
+orchestrator.disable_replay_mode()
+```
+
+### Dashboard-Integration
+
+Orchestratorn har en dedikerad panel i dashboarden som visar:
+
+1. **Status** - Körstatus, läge (Live/Demo), aktiva symboler
+2. **Symbol Rotation Timeline** - Visualisering av rotationshändelser
+3. **RL-Driven Priorities** - Bar chart med symbolprioriteter
+4. **Stream Health** - Gauge som visar systemhälsa
+5. **Replay Status** - Status för replay engine
+
+**Navigera till Orchestrator-panelen:**
+- Starta dashboarden: `python start_demo.py`
+- Öppna webbläsaren: `http://localhost:8050`
+- Klicka på "🎯 Orchestrator" i sidomenyn
+
+### Dataflöde
+
+```
+Finnhub API/WebSocket
+        ↓
+StreamOntologyMapper (normalisering)
+        ↓
+FinnhubOrchestrator
+        ├── IndicatorSynthEngine → Syntetiska indikatorer
+        ├── SymbolRotationEngine → Symbolval
+        ├── RotationStrategyEngine → Strategibeslut
+        ├── StreamStrategyAgent → RL-optimering
+        └── StreamReplayEngine → Test/Simulering
+        ↓
+message_bus (topics: orchestrator_status, symbol_rotation, rl_scores, etc.)
+        ↓
+Downstream Modules (indicator_registry, strategy_engine, etc.)
+```
+
+### Message Bus Topics
+
+Orchestratorn publicerar till följande topics:
+
+- **orchestrator_status** - Hälsa och metrics
+- **symbol_rotation** - Rotationshändelser
+- **stream_metrics** - Prestanda data
+- **rl_scores** - Symbolprioriteter
+- **replay_data** - Repriserad data
+- **indicator_synth_data** - Syntetiska indikatorer
+- **mapped_data** - Normaliserad data
+
+Och prenumererar på:
+
+- **rl_feedback** - Feedback från RL controllers
+- **market_conditions** - Marknadslägesändringar
+- **module_requests** - Förfrågningar från moduler
+
+### Konfiguration
+
+Standardkonfiguration finns i `docs/finnhub_orchestrator.yaml`. Viktiga parametrar:
+
+```yaml
+configuration:
+  default_symbols: ["AAPL", "TSLA", "MSFT", "GOOGL", "AMZN"]
+  rotation_interval: 300  # sekunder
+  max_concurrent_streams: 10
+  buffer_size: 1000
+  priority_update_interval: 60
+
+adaptive_parameters:
+  rotation_threshold: 0.5  # (0.1 - 0.9)
+  batch_size: 10  # (1 - 100)
+  priority_weight: 0.7  # (0.0 - 1.0)
+  replay_speed: 1.0  # (0.1 - 10.0)
+```
+
+### Testning
+
+Omfattande testsvit med 25 tester täcker alla aspekter:
+
+```bash
+# Kör orchestrator-tester
+pytest tests/test_finnhub_orchestrator.py -v
+
+# Resultat: 25/25 tester passerar
+```
+
+Tester inkluderar:
+- Initialisering av alla submoduler
+- Symbolrotation (priority-based, random, hybrid)
+- Indikatorsyntes
+- RL-strategioptimering
+- Replay engine (start/stop, speed adjustment)
+- Data mapping och normalisering
+- Message bus integration
+- Dynamisk konfiguration
+
+### Plug-n-Play Design
+
+Orchestratorn är designad för att kunna köras både fristående och integrerat:
+
+**Fristående:**
+```python
+# Kör orchestrator isolerat
+orchestrator = FinnhubOrchestrator(api_key, message_bus, live_mode=False)
+orchestrator.start()
+# Orchestratorn kör sin egen loop och publicerar data
+```
+
+**Integrerat:**
+```python
+# Automatiskt integrerat i dashboard
+# start_demo.py och start_live.py startar orchestratorn automatiskt
+```
+
+**Inga hårdkodade värden eller mockup-data används!**
+
 ### Dashboard-paneler
 
 Dashboard innehåller 10 huvudpaneler baserade på YAML-specifikationerna:
@@ -327,8 +618,9 @@ python -c "from start_dashboard import NextGenDashboard; print('OK')"
 | Sprint 6 | ✅ Färdig | Tidsanalys och action chains |
 | Sprint 7 | ✅ Färdig | Indikatorvisualisering och systemöversikt |
 | Sprint 8 | ✅ Färdig | DQN, GAN, GNN – Hybridiserad RL & Temporal Intelligence |
+| Sprint 9 | ✅ Färdig | Finnhub Orchestrator – Central datakoordinering och RL-driven symbolrotation |
 
-**Testresultat:** ✅ 314/314 tester passerar (100%)
+**Testresultat:** ✅ 368/368 tester passerar (100%)
 
 ---
 
@@ -399,6 +691,13 @@ http://localhost:8050
 | Modul | Beskrivning | Sprint |
 |-------|-------------|--------|
 | `analyzer_debug.py` | Debug dashboard med fullständig systemvisualisering | Sprint 7 |
+| `finnhub_orchestrator.py` | Central orchestrator för datakoordinering och RL-driven rotation | Sprint 9 |
+| `indicator_synth_engine.py` | Synthesiserar indikatorkombinationer | Sprint 9 |
+| `symbol_rotation_engine.py` | Hanterar symbolrotation | Sprint 9 |
+| `rotation_strategy_engine.py` | RL-driven rotationsstrategi | Sprint 9 |
+| `stream_strategy_agent.py` | RL-agent för streaming-optimering | Sprint 9 |
+| `stream_replay_engine.py` | Reprisering av historisk data | Sprint 9 |
+| `stream_ontology_mapper.py` | Datanormalisering från olika källor | Sprint 9 |
 | `data_ingestion.py` | WebSocket-dataflöde från Finnhub | Sprint 1 |
 | `data_ingestion_sim.py` | Simulerad marknadsdata för demo-läge | Sprint 1 |
 | `strategy_engine.py` | Genererar tradeförslag baserat på indikatorer | Sprint 1-2 |
@@ -457,21 +756,33 @@ Systemet har **16 adaptiva parametrar** som justeras automatiskt via RL/PPO:
 ### Dataflöde
 
 ```
-Market Data (Finnhub) → Data Ingestion → Indicators
-                                              ↓
-                                    Strategy Engine ← RL Controller
-                                              ↓
-                                      Risk Manager
-                                              ↓
-                                    Decision Engine ← Memory/Voting
-                                              ↓
-                                    Execution Engine
-                                              ↓
-                                   Portfolio Manager → Base Reward
-                                              ↓
-                                      Reward Tuner → Tuned Reward
-                                              ↓
-                                       RL Controller → Agent Updates
+Market Data (Finnhub API/WebSocket)
+        ↓
+StreamOntologyMapper (normalisering)
+        ↓
+FinnhubOrchestrator
+        ├── SymbolRotationEngine (dynamisk symbolval)
+        ├── IndicatorSynthEngine (syntetiska indikatorer)
+        ├── RotationStrategyEngine (RL-driven strategi)
+        └── StreamStrategyAgent (RL-optimering)
+        ↓
+message_bus → orchestrator_status, symbol_rotation, rl_scores
+        ↓
+Data Ingestion → Indicators
+        ↓
+Strategy Engine ← RL Controller
+        ↓
+Risk Manager
+        ↓
+Decision Engine ← Memory/Voting
+        ↓
+Execution Engine
+        ↓
+Portfolio Manager → Base Reward
+        ↓
+Reward Tuner → Tuned Reward
+        ↓
+RL Controller → Agent Updates
 ```
 
 ### Demo-läge Dataflöde (data_ingestion_sim.py)
@@ -577,9 +888,16 @@ NextGen/
 ├── analyzer_debug.py            # Debug dashboard (legacy)
 ├── sim_test.py                  # Simulerad trading
 ├── websocket_test.py            # Live trading med Finnhub
-├── modules/                     # Alla kärnmoduler (30 stycken)
+├── modules/                     # Alla kärnmoduler (37 stycken)
+│   ├── finnhub_orchestrator.py       # 🆕 Sprint 9: Central orchestrator
+│   ├── indicator_synth_engine.py     # 🆕 Sprint 9: Indikatorsyntes
+│   ├── symbol_rotation_engine.py     # 🆕 Sprint 9: Symbolrotation
+│   ├── rotation_strategy_engine.py   # 🆕 Sprint 9: Rotationsstrategi
+│   ├── stream_strategy_agent.py      # 🆕 Sprint 9: RL stream-agent
+│   ├── stream_replay_engine.py       # 🆕 Sprint 9: Replay engine
+│   ├── stream_ontology_mapper.py     # 🆕 Sprint 9: Data mapping
 │   ├── data_ingestion.py        # Live WebSocket från Finnhub
-│   ├── data_ingestion_sim.py    # 🆕 Simulerad marknadsdata för demo
+│   ├── data_ingestion_sim.py    # Simulerad marknadsdata för demo
 │   ├── reward_tuner.py          # Sprint 4.4: Reward transformation
 │   ├── rl_controller.py         # Sprint 2, 4.2: PPO-agenter
 │   ├── dqn_controller.py        # Sprint 8: DQN RL
@@ -589,12 +907,16 @@ NextGen/
 │   ├── timespan_tracker.py      # Sprint 6: Timeline-analys
 │   └── ...
 ├── dashboards/                  # Dash-visualiseringar (komponenter)
-├── tests/                       # 332 tester (100% pass rate)
+├── tests/                       # 368 tester (100% pass rate)
+│   └── test_finnhub_orchestrator.py  # 🆕 25 orchestrator-tester
 ├── docs/                        # Dokumentation och YAML-specs
+│   ├── finnhub_orchestrator.yaml     # 🆕 Orchestrator spec
 │   ├── dashboard_structure_sprint8.yaml  # Dashboard spec
 │   ├── adaptive_parameters_sprint8.yaml  # Parameter spec
 │   ├── sprint_8.yaml                     # Sprint 8 overview
 │   └── ...
+├── logs/
+│   └── orchestrator_audit.json       # 🆕 Orchestrator audit log
 └── requirements.txt
 ```
 
@@ -607,6 +929,7 @@ NextGen/
 pytest tests/ -v
 
 # Kör specifika test-suiter
+pytest tests/test_finnhub_orchestrator.py -v    # Sprint 9: Orchestrator (25 tester)
 pytest tests/test_reward_tuner.py -v              # Sprint 4.4
 pytest tests/test_adaptive_parameters_sprint4_3.py -v  # Sprint 4.3
 pytest tests/test_consensus_engine.py -v          # Sprint 5
@@ -616,7 +939,7 @@ pytest tests/test_timespan_tracker.py -v          # Sprint 6
 pytest tests/ --cov=modules --cov-report=html
 ```
 
-**Testresultat:** ✅ 214/214 tester passerar
+**Testresultat:** ✅ 368/368 tester passerar
 
 ---
 
