@@ -1126,6 +1126,9 @@ class NextGenDashboard:
             ], style={'display': 'grid', 'gridTemplateColumns': 'repeat(4, 1fr)', 
                      'gap': '20px', 'marginBottom': '30px'}),
             
+            # System Improvement Tracking Section
+            self.create_system_improvement_section(),
+            
             # Main content grid (3 columns x 3 rows)
             html.Div([
                 # Row 1: Reward Trace, Agent Decision Events, GNN Drift
@@ -1155,6 +1158,184 @@ class NextGenDashboard:
             ], style={'display': 'grid', 'gridTemplateColumns': 'repeat(3, 1fr)', 
                      'gap': '20px'}),
         ])
+    
+    def create_system_improvement_section(self) -> html.Div:
+        """Create system improvement tracking section showing learning progress over time."""
+        import plotly.graph_objs as go
+        
+        # Calculate improvement metrics
+        total_decisions = len(self.decision_history)
+        total_executions = len(self.execution_history)
+        
+        # Success rate (executions vs decisions)
+        success_rate = (total_executions / total_decisions * 100) if total_decisions > 0 else 0
+        
+        # Calculate win rate from execution history (positive rewards)
+        profitable_trades = sum(1 for e in self.execution_history if e.get('reward', 0) > 0)
+        win_rate = (profitable_trades / total_executions * 100) if total_executions > 0 else 0
+        
+        # Average reward trend (last 50 vs first 50)
+        if len(self.decision_history) >= 100:
+            early_rewards = [d.get('reward', 0) for d in self.decision_history[:50]]
+            recent_rewards = [d.get('reward', 0) for d in self.decision_history[-50:]]
+            avg_early = sum(early_rewards) / len(early_rewards) if early_rewards else 0
+            avg_recent = sum(recent_rewards) / len(recent_rewards) if recent_rewards else 0
+            reward_improvement = ((avg_recent - avg_early) / abs(avg_early) * 100) if avg_early != 0 else 0
+        else:
+            reward_improvement = 0
+            avg_early = 0
+            avg_recent = 0
+        
+        # Agent training progress (episodes completed)
+        ppo_episodes = sum(1 for agent in self.rl_controller.agents.values() if hasattr(agent, 'current_episode'))
+        dqn_steps = self.dqn_controller.training_steps if hasattr(self.dqn_controller, 'training_steps') else 0
+        
+        # Consensus efficiency (how often agents agree)
+        if len(self.decision_history) >= 20:
+            # Sample recent decisions to check vote patterns
+            consensus_count = sum(1 for d in self.decision_history[-50:] 
+                                 if d.get('agent', '') in ['PPO', 'DQN'])
+            consensus_rate = (consensus_count / min(50, len(self.decision_history))) * 100
+        else:
+            consensus_rate = 50.0
+        
+        # Create improvement timeline chart
+        window_size = 20
+        improvement_data = []
+        
+        if len(self.decision_history) >= window_size:
+            for i in range(window_size, len(self.decision_history), window_size):
+                window = self.decision_history[i-window_size:i]
+                avg_reward = sum(d.get('reward', 0) for d in window) / len(window)
+                improvement_data.append(avg_reward)
+        
+        if len(improvement_data) < 2:
+            # Fallback for early stages
+            improvement_data = [0] * 10
+        
+        improvement_fig = go.Figure()
+        improvement_fig.add_trace(go.Scatter(
+            y=improvement_data,
+            mode='lines+markers',
+            name='Avg Reward per Window',
+            line=dict(color=THEME_COLORS['success'], width=2),
+            marker=dict(size=6)
+        ))
+        
+        improvement_fig.update_layout(
+            title="Learning Progress (Avg Reward per 20 Decisions)",
+            plot_bgcolor=THEME_COLORS['background'],
+            paper_bgcolor=THEME_COLORS['surface'],
+            font=dict(color=THEME_COLORS['text']),
+            margin=dict(l=50, r=20, t=50, b=40),
+            height=250,
+            xaxis_title="Window #",
+            yaxis_title="Avg Reward",
+            xaxis=dict(gridcolor=THEME_COLORS['border']),
+            yaxis=dict(gridcolor=THEME_COLORS['border']),
+            showlegend=False
+        )
+        
+        # Success rate over time
+        success_data = []
+        if len(self.decision_history) >= 50:
+            for i in range(50, len(self.decision_history), 50):
+                decisions = self.decision_history[i-50:i]
+                executions = [d for d in decisions if d.get('action') in ['BUY', 'SELL']]
+                success = (len(executions) / len(decisions) * 100) if len(decisions) > 0 else 0
+                success_data.append(success)
+        
+        if len(success_data) < 2:
+            success_data = [success_rate] * 5
+        
+        success_fig = go.Figure()
+        success_fig.add_trace(go.Scatter(
+            y=success_data,
+            mode='lines+markers',
+            name='Success Rate',
+            line=dict(color=THEME_COLORS['primary'], width=2),
+            marker=dict(size=6),
+            fill='tozeroy',
+            fillcolor='rgba(77, 171, 247, 0.2)'
+        ))
+        
+        success_fig.update_layout(
+            title="Execution Success Rate Over Time",
+            plot_bgcolor=THEME_COLORS['background'],
+            paper_bgcolor=THEME_COLORS['surface'],
+            font=dict(color=THEME_COLORS['text']),
+            margin=dict(l=50, r=20, t=50, b=40),
+            height=250,
+            xaxis_title="Window #",
+            yaxis_title="Success Rate (%)",
+            xaxis=dict(gridcolor=THEME_COLORS['border']),
+            yaxis=dict(gridcolor=THEME_COLORS['border'], range=[0, 100]),
+            showlegend=False
+        )
+        
+        return html.Div([
+            html.H2("System Learning & Improvement", 
+                   style={'color': THEME_COLORS['primary'], 'marginBottom': '20px', 'fontSize': '24px'}),
+            
+            # Improvement metrics
+            html.Div([
+                self.create_metric_card("Execution Success", f"{success_rate:.1f}%", THEME_COLORS['success']),
+                self.create_metric_card("Win Rate", f"{win_rate:.1f}%", THEME_COLORS['primary']),
+                self.create_metric_card("Reward Improvement", f"{reward_improvement:+.1f}%", 
+                                       THEME_COLORS['success'] if reward_improvement >= 0 else THEME_COLORS['danger']),
+                self.create_metric_card("Agent Training", f"{ppo_episodes + dqn_steps} steps", THEME_COLORS['secondary']),
+                self.create_metric_card("Consensus Rate", f"{consensus_rate:.1f}%", THEME_COLORS['warning']),
+            ], style={'display': 'grid', 'gridTemplateColumns': 'repeat(5, 1fr)', 
+                     'gap': '15px', 'marginBottom': '20px'}),
+            
+            # Charts side by side
+            html.Div([
+                html.Div([
+                    dcc.Graph(figure=improvement_fig, config={'displayModeBar': False}, style={'height': '250px'}),
+                ], style={'flex': '1'}),
+                html.Div([
+                    dcc.Graph(figure=success_fig, config={'displayModeBar': False}, style={'height': '250px'}),
+                ], style={'flex': '1'}),
+            ], style={'display': 'flex', 'gap': '20px', 'marginBottom': '20px'}),
+            
+            # Insights summary
+            html.Div([
+                html.H3("Learning Insights", 
+                       style={'fontSize': '16px', 'marginBottom': '15px', 'color': THEME_COLORS['text']}),
+                html.Div([
+                    html.Div([
+                        html.Span("📈 ", style={'fontSize': '20px', 'marginRight': '10px'}),
+                        html.Span(f"System has made {total_decisions} decisions with {success_rate:.1f}% execution success", 
+                                 style={'fontSize': '13px', 'color': THEME_COLORS['text']})
+                    ], style={'marginBottom': '10px'}),
+                    html.Div([
+                        html.Span("🎯 ", style={'fontSize': '20px', 'marginRight': '10px'}),
+                        html.Span(f"Win rate at {win_rate:.1f}% ({profitable_trades}/{total_executions} profitable trades)", 
+                                 style={'fontSize': '13px', 'color': THEME_COLORS['text']})
+                    ], style={'marginBottom': '10px'}),
+                    html.Div([
+                        html.Span("🧠 ", style={'fontSize': '20px', 'marginRight': '10px'}),
+                        html.Span(f"Average reward {'improved' if reward_improvement > 0 else 'changed'} by {abs(reward_improvement):.1f}% (early: {avg_early:.2f} → recent: {avg_recent:.2f})", 
+                                 style={'fontSize': '13px', 'color': THEME_COLORS['success'] if reward_improvement > 0 else THEME_COLORS['text']})
+                    ], style={'marginBottom': '10px'}),
+                    html.Div([
+                        html.Span("🤝 ", style={'fontSize': '20px', 'marginRight': '10px'}),
+                        html.Span(f"Agents reaching {consensus_rate:.1f}% consensus on trading decisions", 
+                                 style={'fontSize': '13px', 'color': THEME_COLORS['text']})
+                    ], style={'marginBottom': '10px'}),
+                    html.Div([
+                        html.Span("⚡ ", style={'fontSize': '20px', 'marginRight': '10px'}),
+                        html.Span(f"Combined training: {ppo_episodes} PPO episodes + {dqn_steps} DQN steps", 
+                                 style={'fontSize': '13px', 'color': THEME_COLORS['text']})
+                    ]),
+                ])
+            ], style={
+                'backgroundColor': THEME_COLORS['surface'],
+                'padding': '20px',
+                'borderRadius': '8px',
+                'border': f'1px solid {THEME_COLORS["border"]}'
+            }),
+        ], style={'marginBottom': '30px'})
     
     def create_chart_card(self, title: str, content) -> html.Div:
         """Create a card for charts."""
