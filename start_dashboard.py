@@ -3742,77 +3742,135 @@ class NextGenDashboard:
             
             # 1. indicator_synth_engine
             indicator_synth = submodule_details.get('indicator_synth', {})
+            recipes_count = indicator_synth.get('recipes_count', 0)
+            cached_count = indicator_synth.get('cached_symbols', 0)
+            
+            # Determine activity description
+            if recipes_count > 0:
+                synth_activity = f"Synthesizing {recipes_count} indicator combinations"
+            else:
+                synth_activity = "Waiting for market data"
+            
             module_data.append({
                 'name': 'Indicator Synth Engine',
                 'status': indicator_synth.get('status', 'active').capitalize(),
+                'activity': synth_activity,
                 'metrics': {
-                    'Combinations': indicator_synth.get('recipes_count', 'N/A'),
-                    'Active': indicator_synth.get('cached_symbols', 'N/A'),
+                    'Recipes': recipes_count,
+                    'Cached': cached_count,
                 }
             })
             
             # 2. websocket status
+            if active_subs > 0:
+                ws_activity = f"Streaming {active_subs} symbols in real-time"
+            else:
+                ws_activity = "No active WebSocket connections"
+            
             module_data.append({
                 'name': 'WebSocket Status',
                 'status': 'Active' if active_subs > 0 else 'Idle',
+                'activity': ws_activity,
                 'metrics': {
-                    'Active Streams': f"{active_subs}/{ws_limit}",
+                    'Streams': f"{active_subs}/{ws_limit}",
                     'Usage': f"{ws_usage:.1f}%",
                 }
             })
             
             # 3. symbol_rotation_engine
             symbol_rotation = submodule_details.get('symbol_rotation', {})
+            rotation_count = symbol_rotation.get('rotation_count', len(self.orchestrator_metrics['symbol_rotations']))
+            pool_size = symbol_rotation.get('symbol_pool_size', 0)
+            
+            if rotation_count > 0:
+                rotation_activity = f"Managing {pool_size} symbols, {rotation_count} rotations completed"
+            else:
+                rotation_activity = f"Initialized with {pool_size} symbols, awaiting first rotation"
+            
             module_data.append({
                 'name': 'Symbol Rotation Engine',
                 'status': symbol_rotation.get('status', 'active').capitalize(),
+                'activity': rotation_activity,
                 'metrics': {
-                    'Rotations': symbol_rotation.get('rotation_count', len(self.orchestrator_metrics['symbol_rotations'])),
-                    'Test Slots': symbol_rotation.get('test_slots', 1),
+                    'Rotations': rotation_count,
+                    'Pool Size': pool_size,
                 }
             })
             
             # 4. rotation_strategy_engine
             rotation_strategy = submodule_details.get('rotation_strategy', {})
+            strategy_type = rotation_strategy.get('current_strategy', 'RL-driven')
+            feedback_buffer = rotation_strategy.get('feedback_buffer_size', 0)
+            
+            strategy_activity = f"Using {strategy_type} strategy, processing {feedback_buffer} feedback signals"
+            
             module_data.append({
                 'name': 'Rotation Strategy Engine',
                 'status': rotation_strategy.get('status', 'active').capitalize(),
+                'activity': strategy_activity,
                 'metrics': {
-                    'Strategy': rotation_strategy.get('current_strategy', 'RL-driven'),
-                    'Feedback Buffer': rotation_strategy.get('feedback_buffer_size', 'N/A'),
+                    'Strategy': strategy_type,
+                    'Buffer': feedback_buffer,
                 }
             })
             
             # 5. stream_strategy_agent
             stream_strategy = submodule_details.get('stream_strategy', {})
+            rest_batch = stream_strategy.get('rest_batch_size', 12)
+            exp_buffer = stream_strategy.get('experience_buffer_size', 0)
+            
+            if exp_buffer > 0:
+                stream_activity = f"Optimizing stream allocation, {exp_buffer} experiences stored"
+            else:
+                stream_activity = f"Learning optimal streaming strategy (batch: {rest_batch})"
+            
             module_data.append({
                 'name': 'Stream Strategy Agent',
                 'status': stream_strategy.get('status', 'active').capitalize(),
+                'activity': stream_activity,
                 'metrics': {
-                    'REST Batch': stream_strategy.get('rest_batch_size', 12),
-                    'Buffer Size': stream_strategy.get('experience_buffer_size', 'N/A'),
+                    'REST Batch': rest_batch,
+                    'Experience': exp_buffer,
                 }
             })
             
             # 6. stream_replay_engine
             replay_details = submodule_details.get('replay_engine', {})
             replay_status = self.orchestrator.replay_engine.get_replay_status()
+            is_replaying = replay_status.get('is_replaying', False)
+            replay_mode = replay_status.get('mode', 'historical')
+            replay_speed = replay_status.get('speed', 1.0)
+            
+            if is_replaying:
+                replay_activity = f"Replaying {replay_mode} data at {replay_speed}x speed"
+            else:
+                replay_activity = "Standby - ready for historical data replay"
+            
             module_data.append({
                 'name': 'Stream Replay Engine',
-                'status': 'Active' if replay_status.get('is_replaying') else 'Idle',
+                'status': 'Active' if is_replaying else 'Idle',
+                'activity': replay_activity,
                 'metrics': {
-                    'Mode': replay_status.get('mode', 'N/A'),
-                    'Speed': f"{replay_status.get('speed', 1.0)}x",
+                    'Mode': replay_mode,
+                    'Speed': f"{replay_speed}x",
                 }
             })
             
             # 7. stream_ontology_mapper
             ontology_mapper = submodule_details.get('ontology_mapper', {})
+            mapping_count = ontology_mapper.get('supported_sources', 0)
+            
+            if mapping_count > 0:
+                ontology_activity = f"Normalizing data from {mapping_count} sources (JSON, CSV, Finnhub)"
+            else:
+                ontology_activity = "Ready to normalize data formats"
+            
             module_data.append({
                 'name': 'Stream Ontology Mapper',
                 'status': ontology_mapper.get('status', 'active').capitalize(),
+                'activity': ontology_activity,
                 'metrics': {
-                    'Mappings': ontology_mapper.get('supported_sources', 'N/A'),
+                    'Sources': mapping_count,
                     'Formats': 'JSON, CSV, Finnhub',
                 }
             })
@@ -3890,13 +3948,13 @@ class NextGenDashboard:
             traceback.print_exc()
             # Fallback data
             module_data = [
-                {'name': 'Indicator Synth Engine', 'status': 'Active', 'metrics': {'Info': 'Loading...'}},
-                {'name': 'WebSocket Status', 'status': 'Active', 'metrics': {'Info': 'Loading...'}},
-                {'name': 'Symbol Rotation Engine', 'status': 'Active', 'metrics': {'Info': 'Loading...'}},
-                {'name': 'Rotation Strategy Engine', 'status': 'Active', 'metrics': {'Info': 'Loading...'}},
-                {'name': 'Stream Strategy Agent', 'status': 'Active', 'metrics': {'Info': 'Loading...'}},
-                {'name': 'Stream Replay Engine', 'status': 'Active', 'metrics': {'Info': 'Loading...'}},
-                {'name': 'Stream Ontology Mapper', 'status': 'Active', 'metrics': {'Info': 'Loading...'}},
+                {'name': 'Indicator Synth Engine', 'status': 'Active', 'activity': 'Initializing indicator combinations', 'metrics': {'Info': 'Loading...'}},
+                {'name': 'WebSocket Status', 'status': 'Active', 'activity': 'Establishing connections', 'metrics': {'Info': 'Loading...'}},
+                {'name': 'Symbol Rotation Engine', 'status': 'Active', 'activity': 'Preparing symbol rotation', 'metrics': {'Info': 'Loading...'}},
+                {'name': 'Rotation Strategy Engine', 'status': 'Active', 'activity': 'Loading rotation strategy', 'metrics': {'Info': 'Loading...'}},
+                {'name': 'Stream Strategy Agent', 'status': 'Active', 'activity': 'Optimizing stream parameters', 'metrics': {'Info': 'Loading...'}},
+                {'name': 'Stream Replay Engine', 'status': 'Idle', 'activity': 'Standby for replay', 'metrics': {'Info': 'Loading...'}},
+                {'name': 'Stream Ontology Mapper', 'status': 'Active', 'activity': 'Ready to normalize data', 'metrics': {'Info': 'Loading...'}},
             ]
             status_fig = go.Figure()
             health_fig = go.Figure()
@@ -3939,6 +3997,15 @@ class NextGenDashboard:
                                     'color': THEME_COLORS['text']
                                 })
                             ], style={'marginBottom': '12px'}),
+                            # Activity description
+                            html.Div(m.get('activity', 'Running'), style={
+                                'fontSize': '11px',
+                                'color': THEME_COLORS['text_secondary'],
+                                'fontStyle': 'italic',
+                                'marginBottom': '12px',
+                                'lineHeight': '1.4'
+                            }),
+                            # Metrics
                             *[html.Div([
                                 html.Span(f"{key}:", style={
                                     'color': THEME_COLORS['text_secondary'], 
@@ -3956,7 +4023,7 @@ class NextGenDashboard:
                             'backgroundColor': THEME_COLORS['surface'],
                             'borderRadius': '8px',
                             'border': f'1px solid {THEME_COLORS["border"]}',
-                            'minHeight': '120px'
+                            'minHeight': '160px'
                         })
                     ], style={'flex': '1'})
                     for m in module_data
