@@ -799,12 +799,13 @@ class NextGenDashboard:
              Output('replay-status-display', 'children'),
              Output('orchestrator-details-display', 'children')],
             [Input('interval-component', 'n_intervals')],
-            prevent_initial_call=True
+            prevent_initial_call=False  # Allow initial call to populate data
         )
         def update_orchestrator_panel(n):
             """Update orchestrator panel with latest data."""
             # Only update every 5 intervals (10 seconds) to reduce flickering
-            if n % 5 != 0:
+            # But always allow the first update (n=0 or n=1)
+            if n is not None and n > 1 and n % 5 != 0:
                 raise dash.exceptions.PreventUpdate
             
             try:
@@ -950,17 +951,37 @@ class NextGenDashboard:
                        rotation_fig, rl_fig, health_fig, replay_text, details_text)
                 
             except Exception as e:
-                # Return empty/error state
+                print(f"⚠️ Error updating orchestrator panel: {e}")
+                # Return empty/error state with proper structure
                 empty_fig = go.Figure()
                 empty_fig.update_layout(
                     paper_bgcolor=THEME_COLORS['surface'],
                     plot_bgcolor=THEME_COLORS['surface'],
+                    font=dict(color=THEME_COLORS['text']),
                     autosize=False,
-                    height=200
+                    height=200,
+                    margin=dict(l=20, r=20, t=20, b=20)
                 )
-                error_text = [html.Div(f"Error: {str(e)}", style={'color': THEME_COLORS['danger']})]
+                
+                # Create proper empty figure for health gauge
+                empty_health_fig = go.Figure(go.Indicator(
+                    mode="gauge+number",
+                    value=0,
+                    domain={'x': [0, 1], 'y': [0, 1]},
+                    title={'text': "Health %"},
+                    gauge={'axis': {'range': [0, 100]}}
+                ))
+                empty_health_fig.update_layout(
+                    paper_bgcolor=THEME_COLORS['surface'],
+                    font=dict(color=THEME_COLORS['text']),
+                    height=200,
+                    margin=dict(l=20, r=20, t=40, b=20),
+                    autosize=False
+                )
+                
+                error_text = [html.Div("Waiting for data...", style={'color': THEME_COLORS['text_secondary']})]
                 return (error_text, error_text, error_text, 
-                       empty_fig, empty_fig, empty_fig, error_text, error_text)
+                       empty_fig, empty_fig, empty_health_fig, error_text, error_text)
         
     
     def create_dashboard_view(self) -> html.Div:
