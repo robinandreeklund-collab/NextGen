@@ -4665,6 +4665,9 @@ class NextGenDashboard:
                         actual_action = execution_result.get('action', final_action)
                         # Only track if it's an actual BUY or SELL
                         if actual_action in ['BUY', 'SELL']:
+                            # Ensure deciding_agent is defined
+                            if 'deciding_agent' not in locals():
+                                deciding_agent = 'Unknown'
                             self.execution_history.append({
                                 'timestamp': datetime.now().strftime('%H:%M:%S'),
                                 'agent': deciding_agent,  # Use actual deciding agent (PPO/DQN/Consensus)
