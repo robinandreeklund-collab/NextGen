@@ -3579,8 +3579,8 @@ class NextGenDashboard:
         """Create Decision & Consensus panel."""
         # Get consensus data from consensus_engine
         try:
-            # Expanded agent list with specialized agents
-            agents = ['PPO', 'DQN', 'Conservative', 'Aggressive', 'Momentum', 
+            # Expanded agent list with specialized agents + DT
+            agents = ['PPO', 'DQN', 'DT', 'Conservative', 'Aggressive', 'Momentum', 
                      'Mean Reversion', 'Contrarian', 'Volatility', 'Volume', 'Tech Pattern']
             # Expanded decisions with position sizing
             decisions = ['BUY_SMALL', 'BUY_MED', 'BUY_LARGE', 'SELL_PART', 'SELL_ALL', 'HOLD', 'REBAL']
@@ -4848,31 +4848,93 @@ class NextGenDashboard:
                     # DQN controller uses the full 12-dimensional state
                     dqn_action_idx = self.dqn_controller.select_action(np.array(state))
                     
+                    # DT agent uses 10-dimensional state (similar to PPO)
+                    if len(state) >= 10:
+                        dt_state = np.array(state[:10])
+                    else:
+                        dt_state = np.array(state + [0.0] * (10 - len(state)))
+                    
+                    # Get DT prediction
+                    dt_action_vector, dt_metrics = self.dt_agent.predict_action(dt_state, target_return=100.0)
+                    dt_action_idx = np.argmax(dt_action_vector)  # 0=HOLD, 1=BUY, 2=SELL
+                    
+                    # Publish DT action to message bus
+                    self.message_bus.publish('dt_action', {
+                        'action': dt_action_vector,
+                        'action_type': ['HOLD', 'BUY', 'SELL'][dt_action_idx],
+                        'confidence': dt_metrics.get('confidence', 0.5),
+                        'action_probs': dt_action_vector.tolist() if hasattr(dt_action_vector, 'tolist') else list(dt_action_vector),
+                        'timestamp': datetime.now().timestamp()
+                    })
+                    
                     # Expanded action map with position sizing (7 actions)
                     action_map_full = ['BUY_SMALL', 'BUY_MEDIUM', 'BUY_LARGE', 'SELL_PARTIAL', 'SELL_ALL', 'HOLD', 'REBALANCE']
-                    # PPO still uses 3 actions (for backward compatibility)
+                    # PPO and DT use 3 actions (for backward compatibility)
                     action_map_ppo = ['BUY', 'SELL', 'HOLD']
+                    action_map_dt = ['HOLD', 'BUY', 'SELL']  # DT outputs: 0=HOLD, 1=BUY, 2=SELL
                     
                     ppo_action = action_map_ppo[ppo_action_idx] if ppo_action_idx < len(action_map_ppo) else 'HOLD'
                     dqn_action = action_map_full[dqn_action_idx] if dqn_action_idx < len(action_map_full) else 'HOLD'
+                    dt_action = action_map_dt[dt_action_idx] if dt_action_idx < len(action_map_dt) else 'HOLD'
                     
-                    # Detect conflicts
-                    if ppo_action != dqn_action:
-                        resolution = random.choice(['PPO', 'DQN', 'Consensus'])
+                    # Use ensemble coordinator for decision
+                    # Publish all agent actions for ensemble coordination
+                    self.message_bus.publish('ppo_action', {
+                        'action_type': ppo_action,
+                        'confidence': 0.7
+                    })
+                    self.message_bus.publish('dqn_action', {
+                        'action_type': dqn_action,
+                        'confidence': 0.7
+                    })
+                    # DT action already published above
+                    
+                    # Get ensemble decision (weighted voting)
+                    # For now, simple majority voting with weights
+                    agent_votes = {
+                        'PPO': ppo_action,
+                        'DQN': dqn_action,
+                        'DT': dt_action
+                    }
+                    
+                    # Normalize actions to basic 3: BUY, SELL, HOLD
+                    normalized_votes = {}
+                    for agent, action in agent_votes.items():
+                        if 'BUY' in action:
+                            normalized_votes[agent] = 'BUY'
+                        elif 'SELL' in action:
+                            normalized_votes[agent] = 'SELL'
+                        else:
+                            normalized_votes[agent] = 'HOLD'
+                    
+                    # Count votes
+                    vote_counts = {'BUY': 0, 'SELL': 0, 'HOLD': 0}
+                    for action in normalized_votes.values():
+                        vote_counts[action] += 1
+                    
+                    # Majority vote wins
+                    final_action = max(vote_counts, key=vote_counts.get)
+                    
+                    # If action came from DQN, convert back to expanded format
+                    if dqn_action.startswith(final_action) or (final_action in dqn_action):
+                        final_action = dqn_action
+                    
+                    # Detect conflicts (disagreement among agents)
+                    unique_votes = set(normalized_votes.values())
+                    if len(unique_votes) > 1:
+                        deciding_agent = 'Ensemble'
                         self.conflict_history.append({
                             'timestamp': datetime.now().strftime('%H:%M:%S'),
                             'ppo_action': ppo_action,
                             'dqn_action': dqn_action,
-                            'resolution': resolution
+                            'dt_action': dt_action,
+                            'resolution': 'Ensemble',
+                            'final_action': final_action
                         })
                         if len(self.conflict_history) > 50:
                             self.conflict_history.pop(0)
-                        
-                        final_action = ppo_action if resolution == 'PPO' else dqn_action
-                        deciding_agent = resolution
                     else:
-                        final_action = ppo_action
-                        deciding_agent = 'PPO'
+                        deciding_agent = 'Consensus'
                     
                     # Execute trade with proper budget checks and position sizing
                     execution_result = None
@@ -5099,6 +5161,28 @@ class NextGenDashboard:
                     # Train DQN if buffer has enough samples
                     if len(self.dqn_controller.replay_buffer) >= self.dqn_controller.batch_size:
                         self.dqn_controller.train_step()
+                    
+                    # Train DT agent (Decision Transformer)
+                    # Store experience in DT's sequence buffer
+                    # DT expects state, action, reward, return-to-go
+                    dt_action_encoded = [0, 0, 0]
+                    if dt_action == 'HOLD':
+                        dt_action_encoded = [1, 0, 0]
+                    elif dt_action == 'BUY':
+                        dt_action_encoded = [0, 1, 0]
+                    elif dt_action == 'SELL':
+                        dt_action_encoded = [0, 0, 1]
+                    
+                    # For DT, we use the 10-dimensional state
+                    self.dt_agent.current_sequence['states'].append(dt_state.tolist())
+                    self.dt_agent.current_sequence['actions'].append(dt_action_encoded)
+                    self.dt_agent.current_sequence['rewards'].append(reward)
+                    
+                    # Train DT every 10 steps if we have enough data
+                    if self.iteration_count % 10 == 0:
+                        train_loss = self.dt_agent.train_step()
+                        if train_loss is not None:
+                            self.log_message(f"DT training loss: {train_loss:.4f}", "INFO")
                     
                     self.decision_history.append({
                         'timestamp': datetime.now().strftime('%H:%M:%S'),
