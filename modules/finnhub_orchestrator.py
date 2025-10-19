@@ -141,12 +141,15 @@ class FinnhubOrchestrator:
         return {
             'default_symbols': default_symbols,
             'rotation_interval': 300,  # seconds
-            'max_concurrent_streams': 10,
+            'max_concurrent_streams': 50,  # Finnhub WebSocket limit
+            'websocket_limit': 50,  # Hard limit for WebSocket connections
+            'test_slot_count': 1,  # Reserved slots for testing new symbols
+            'rest_batch_size': 12,  # Batch size for REST API calls (10-15)
             'buffer_size': 1000,
             'priority_update_interval': 60,
             'adaptive_params': {
                 'rotation_threshold': 0.5,
-                'batch_size': 10,
+                'batch_size': 12,  # 10-15 symbols per REST call
                 'priority_weight': 0.7,
                 'replay_speed': 1.0
             },
@@ -232,9 +235,20 @@ class FinnhubOrchestrator:
         self.is_running = True
         self.last_rotation_time = time.time()
         
-        # Initialize with default symbols
-        self.active_symbols = self.config['default_symbols'].copy()
+        # Initialize with limited symbols based on WebSocket limit
+        # Reserve slots: (websocket_limit - test_slot_count) for active trading
+        available_slots = self.config['websocket_limit'] - self.config['test_slot_count']
+        all_symbols = self.config['default_symbols']
+        
+        # Start with top priority symbols (or first N if no priorities yet)
+        if len(all_symbols) > available_slots:
+            self.active_symbols = all_symbols[:available_slots]
+        else:
+            self.active_symbols = all_symbols.copy()
+        
         self._initialize_symbol_priorities()
+        
+        self.logger.info(f"Starting with {len(self.active_symbols)} active symbols (limit: {self.config['websocket_limit']})")
         
         # Start orchestration loop in background thread
         self.orchestration_thread = threading.Thread(
@@ -323,13 +337,22 @@ class FinnhubOrchestrator:
             self.active_symbols
         )
         
-        # Execute rotation
+        # Calculate max symbols (WebSocket limit - test slots)
+        websocket_limit = self.config.get('websocket_limit', 50)
+        test_slots = self.config.get('test_slot_count', 1)
+        max_active_symbols = websocket_limit - test_slots
+        
+        # Execute rotation with proper limit
         new_symbols = self.symbol_rotation.rotate_symbols(
             current_symbols=self.active_symbols,
             priorities=self.symbol_priorities,
             strategy=strategy,
-            max_symbols=self.config['max_concurrent_streams']
+            max_symbols=max_active_symbols
         )
+        
+        # Ensure we don't exceed the limit
+        if len(new_symbols) > max_active_symbols:
+            new_symbols = new_symbols[:max_active_symbols]
         
         # Record rotation event
         rotation_event = {
@@ -337,7 +360,9 @@ class FinnhubOrchestrator:
             'old_symbols': self.active_symbols.copy(),
             'new_symbols': new_symbols,
             'strategy': strategy,
-            'trigger': 'time_based'  # Could be enhanced with actual trigger
+            'trigger': 'time_based',  # Could be enhanced with actual trigger
+            'websocket_limit': websocket_limit,
+            'test_slots_reserved': test_slots
         }
         
         self.rotation_history.append(rotation_event)
@@ -406,13 +431,15 @@ class FinnhubOrchestrator:
     
     def _collect_metrics(self):
         """Collect metrics from all streams and submodules."""
-        # Update detailed metrics
-        self.detailed_metrics['active_subscriptions'] = len(self.active_symbols)
+        # Update detailed metrics with proper limits
+        websocket_limit = self.config.get('websocket_limit', 50)
+        self.detailed_metrics['active_subscriptions'] = min(len(self.active_symbols), websocket_limit)
         self.detailed_metrics['historical_symbols_used'].update(self.active_symbols)
-        self.detailed_metrics['websocket_usage_pct'] = (
-            len(self.active_symbols) / self.config['max_concurrent_streams'] * 100
-            if self.config['max_concurrent_streams'] > 0 else 0
-        )
+        
+        # Calculate WebSocket usage percentage (capped at 100%)
+        usage_pct = (len(self.active_symbols) / websocket_limit * 100) if websocket_limit > 0 else 0
+        self.detailed_metrics['websocket_usage_pct'] = min(usage_pct, 100.0)
+        
         self.detailed_metrics['total_data_points'] += len(self.active_symbols)
         
         # Get submodule details
@@ -425,7 +452,9 @@ class FinnhubOrchestrator:
             'symbol_rotation': {
                 'status': 'active',
                 'rotation_count': self.symbol_rotation.rotation_count,
-                'symbol_pool_size': len(self.symbol_rotation.symbol_pool)
+                'symbol_pool_size': len(self.symbol_rotation.symbol_pool),
+                'websocket_limit': websocket_limit,
+                'test_slots': self.config.get('test_slot_count', 1)
             },
             'rotation_strategy': {
                 'status': 'active',
@@ -435,7 +464,8 @@ class FinnhubOrchestrator:
             'stream_strategy': {
                 'status': 'active',
                 'experience_buffer_size': len(self.stream_strategy.experience_buffer),
-                'current_batch_size': self.stream_strategy.current_strategy.get('batch_size', 10)
+                'current_batch_size': self.stream_strategy.current_strategy.get('batch_size', 12),
+                'rest_batch_size': self.config.get('rest_batch_size', 12)
             },
             'replay_engine': {
                 'status': 'active',

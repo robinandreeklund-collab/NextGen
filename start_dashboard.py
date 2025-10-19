@@ -786,11 +786,19 @@ class NextGenDashboard:
                 ws_usage = detailed_metrics.get('websocket_usage_pct', 0)
                 hist_symbols = detailed_metrics.get('historical_symbols_used', [])
                 
+                # Get WebSocket limit from submodule details
+                submodule_details = detailed_metrics.get('submodule_details', {})
+                ws_limit = submodule_details.get('symbol_rotation', {}).get('websocket_limit', 50)
+                test_slots = submodule_details.get('symbol_rotation', {}).get('test_slots', 1)
+                rest_batch = submodule_details.get('stream_strategy', {}).get('rest_batch_size', 12)
+                
                 status_text = [
                     html.Div(f"Running: {'✅ Yes' if orch_status.get('is_running') else '❌ No'}"),
                     html.Div(f"Mode: {'🔴 Live' if orch_status.get('live_mode') else '🟢 Demo'}"),
-                    html.Div(f"Active Subscriptions: {active_subs}"),
+                    html.Div(f"Active Streams: {active_subs}/{ws_limit} (WebSocket)"),
                     html.Div(f"WebSocket Usage: {ws_usage:.1f}%"),
+                    html.Div(f"Test Slots Reserved: {test_slots}"),
+                    html.Div(f"REST Batch Size: {rest_batch}"),
                     html.Div(f"Historical Symbols: {len(hist_symbols)}"),
                 ]
                 
