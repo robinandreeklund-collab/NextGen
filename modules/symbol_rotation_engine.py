@@ -10,12 +10,15 @@ Features:
     - Performance-based rotation
     - RL-driven rotation
     - Adaptive rotation intervals
+    - Loads NASDAQ 100 symbols from configuration
 """
 
 from typing import Dict, List, Any, Optional
 from datetime import datetime
 import logging
 import random
+import yaml
+import os
 
 
 class SymbolRotationEngine:
@@ -35,15 +38,44 @@ class SymbolRotationEngine:
         self.rotation_interval = rotation_interval
         self.logger = logging.getLogger('SymbolRotationEngine')
         
-        # Available symbol pool
-        self.symbol_pool = [
-            "AAPL", "TSLA", "MSFT", "GOOGL", "AMZN", "NVDA", "META",
-            "NFLX", "AMD", "INTC", "BABA", "DIS", "BA", "GE",
-            "JPM", "BAC", "WMT", "JNJ", "V", "MA"
-        ]
+        # Available symbol pool - load from NASDAQ 100 if available
+        self.symbol_pool = self._load_symbol_pool()
         
         # Rotation history
         self.rotation_count = 0
+    
+    def _load_symbol_pool(self) -> List[str]:
+        """Load symbol pool from NASDAQ 100 YAML or use default."""
+        try:
+            # Try multiple paths
+            paths = [
+                'config/nasdaq_100_symbols.yaml',
+                '../config/nasdaq_100_symbols.yaml',
+                os.path.join(os.path.dirname(__file__), '..', 'config', 'nasdaq_100_symbols.yaml')
+            ]
+            
+            for path in paths:
+                if os.path.exists(path):
+                    with open(path, 'r') as f:
+                        data = yaml.safe_load(f)
+                        if data and 'symbols' in data:
+                            self.logger.info(f"Loaded {len(data['symbols'])} symbols from NASDAQ 100")
+                            return data['symbols']
+            
+            # Fallback to default pool
+            self.logger.warning("Using default symbol pool")
+            return [
+                "AAPL", "TSLA", "MSFT", "GOOGL", "AMZN", "NVDA", "META",
+                "NFLX", "AMD", "INTC", "BABA", "DIS", "BA", "GE",
+                "JPM", "BAC", "WMT", "JNJ", "V", "MA"
+            ]
+        except Exception as e:
+            self.logger.error(f"Error loading symbol pool: {e}")
+            return [
+                "AAPL", "TSLA", "MSFT", "GOOGL", "AMZN", "NVDA", "META",
+                "NFLX", "AMD", "INTC", "BABA", "DIS", "BA", "GE",
+                "JPM", "BAC", "WMT", "JNJ", "V", "MA"
+            ]
     
     def rotate_symbols(
         self,

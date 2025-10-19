@@ -44,6 +44,8 @@ from datetime import datetime, timedelta
 from collections import deque
 import threading
 import random
+import yaml
+import os
 
 # Import submodules
 try:
@@ -103,6 +105,15 @@ class FinnhubOrchestrator:
         self.is_running = False
         self.last_rotation_time = None
         
+        # Detailed metrics tracking
+        self.detailed_metrics = {
+            'active_subscriptions': 0,
+            'historical_symbols_used': set(),
+            'websocket_usage_pct': 0.0,
+            'total_data_points': 0,
+            'submodule_details': {}
+        }
+        
         # Rate limiting
         self.rate_limiter = {
             'requests': deque(maxlen=self.config['rate_limit']['requests_per_second']),
@@ -122,8 +133,13 @@ class FinnhubOrchestrator:
     
     def _load_default_config(self) -> Dict[str, Any]:
         """Load default configuration."""
+        # Try to load NASDAQ 100 symbols
+        default_symbols = self._load_nasdaq_symbols()
+        if not default_symbols:
+            default_symbols = ["AAPL", "TSLA", "MSFT", "GOOGL", "AMZN", "NVDA", "META"]
+        
         return {
-            'default_symbols': ["AAPL", "TSLA", "MSFT", "GOOGL", "AMZN", "NVDA", "META"],
+            'default_symbols': default_symbols,
             'rotation_interval': 300,  # seconds
             'max_concurrent_streams': 10,
             'buffer_size': 1000,
@@ -150,6 +166,28 @@ class FinnhubOrchestrator:
                 'log_file': 'logs/orchestrator_audit.json'
             }
         }
+    
+    def _load_nasdaq_symbols(self) -> List[str]:
+        """Load NASDAQ 100 symbols from YAML file."""
+        try:
+            # Try multiple paths
+            paths = [
+                'config/nasdaq_100_symbols.yaml',
+                '../config/nasdaq_100_symbols.yaml',
+                os.path.join(os.path.dirname(__file__), '..', 'config', 'nasdaq_100_symbols.yaml')
+            ]
+            
+            for path in paths:
+                if os.path.exists(path):
+                    with open(path, 'r') as f:
+                        data = yaml.safe_load(f)
+                        if data and 'symbols' in data:
+                            return data['symbols']
+            
+            return []
+        except Exception as e:
+            print(f"Warning: Could not load NASDAQ symbols: {e}")
+            return []
     
     def _initialize_submodules(self):
         """Initialize all submodules."""
@@ -368,6 +406,49 @@ class FinnhubOrchestrator:
     
     def _collect_metrics(self):
         """Collect metrics from all streams and submodules."""
+        # Update detailed metrics
+        self.detailed_metrics['active_subscriptions'] = len(self.active_symbols)
+        self.detailed_metrics['historical_symbols_used'].update(self.active_symbols)
+        self.detailed_metrics['websocket_usage_pct'] = (
+            len(self.active_symbols) / self.config['max_concurrent_streams'] * 100
+            if self.config['max_concurrent_streams'] > 0 else 0
+        )
+        self.detailed_metrics['total_data_points'] += len(self.active_symbols)
+        
+        # Get submodule details
+        self.detailed_metrics['submodule_details'] = {
+            'indicator_synth': {
+                'status': 'active',
+                'recipes_count': len(self.indicator_synth.recipes),
+                'cached_symbols': len(self.indicator_synth.indicator_cache)
+            },
+            'symbol_rotation': {
+                'status': 'active',
+                'rotation_count': self.symbol_rotation.rotation_count,
+                'symbol_pool_size': len(self.symbol_rotation.symbol_pool)
+            },
+            'rotation_strategy': {
+                'status': 'active',
+                'current_strategy': self.rotation_strategy.current_strategy.get('type', 'unknown'),
+                'feedback_buffer_size': len(self.rotation_strategy.feedback_buffer)
+            },
+            'stream_strategy': {
+                'status': 'active',
+                'experience_buffer_size': len(self.stream_strategy.experience_buffer),
+                'current_batch_size': self.stream_strategy.current_strategy.get('batch_size', 10)
+            },
+            'replay_engine': {
+                'status': 'active',
+                'is_replaying': self.replay_engine.is_replaying,
+                'replay_mode': self.replay_engine.replay_mode,
+                'replay_position': self.replay_engine.replay_position
+            },
+            'ontology_mapper': {
+                'status': 'active',
+                'supported_sources': len(self.ontology_mapper.mapping_rules)
+            }
+        }
+        
         metrics = {
             'timestamp': datetime.now().isoformat(),
             'active_symbols': len(self.active_symbols),
@@ -375,8 +456,15 @@ class FinnhubOrchestrator:
             'avg_priority': sum(self.symbol_priorities.values()) / len(self.symbol_priorities) if self.symbol_priorities else 0,
             'rotations_count': len(self.rotation_history),
             'stream_health': self._calculate_stream_health(),
-            'submodule_status': self._get_submodule_status()
+            'submodule_status': self._get_submodule_status(),
+            'detailed_metrics': self.detailed_metrics.copy()
         }
+        
+        # Convert set to list for JSON serialization
+        if 'historical_symbols_used' in metrics['detailed_metrics']:
+            metrics['detailed_metrics']['historical_symbols_used'] = list(
+                metrics['detailed_metrics']['historical_symbols_used']
+            )
         
         self.stream_metrics['orchestrator'] = metrics
         

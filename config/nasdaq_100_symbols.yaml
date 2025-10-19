@@ -1,0 +1,104 @@
+# NASDAQ 100 Symbols
+# These are the 100 largest non-financial companies listed on the NASDAQ stock exchange
+
+symbols:
+  - AAPL  # Apple Inc.
+  - MSFT  # Microsoft Corporation
+  - AMZN  # Amazon.com Inc.
+  - NVDA  # NVIDIA Corporation
+  - META  # Meta Platforms Inc.
+  - GOOGL # Alphabet Inc. Class A
+  - GOOG  # Alphabet Inc. Class C
+  - TSLA  # Tesla Inc.
+  - AVGO  # Broadcom Inc.
+  - COST  # Costco Wholesale Corporation
+  - NFLX  # Netflix Inc.
+  - AMD   # Advanced Micro Devices Inc.
+  - PEP   # PepsiCo Inc.
+  - ADBE  # Adobe Inc.
+  - CSCO  # Cisco Systems Inc.
+  - CMCSA # Comcast Corporation
+  - TMUS  # T-Mobile US Inc.
+  - INTC  # Intel Corporation
+  - TXN   # Texas Instruments Inc.
+  - INTU  # Intuit Inc.
+  - AMGN  # Amgen Inc.
+  - QCOM  # QUALCOMM Inc.
+  - HON   # Honeywell International Inc.
+  - AMAT  # Applied Materials Inc.
+  - BKNG  # Booking Holdings Inc.
+  - SBUX  # Starbucks Corporation
+  - ISRG  # Intuitive Surgical Inc.
+  - PANW  # Palo Alto Networks Inc.
+  - GILD  # Gilead Sciences Inc.
+  - ADP   # Automatic Data Processing Inc.
+  - VRTX  # Vertex Pharmaceuticals Inc.
+  - MU    # Micron Technology Inc.
+  - LRCX  # Lam Research Corporation
+  - ADI   # Analog Devices Inc.
+  - REGN  # Regeneron Pharmaceuticals Inc.
+  - MDLZ  # Mondelez International Inc.
+  - SNPS  # Synopsys Inc.
+  - KLAC  # KLA Corporation
+  - PYPL  # PayPal Holdings Inc.
+  - CDNS  # Cadence Design Systems Inc.
+  - MRVL  # Marvell Technology Inc.
+  - ASML  # ASML Holding N.V.
+  - CRWD  # CrowdStrike Holdings Inc.
+  - MAR   # Marriott International Inc.
+  - ORLY  # O'Reilly Automotive Inc.
+  - MELI  # MercadoLibre Inc.
+  - CSX   # CSX Corporation
+  - FTNT  # Fortinet Inc.
+  - ABNB  # Airbnb Inc.
+  - DASH  # DoorDash Inc.
+  - NXPI  # NXP Semiconductors N.V.
+  - WDAY  # Workday Inc.
+  - CPRT  # Copart Inc.
+  - PAYX  # Paychex Inc.
+  - ROP   # Roper Technologies Inc.
+  - CHTR  # Charter Communications Inc.
+  - AEP   # American Electric Power Company Inc.
+  - MNST  # Monster Beverage Corporation
+  - FAST  # Fastenal Company
+  - ODFL  # Old Dominion Freight Line Inc.
+  - ROST  # Ross Stores Inc.
+  - PCAR  # PACCAR Inc.
+  - EA    # Electronic Arts Inc.
+  - KDP   # Keurig Dr Pepper Inc.
+  - BKR   # Baker Hughes Company
+  - DXCM  # DexCom Inc.
+  - EXC   # Exelon Corporation
+  - VRSK  # Verisk Analytics Inc.
+  - GEHC  # GE HealthCare Technologies Inc.
+  - CTSH  # Cognizant Technology Solutions Corporation
+  - LULU  # Lululemon Athletica Inc.
+  - XEL   # Xcel Energy Inc.
+  - KHC   # The Kraft Heinz Company
+  - CTAS  # Cintas Corporation
+  - TEAM  # Atlassian Corporation
+  - IDXX  # IDEXX Laboratories Inc.
+  - FANG  # Diamondback Energy Inc.
+  - TTWO  # Take-Two Interactive Software Inc.
+  - ON    # ON Semiconductor Corporation
+  - ZS    # Zscaler Inc.
+  - ANSS  # ANSYS Inc.
+  - CDW   # CDW Corporation
+  - GFS   # GlobalFoundries Inc.
+  - BIIB  # Biogen Inc.
+  - WBD   # Warner Bros. Discovery Inc.
+  - MDB   # MongoDB Inc.
+  - DDOG  # Datadog Inc.
+  - ILMN  # Illumina Inc.
+  - ARM   # Arm Holdings plc
+  - WBA   # Walgreens Boots Alliance Inc.
+  - ZM    # Zoom Video Communications Inc.
+  - MRNA  # Moderna Inc.
+  - DLTR  # Dollar Tree Inc.
+  - EBAY  # eBay Inc.
+  - SIRI  # Sirius XM Holdings Inc.
+  - ALGN  # Align Technology Inc.
+  - ENPH  # Enphase Energy Inc.
+  - LCID  # Lucid Group Inc.
+  - RIVN  # Rivian Automotive Inc.
+  - SMCI  # Super Micro Computer Inc.
