@@ -65,6 +65,7 @@ from modules.gnn_timespan_analyzer import GNNTimespanAnalyzer
 from modules.finnhub_orchestrator import FinnhubOrchestrator
 from modules.decision_transformer_agent import DecisionTransformerAgent
 from modules.ensemble_coordinator import EnsembleCoordinator
+from modules.specialized_agents import SpecializedAgentsCoordinator
 import numpy as np
 
 
@@ -179,6 +180,11 @@ class NextGenDashboard:
             'ensemble_confidence': [],
             'conflict_count': []
         }
+        self.specialized_agents_history = {
+            'votes': [],           # Track votes from 8 agents
+            'performance': [],     # Track performance metrics
+            'statistics': []       # Track aggregated statistics
+        }
         self.conflict_history = []
         self.decision_history = []
         self.execution_history = []  # Track all executed trades
@@ -279,8 +285,15 @@ class NextGenDashboard:
             gnn_weight=0.1
         )
         
+        # 8 Specialized Trading Agents
+        self.specialized_agents = SpecializedAgentsCoordinator(
+            message_bus=self.message_bus,
+            initial_capital_per_agent=1000.0
+        )
+        
         print("✅ Decision Transformer agent initialized")
         print("✅ Ensemble coordinator initialized (5 agents)")
+        print("✅ 8 Specialized Trading Agents initialized")
         
         # Track orchestrator metrics
         self.orchestrator_metrics = {
@@ -301,6 +314,9 @@ class NextGenDashboard:
         self.message_bus.subscribe('dt_metrics', self._handle_dt_metrics)
         self.message_bus.subscribe('ensemble_decision', self._handle_ensemble_decision)
         self.message_bus.subscribe('ensemble_metrics', self._handle_ensemble_metrics)
+        
+        # Subscribe to specialized agents events
+        self.message_bus.subscribe('agent_state', self._handle_agent_state)
         
         print("✅ Message bus subscriptions configured")
         
@@ -422,6 +438,21 @@ class NextGenDashboard:
         for key in ['ppo_accuracy', 'dqn_accuracy', 'dt_accuracy', 'conflict_count']:
             if len(self.ensemble_metrics_history[key]) > 100:
                 self.ensemble_metrics_history[key].pop(0)
+    
+    def _handle_agent_state(self, state: Dict[str, Any]):
+        """Handle specialized agent state updates."""
+        # Track performance of individual specialized agents
+        self.specialized_agents_history['performance'].append({
+            'timestamp': datetime.now().timestamp(),
+            'agent_id': state.get('agent_id'),
+            'portfolio_value': state.get('portfolio_value'),
+            'roi': state.get('roi'),
+            'win_rate': state.get('win_rate'),
+            'total_trades': state.get('total_trades')
+        })
+        # Keep last 200 entries (8 agents * ~25 samples)
+        if len(self.specialized_agents_history['performance']) > 200:
+            self.specialized_agents_history['performance'].pop(0)
     
     
     def setup_layout(self) -> None:
@@ -5275,6 +5306,37 @@ class NextGenDashboard:
                         'action_probs': dt_action_vector.tolist() if hasattr(dt_action_vector, 'tolist') else list(dt_action_vector),
                         'timestamp': datetime.now().timestamp()
                     })
+                    
+                    # 8 Specialized Trading Agents - Trigger analysis and voting
+                    # The agents automatically subscribe to market_data, but we manually trigger here
+                    # to ensure they analyze the current symbol with up-to-date indicators
+                    for agent in self.specialized_agents.agents:
+                        # Update agent's indicator data for this symbol
+                        agent.indicator_data[selected_symbol] = {
+                            'technical': {
+                                'RSI': rsi,
+                                'MACD': {'histogram': macd},
+                                'ATR': atr
+                            },
+                            'fundamental': {
+                                'AnalystRatings': {'consensus': 'HOLD'}  # Default, could be enhanced
+                            }
+                        }
+                        agent.market_data[selected_symbol] = {'price': current_price}
+                    
+                    # Trigger voting from all 8 agents
+                    self.specialized_agents.analyze_and_vote_all(selected_symbol)
+                    
+                    # Track specialized agents statistics
+                    agent_stats = self.specialized_agents.get_aggregated_statistics()
+                    self.specialized_agents_history['statistics'].append({
+                        'timestamp': datetime.now().timestamp(),
+                        'total_portfolio_value': agent_stats['total_portfolio_value'],
+                        'total_trades': agent_stats['total_trades'],
+                        'num_agents': agent_stats['num_agents']
+                    })
+                    if len(self.specialized_agents_history['statistics']) > 100:
+                        self.specialized_agents_history['statistics'].pop(0)
                     
                     # Expanded action map with position sizing (7 actions)
                     action_map_full = ['BUY_SMALL', 'BUY_MEDIUM', 'BUY_LARGE', 'SELL_PARTIAL', 'SELL_ALL', 'HOLD', 'REBALANCE']
