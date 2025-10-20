@@ -1797,18 +1797,31 @@ class NextGenDashboard:
                 )]
             )
         
-        # Holdings table
+        # Holdings table with P/L color coding
         holdings_rows = []
         for symbol, position_data in positions.items():
             quantity = position_data.get('quantity', 0)
-            price = self.current_prices.get(symbol, position_data.get('avg_price', 0))
-            value = quantity * price
+            avg_price = position_data.get('avg_price', 0)
+            current_price = self.current_prices.get(symbol, avg_price)
+            value = quantity * current_price
+            cost_basis = quantity * avg_price
+            pnl = value - cost_basis
+            pnl_pct = (pnl / cost_basis * 100) if cost_basis > 0 else 0
+            
+            # Determine color based on P/L
+            pnl_color = THEME_COLORS['success'] if pnl >= 0 else THEME_COLORS['danger']
+            
             holdings_rows.append(html.Tr([
-                html.Td(symbol, style={'padding': '10px', 'color': THEME_COLORS['text']}),
+                html.Td(symbol, style={'padding': '10px', 'color': THEME_COLORS['text'], 'fontWeight': '600'}),
                 html.Td(f"{quantity}", style={'padding': '10px', 'color': THEME_COLORS['text'], 'textAlign': 'right'}),
-                html.Td(f"${price:.2f}", style={'padding': '10px', 'color': THEME_COLORS['text'], 'textAlign': 'right'}),
+                html.Td(f"${avg_price:.2f}", style={'padding': '10px', 'color': THEME_COLORS['text_secondary'], 
+                                                     'textAlign': 'right', 'fontSize': '11px'}),
+                html.Td(f"${current_price:.2f}", style={'padding': '10px', 'color': THEME_COLORS['text'], 'textAlign': 'right'}),
                 html.Td(f"${value:.2f}", style={'padding': '10px', 'color': THEME_COLORS['text'], 'textAlign': 'right'}),
-            ]))
+                html.Td(f"${pnl:.2f}", style={'padding': '10px', 'color': pnl_color, 'textAlign': 'right', 'fontWeight': '600'}),
+                html.Td(f"{pnl_pct:+.2f}%", style={'padding': '10px', 'color': pnl_color, 'textAlign': 'right', 
+                                                    'fontWeight': '600', 'fontSize': '13px'}),
+            ], style={'backgroundColor': 'rgba(81, 207, 102, 0.05)' if pnl >= 0 else 'rgba(255, 107, 107, 0.05)'}))
         
         return html.Div([
             html.H2("Portfolio Overview", 
@@ -1854,13 +1867,19 @@ class NextGenDashboard:
                                                 'borderBottom': f'1px solid {THEME_COLORS["border"]}'}),
                         html.Th("Quantity", style={'padding': '10px', 'color': THEME_COLORS['text_secondary'], 
                                                    'textAlign': 'right', 'borderBottom': f'1px solid {THEME_COLORS["border"]}'}),
-                        html.Th("Price", style={'padding': '10px', 'color': THEME_COLORS['text_secondary'], 
-                                               'textAlign': 'right', 'borderBottom': f'1px solid {THEME_COLORS["border"]}'}),
+                        html.Th("Avg Price", style={'padding': '10px', 'color': THEME_COLORS['text_secondary'], 
+                                                    'textAlign': 'right', 'borderBottom': f'1px solid {THEME_COLORS["border"]}'}),
+                        html.Th("Current Price", style={'padding': '10px', 'color': THEME_COLORS['text_secondary'], 
+                                                       'textAlign': 'right', 'borderBottom': f'1px solid {THEME_COLORS["border"]}'}),
                         html.Th("Value", style={'padding': '10px', 'color': THEME_COLORS['text_secondary'], 
+                                               'textAlign': 'right', 'borderBottom': f'1px solid {THEME_COLORS["border"]}'}),
+                        html.Th("P/L", style={'padding': '10px', 'color': THEME_COLORS['text_secondary'], 
+                                             'textAlign': 'right', 'borderBottom': f'1px solid {THEME_COLORS["border"]}'}),
+                        html.Th("P/L %", style={'padding': '10px', 'color': THEME_COLORS['text_secondary'], 
                                                'textAlign': 'right', 'borderBottom': f'1px solid {THEME_COLORS["border"]}'}),
                     ])),
                     html.Tbody(holdings_rows if holdings_rows else [
-                        html.Tr([html.Td("No holdings", colSpan=4, 
+                        html.Tr([html.Td("No holdings", colSpan=7, 
                                         style={'padding': '20px', 'textAlign': 'center', 
                                               'color': THEME_COLORS['text_secondary']})])
                     ])
@@ -3373,22 +3392,47 @@ class NextGenDashboard:
         ])
     
     def create_conflict_panel(self) -> html.Div:
-        """Create RL Conflict Monitor panel."""
-        # Simulate conflict detection between PPO and DQN
-        conflicts = []
-        for i in range(20):
-            ppo_action = random.choice(['BUY', 'SELL', 'HOLD'])
-            dqn_action = random.choice(['BUY', 'SELL', 'HOLD'])
-            if ppo_action != dqn_action:
-                conflicts.append({
-                    'episode': i,
-                    'ppo_action': ppo_action,
-                    'dqn_action': dqn_action,
-                    'resolution': random.choice(['PPO', 'DQN', 'Consensus'])
-                })
+        """Create RL Conflict Monitor panel with detailed conflict information."""
+        # Use REAL conflict data from conflict_history (tracked in simulation_loop)
+        conflicts = self.conflict_history[-20:] if len(self.conflict_history) > 0 else []
         
-        # Conflict frequency over time
-        conflict_freq = [len([c for c in conflicts if c['episode'] <= i]) for i in range(20)]
+        # Build detailed conflict table data
+        conflict_table_data = []
+        for conf in conflicts:
+            # Calculate agreement percentage based on how many agents agreed
+            ppo_action = conf.get('ppo_action', 'HOLD')
+            dqn_action = conf.get('dqn_action', 'HOLD')
+            dt_action = conf.get('dt_action', 'HOLD')
+            final_action = conf.get('final_action', 'HOLD')
+            
+            # Normalize actions for comparison
+            actions_list = [ppo_action.split('_')[0], dqn_action.split('_')[0], dt_action.split('_')[0]]
+            final_base = final_action.split('_')[0]
+            
+            # Count how many agents agreed with final decision
+            agreements = sum(1 for a in actions_list if a == final_base)
+            agreement_pct = (agreements / 3.0) * 100  # 3 agents total
+            
+            # Determine conflict type based on disagreement pattern
+            unique_actions = set(actions_list)
+            if len(unique_actions) == 3:
+                conflict_type = "Full Conflict"  # All 3 agents disagree
+            elif len(unique_actions) == 2:
+                conflict_type = "Partial Conflict"  # 2 vs 1 split
+            else:
+                conflict_type = "Consensus"  # All agree (shouldn't be in conflict list)
+            
+            conflict_table_data.append({
+                'timestamp': conf.get('timestamp', 'N/A'),
+                'agents': f"PPO({ppo_action}) / DQN({dqn_action}) / DT({dt_action})",
+                'solution': conf.get('resolution', 'Unknown'),
+                'conflict_type': conflict_type,
+                'agreement_pct': agreement_pct,
+                'final_action': final_action
+            })
+        
+        # Conflict frequency over time (based on actual conflict history)
+        conflict_freq = list(range(1, len(conflicts) + 1)) if conflicts else [0]
         
         freq_fig = go.Figure()
         freq_fig.add_trace(go.Scatter(
@@ -3405,18 +3449,24 @@ class NextGenDashboard:
             yaxis_title="Cumulative Conflicts"
         )
         
-        # Resolution strategy breakdown
-        resolutions = [c['resolution'] for c in conflicts]
-        resolution_counts = {
-            'PPO': resolutions.count('PPO'),
-            'DQN': resolutions.count('DQN'),
-            'Consensus': resolutions.count('Consensus')
-        }
+        # Resolution strategy breakdown (from actual data)
+        resolutions = [c['solution'] for c in conflict_table_data]
+        resolution_counts = {}
+        for res in resolutions:
+            resolution_counts[res] = resolution_counts.get(res, 0) + 1
+        
+        # Add zeros for any missing resolution types
+        for res_type in ['PPO', 'DQN', 'DT', 'PPO+DQN', 'PPO+DT', 'DQN+DT', 'Ensemble']:
+            if res_type not in resolution_counts:
+                resolution_counts[res_type] = 0
         
         pie_fig = go.Figure(data=[go.Pie(
             labels=list(resolution_counts.keys()),
             values=list(resolution_counts.values()),
-            marker=dict(colors=[THEME_COLORS['chart_line1'], THEME_COLORS['chart_line2'], THEME_COLORS['success']]),
+            marker=dict(colors=[THEME_COLORS['chart_line1'], THEME_COLORS['chart_line2'], 
+                               THEME_COLORS['chart_line3'], THEME_COLORS['success'],
+                               THEME_COLORS['warning'], THEME_COLORS['secondary'], 
+                               THEME_COLORS['primary']]),
             hole=0.4
         )])
         pie_fig.update_layout(
@@ -3425,16 +3475,25 @@ class NextGenDashboard:
             showlegend=True
         )
         
+        # Calculate total conflicts and resolution counts
+        total_conflicts = len(conflicts)
+        
         return html.Div([
-            html.H2("RL Conflict Monitor (PPO vs DQN)", 
+            html.H2("RL Conflict Monitor (PPO vs DQN vs DT)", 
                    style={'color': THEME_COLORS['primary'], 'marginBottom': '20px'}),
             
             # Metrics
             html.Div([
-                self.create_metric_card("Total Conflicts", str(len(conflicts)), THEME_COLORS['danger']),
-                self.create_metric_card("PPO Wins", str(resolution_counts['PPO']), THEME_COLORS['chart_line1']),
-                self.create_metric_card("DQN Wins", str(resolution_counts['DQN']), THEME_COLORS['chart_line2']),
-                self.create_metric_card("Consensus", str(resolution_counts['Consensus']), THEME_COLORS['success']),
+                self.create_metric_card("Total Conflicts", str(total_conflicts), THEME_COLORS['danger']),
+                self.create_metric_card("Full Conflicts", 
+                                       str(sum(1 for c in conflict_table_data if c['conflict_type'] == 'Full Conflict')), 
+                                       THEME_COLORS['chart_line1']),
+                self.create_metric_card("Partial Conflicts", 
+                                       str(sum(1 for c in conflict_table_data if c['conflict_type'] == 'Partial Conflict')), 
+                                       THEME_COLORS['chart_line2']),
+                self.create_metric_card("Avg Agreement", 
+                                       f"{sum(c['agreement_pct'] for c in conflict_table_data) / max(1, len(conflict_table_data)):.1f}%", 
+                                       THEME_COLORS['success']),
             ], style={'display': 'grid', 'gridTemplateColumns': 'repeat(4, 1fr)', 
                      'gap': '20px', 'marginBottom': '30px'}),
             
@@ -3456,7 +3515,77 @@ class NextGenDashboard:
                     )),
                     style={'flex': '1'}
                 ),
-            ], style={'display': 'flex', 'gap': '20px'}),
+            ], style={'display': 'flex', 'gap': '20px', 'marginBottom': '30px'}),
+            
+            # Detailed Conflict Table (Latest 20)
+            html.Div([
+                html.H3("Latest 20 Conflicts", 
+                       style={'fontSize': '18px', 'marginBottom': '15px', 'color': THEME_COLORS['text']}),
+                html.Div([
+                    html.Table([
+                        html.Thead(html.Tr([
+                            html.Th("Time", style={'textAlign': 'left', 'padding': '10px', 'fontSize': '12px',
+                                                  'color': THEME_COLORS['text_secondary'], 
+                                                  'borderBottom': f'1px solid {THEME_COLORS["border"]}'}),
+                            html.Th("Agents Involved", style={'textAlign': 'left', 'padding': '10px', 'fontSize': '12px',
+                                                             'color': THEME_COLORS['text_secondary'],
+                                                             'borderBottom': f'1px solid {THEME_COLORS["border"]}'}),
+                            html.Th("Solution", style={'textAlign': 'left', 'padding': '10px', 'fontSize': '12px',
+                                                      'color': THEME_COLORS['text_secondary'],
+                                                      'borderBottom': f'1px solid {THEME_COLORS["border"]}'}),
+                            html.Th("Type", style={'textAlign': 'left', 'padding': '10px', 'fontSize': '12px',
+                                                  'color': THEME_COLORS['text_secondary'],
+                                                  'borderBottom': f'1px solid {THEME_COLORS["border"]}'}),
+                            html.Th("Agreement%", style={'textAlign': 'right', 'padding': '10px', 'fontSize': '12px',
+                                                        'color': THEME_COLORS['text_secondary'],
+                                                        'borderBottom': f'1px solid {THEME_COLORS["border"]}'}),
+                        ])),
+                        html.Tbody([
+                            html.Tr([
+                                html.Td(c['timestamp'], 
+                                       style={'padding': '10px', 'fontSize': '11px', 'color': THEME_COLORS['text']}),
+                                html.Td(c['agents'], 
+                                       style={'padding': '10px', 'fontSize': '10px', 'color': THEME_COLORS['text_secondary'],
+                                             'maxWidth': '300px', 'overflow': 'hidden', 'textOverflow': 'ellipsis'}),
+                                html.Td(
+                                    html.Span(c['solution'], 
+                                             style={'padding': '4px 8px', 'borderRadius': '4px',
+                                                   'backgroundColor': THEME_COLORS['primary'],
+                                                   'color': 'white', 'fontSize': '10px', 'fontWeight': '600'}),
+                                    style={'padding': '10px'}
+                                ),
+                                html.Td(c['conflict_type'], 
+                                       style={'padding': '10px', 'fontSize': '11px', 
+                                             'color': THEME_COLORS['danger'] if c['conflict_type'] == 'Full Conflict' 
+                                             else THEME_COLORS['warning']}),
+                                html.Td(f"{c['agreement_pct']:.0f}%", 
+                                       style={'padding': '10px', 'textAlign': 'right', 'fontSize': '12px',
+                                             'color': THEME_COLORS['success'] if c['agreement_pct'] >= 66 
+                                             else THEME_COLORS['warning'] if c['agreement_pct'] >= 33 
+                                             else THEME_COLORS['danger'], 'fontWeight': '600'}),
+                            ], style={'borderBottom': f'1px solid {THEME_COLORS["border"]}'})
+                            for c in reversed(conflict_table_data[-20:])  # Show latest 20
+                        ] if conflict_table_data else [
+                            html.Tr([
+                                html.Td("No conflicts detected yet", colSpan=5,
+                                       style={'padding': '20px', 'textAlign': 'center', 
+                                             'color': THEME_COLORS['text_secondary']})
+                            ])
+                        ])
+                    ], style={
+                        'width': '100%',
+                        'borderCollapse': 'collapse',
+                        'backgroundColor': THEME_COLORS['surface'],
+                        'borderRadius': '8px',
+                        'border': f'1px solid {THEME_COLORS["border"]}'
+                    })
+                ], style={'overflowX': 'auto'})
+            ], style={
+                'backgroundColor': THEME_COLORS['surface'],
+                'padding': '20px',
+                'borderRadius': '8px',
+                'border': f'1px solid {THEME_COLORS["border"]}'
+            }),
         ])
     
     def create_execution_panel(self) -> html.Div:
@@ -3613,19 +3742,39 @@ class NextGenDashboard:
         ])
     
     def create_consensus_panel(self) -> html.Div:
-        """Create Decision & Consensus panel."""
+        """Create Decision & Consensus panel with real-time voting calculations."""
         # Get consensus data from consensus_engine
         try:
-            # Expanded agent list with specialized agents + DT
-            agents = ['PPO', 'DQN', 'DT', 'Conservative', 'Aggressive', 'Momentum', 
-                     'Mean Reversion', 'Contrarian', 'Volatility', 'Volume', 'Tech Pattern']
+            # Core agent list based on actual agents in the system
+            agents = ['PPO', 'DQN', 'DT']
             # Expanded decisions with position sizing
             decisions = ['BUY_SMALL', 'BUY_MED', 'BUY_LARGE', 'SELL_PART', 'SELL_ALL', 'HOLD', 'REBAL']
             
-            # Create voting matrix
+            # Calculate voting matrix from REAL decision history (latest 50 decisions)
             voting_data = []
+            recent_decisions = self.decision_history[-50:] if len(self.decision_history) >= 50 else self.decision_history
+            
             for agent in agents:
-                votes = [random.randint(0, 10) for _ in decisions]
+                # Count how many times this agent voted for each decision type
+                votes = []
+                for decision_type in decisions:
+                    # Normalize decision types (e.g., BUY_LARGE -> BUY, SELL_PARTIAL -> SELL)
+                    decision_base = decision_type.split('_')[0] if '_' in decision_type else decision_type
+                    
+                    # Count votes from real decision history
+                    vote_count = 0
+                    for dec in recent_decisions:
+                        dec_agent = dec.get('agent', '')
+                        dec_action = dec.get('action', '')
+                        
+                        # Check if this agent was involved in the decision
+                        if agent in dec_agent:
+                            # Check if the action matches this decision type
+                            if decision_type in dec_action or decision_base in dec_action:
+                                vote_count += 1
+                    
+                    votes.append(vote_count)
+                
                 voting_data.append(votes)
             
             # Heatmap for voting matrix
@@ -3646,8 +3795,23 @@ class NextGenDashboard:
                 yaxis_title="Agent"
             )
             
-            # Consensus robustness over time
-            consensus_scores = [random.uniform(0.6, 0.95) for _ in range(30)]
+            # Consensus robustness over time - calculate from actual conflict history
+            # Consensus robustness = (1 - conflict_rate) where conflict_rate is conflicts / total_decisions
+            consensus_scores = []
+            
+            # Calculate consensus strength for each window of decisions
+            window_size = 5
+            for i in range(0, min(len(self.decision_history), 150), window_size):
+                window = self.decision_history[i:i+window_size]
+                if len(window) > 0:
+                    # Count conflicts in this window (look at agent field for multi-agent decisions)
+                    multi_agent_decisions = sum(1 for d in window if '+' in d.get('agent', ''))
+                    consensus_strength = 1.0 - (multi_agent_decisions / len(window))
+                    consensus_scores.append(max(0.3, min(1.0, consensus_strength)))  # Clamp to reasonable range
+            
+            # Ensure we have at least some data for visualization
+            if len(consensus_scores) == 0:
+                consensus_scores = [0.5]  # Neutral starting value
             
             robustness_fig = go.Figure()
             robustness_fig.add_trace(go.Scatter(
@@ -3857,7 +4021,7 @@ class NextGenDashboard:
         ])
     
     def create_adaptive_panel(self) -> html.Div:
-        """Create Adaptive Settings panel with parameters from adaptive_parameters.yaml."""
+        """Create Adaptive Settings panel with REAL-TIME parameters from rl_controller."""
         
         # Load all adaptive parameters from YAML config
         if not hasattr(self, 'adaptive_params_config'):
@@ -3877,28 +4041,27 @@ class NextGenDashboard:
         # Combine all parameters
         all_params = {**adaptive_params, **reward_tuner_params}
         
-        # Get real current values from modules
+        # Get REAL current values from rl_controller.get_current_parameters()
+        rl_params = self.rl_controller.get_current_meta_parameters()
+        
+        # Get real current values from modules and RL controller
         current_param_values = {
-            # Strategy Engine
-            'signal_threshold': self.strategy_engine.signal_threshold if hasattr(self.strategy_engine, 'signal_threshold') else 0.5,
-            'indicator_weighting': self.strategy_engine.indicator_weighting if hasattr(self.strategy_engine, 'indicator_weighting') else 0.33,
-            # Risk Manager
-            'risk_tolerance': self.risk_manager.risk_tolerance if hasattr(self.risk_manager, 'risk_tolerance') else 0.1,
-            'max_drawdown': self.risk_manager.max_drawdown if hasattr(self.risk_manager, 'max_drawdown') else 0.15,
-            # Decision Engine
-            'consensus_threshold': self.decision_engine.consensus_threshold if hasattr(self.decision_engine, 'consensus_threshold') else 0.75,
-            'memory_weighting': self.decision_engine.memory_weighting if hasattr(self.decision_engine, 'memory_weighting') else 0.4,
-            # Vote Engine
-            'agent_vote_weight': self.vote_engine.agent_vote_weight if hasattr(self.vote_engine, 'agent_vote_weight') else 1.0,
-            # Execution Engine
-            'execution_delay': self.execution_engine.execution_delay if hasattr(self.execution_engine, 'execution_delay') else 0,
-            'slippage_tolerance': self.execution_engine.slippage_tolerance if hasattr(self.execution_engine, 'slippage_tolerance') else 0.01,
-            # RL Controller meta-parameters
-            'evolution_threshold': 0.25,
-            'min_samples': 20,
-            'update_frequency': 10,
-            'agent_entropy_threshold': 0.3,
-            # Reward Tuner
+            # Get from RL controller's meta_parameter_agent (these are auto-updated)
+            'signal_threshold': rl_params.get('signal_threshold', 0.5),
+            'indicator_weighting': rl_params.get('indicator_weighting', 0.33),
+            'risk_tolerance': rl_params.get('risk_tolerance', 0.1),
+            'max_drawdown': rl_params.get('max_drawdown', 0.15),
+            'consensus_threshold': rl_params.get('consensus_threshold', 0.75),
+            'memory_weighting': rl_params.get('memory_weighting', 0.4),
+            'agent_vote_weight': rl_params.get('agent_vote_weight', 1.0),
+            'execution_delay': rl_params.get('execution_delay', 0),
+            'slippage_tolerance': rl_params.get('slippage_tolerance', 0.01),
+            # Meta-parameters from RL controller
+            'evolution_threshold': rl_params.get('evolution_threshold', 0.25),
+            'min_samples': rl_params.get('min_samples', 20),
+            'update_frequency': rl_params.get('update_frequency', 10),
+            'agent_entropy_threshold': rl_params.get('agent_entropy_threshold', 0.3),
+            # Reward Tuner - get from actual module
             'reward_scaling_factor': self.reward_tuner.reward_scaling_factor if hasattr(self.reward_tuner, 'reward_scaling_factor') else 1.0,
             'volatility_penalty_weight': self.reward_tuner.volatility_penalty_weight if hasattr(self.reward_tuner, 'volatility_penalty_weight') else 0.3,
             'overfitting_detector_threshold': self.reward_tuner.overfitting_detector_threshold if hasattr(self.reward_tuner, 'overfitting_detector_threshold') else 0.2,
@@ -3962,7 +4125,7 @@ class NextGenDashboard:
         )
         
         return html.Div([
-            html.H2("Adaptive Parameters (from adaptive_parameters.yaml)", 
+            html.H2("Adaptive Parameters (Real-Time from RL Controller)", 
                    style={'color': THEME_COLORS['primary'], 'marginBottom': '20px'}),
             
             # Metrics
@@ -5448,11 +5611,11 @@ class NextGenDashboard:
             except Exception as e:
                 print(f"Error collecting GAN metrics: {e}")
             
-            # GNN Pattern Detection - use actual GNN module
+            # GNN Pattern Detection - use ONLY actual GNN module data (no fallback)
             try:
                 gnn_metrics = self.gnn_analyzer.get_metrics()
                 
-                # Get latest pattern if available
+                # Get latest pattern ONLY if available from GNN analyzer
                 if len(self.gnn_analyzer.detected_patterns) > 0:
                     latest_pattern = self.gnn_analyzer.detected_patterns[-1]
                     self.gnn_pattern_history.append({
@@ -5460,21 +5623,19 @@ class NextGenDashboard:
                         'type': latest_pattern.get('type', 'Unknown'),
                         'confidence': latest_pattern.get('confidence', 0.5)
                     })
-                elif len(prices) >= 10:
-                    # Fallback: detect basic trend pattern from price data
-                    recent_trend = (prices[-1] - prices[-10]) / prices[-10]
-                    if abs(recent_trend) > 0.015:
-                        pattern_type = 'uptrend' if recent_trend > 0 else 'downtrend'
-                        confidence = 0.70 + min(abs(recent_trend) * 10, 0.20)
-                    else:
-                        pattern_type = 'consolidation'
-                        confidence = 0.60
-                    
-                    self.gnn_pattern_history.append({
-                        'timestamp': datetime.now().strftime('%H:%M:%S'),
-                        'type': pattern_type,
-                        'confidence': confidence
-                    })
+                # If GNN hasn't detected patterns yet, check if we should trigger analysis
+                elif len(self.gnn_analyzer.decision_history) >= 5 and self.iteration_count % 15 == 0:
+                    # Trigger GNN pattern analysis programmatically
+                    patterns = self.gnn_analyzer.analyze_patterns()
+                    if patterns.get('patterns') and len(patterns['patterns']) > 0:
+                        # Add the first detected pattern to history
+                        first_pattern = patterns['patterns'][0]
+                        self.gnn_pattern_history.append({
+                            'timestamp': datetime.now().strftime('%H:%M:%S'),
+                            'type': first_pattern.get('type', 'Unknown'),
+                            'confidence': first_pattern.get('confidence', 0.5)
+                        })
+                # No fallback to price-based pattern detection - use only GNN
                 
                 if len(self.gnn_pattern_history) > 50:
                     self.gnn_pattern_history.pop(0)
