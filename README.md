@@ -347,9 +347,26 @@ Data-panelen ger omfattande insikter i systemets dataflöde och prestanda. Tillg
 - `message_bus`: Real-time event tracking
 
 **Uppdateringar:**
-- Panelen uppdateras live var 2:e sekund
+- Dashboard GUI uppdateras live var 2:e sekund (via Dash interval)
+- **Agent tick rate: 100ms (10 ticks/sekund) för maximal precision**
+- Konfigurerbar tick rate - kan sättas till 0 för max hastighet
+- I live-läge: WebSocket data kommer i realtid utan artificiella fördröjningar
 - Fungerar i både demo och live-läge
 - All data från systemets riktiga logik och moduler
+
+**Tick Rate Konfiguration:**
+```python
+# Demo mode - snabb simulering för agentträning
+dashboard = NextGenDashboard(live_mode=False, tick_rate=0.1)  # 100ms = 10 ticks/s
+
+# Maximal hastighet (ingen fördröjning)
+dashboard = NextGenDashboard(live_mode=False, tick_rate=0)
+
+# Live mode - realtid WebSocket data
+dashboard = NextGenDashboard(live_mode=True, tick_rate=0.1)
+```
+
+Lägre tick rate = snabbare agentreaktioner = bättre precision för RL-träning.
 
 
 ### Dataflöde

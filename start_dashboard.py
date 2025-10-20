@@ -93,13 +93,17 @@ THEME_COLORS = {
 class NextGenDashboard:
     """Full-scale NextGen Dashboard with all panels."""
     
-    def __init__(self, live_mode: bool = False):
+    def __init__(self, live_mode: bool = False, tick_rate: float = 0.1):
         """Initialize dashboard.
         
         Args:
             live_mode: If True, connects to live WebSocket data. If False, uses simulated data.
+            tick_rate: Simulation tick rate in seconds (default 0.1s = 100ms for fast agent training).
+                      Lower values = faster updates and better agent precision.
+                      Set to 0 for maximum speed (no delay between iterations).
         """
         self.live_mode = live_mode
+        self.tick_rate = tick_rate  # Configurable tick rate for agent training
         self.api_key = "d3in10hr01qmn7fkr2a0d3in10hr01qmn7fkr2ag"
         
         # Symbols for tracking (will be updated by orchestrator)
@@ -5567,7 +5571,8 @@ class NextGenDashboard:
                             ], style={'marginBottom': '8px'}),
                             html.Div([
                                 html.Span("Update Rate:", style={'color': THEME_COLORS['text_secondary'], 'fontSize': '11px'}),
-                                html.Span(" 2s/tick", style={'color': THEME_COLORS['text'], 'fontWeight': 'bold', 'fontSize': '11px'})
+                                html.Span(f" {self.tick_rate * 1000:.0f}ms/tick" if self.tick_rate > 0 else " Max speed", 
+                                         style={'color': THEME_COLORS['text'], 'fontWeight': 'bold', 'fontSize': '11px'})
                             ]),
                         ])
                     ], style={
@@ -6590,7 +6595,12 @@ class NextGenDashboard:
                       f"Positions={len(self.portfolio_manager.positions)}")
                 self.log_message(f"Iteration {self.iteration_count}: Portfolio=${portfolio_value:.2f}, Cash=${self.portfolio_manager.cash:.2f}, Positions={len(self.portfolio_manager.positions)}", "INFO")
             
-            time.sleep(2)  # Update every 2 seconds
+            # Configurable tick rate for optimal agent training
+            # Default 0.1s (100ms) allows ~10 updates/second for precise agent reactions
+            # Set to 0 for maximum speed (limited only by computation time)
+            # In live mode, WebSocket provides real-time data without artificial delays
+            if self.tick_rate > 0:
+                time.sleep(self.tick_rate)
     
     def run(self, host: str = '0.0.0.0', port: int = 8050, debug: bool = False) -> None:
         """Run the dashboard."""

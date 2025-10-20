@@ -77,7 +77,9 @@ Three metric cards showing system-wide statistics.
 - **Total Data Points** - Cumulative price data across all symbols
 - **Active Symbols** - Number of currently tracked symbols
 - **Avg Points/Symbol** - Average data accumulation per symbol
-- **Update Rate** - System tick rate (2s/tick)
+- **Update Rate** - Agent tick rate (default: 100ms for fast reactions, configurable)
+
+**Note:** The update rate shown is the agent processing tick rate, not the dashboard refresh rate. Lower values mean faster agent reactions and better precision for RL training.
 
 #### Portfolio-Protected Symbols
 - **Protected Count** - Number of symbols with open positions
@@ -113,7 +115,32 @@ Three metric cards showing system-wide statistics.
 
 ## Updates
 
-The Data Panel refreshes **every 2 seconds** when the simulation is running, providing real-time insights into system performance.
+The Data Panel has two separate update mechanisms:
+
+1. **Dashboard GUI Refresh**: Every 2 seconds (via Dash `dcc.Interval`)
+   - Updates all visual components
+   - Pulls latest data from system state
+
+2. **Agent Tick Rate**: Default 100ms (configurable)
+   - Controls how fast agents process market data
+   - Lower = faster reactions = better RL precision
+   - Set to 0 for maximum speed (no artificial delay)
+   - In live mode, WebSocket data arrives in real-time
+
+**Configuring Tick Rate:**
+
+```python
+# Fast agent training (default)
+dashboard = NextGenDashboard(live_mode=False, tick_rate=0.1)  # 100ms
+
+# Maximum speed
+dashboard = NextGenDashboard(live_mode=False, tick_rate=0)  # No delay
+
+# Custom rate
+dashboard = NextGenDashboard(live_mode=False, tick_rate=0.05)  # 50ms
+```
+
+Lower tick rates provide better precision for RL agent training by allowing them to react faster to market changes.
 
 ## Navigation
 
