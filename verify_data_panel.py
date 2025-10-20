@@ -24,11 +24,22 @@ def verify_data_panel_extensions():
     print("   ✅ Simulation started")
     
     # Wait for some data to accumulate
-    print("\n3. Waiting 5 seconds for data accumulation...")
-    for i in range(5):
-        time.sleep(1)
-        print(f"   ... {i+1}s")
-    
+    # Adjust wait time based on dashboard tick_rate
+    tick_rate = getattr(dashboard, "tick_rate", 0.1)  # Default to 0.1s if not set
+    if tick_rate == 0:
+        # Max speed: wait a short fixed time to avoid overwhelming system
+        wait_time = 0.5
+        print(f"\n3. Waiting {wait_time} seconds for data accumulation (tick_rate=max speed)...")
+        time.sleep(wait_time)
+        print(f"   ... {wait_time}s")
+    else:
+        # Wait for enough ticks (e.g., 50 ticks)
+        num_ticks = 50
+        wait_time = num_ticks * tick_rate
+        print(f"\n3. Waiting {wait_time:.1f} seconds for data accumulation ({num_ticks} ticks at tick_rate={tick_rate}s)...")
+        for i in range(num_ticks):
+            time.sleep(tick_rate)
+            print(f"   ... {(i+1)*tick_rate:.1f}s")
     # Test each section
     print("\n4. Testing WebSocket Connections Section...")
     try:
