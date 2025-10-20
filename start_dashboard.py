@@ -6596,9 +6596,10 @@ class NextGenDashboard:
                 self.log_message(f"Iteration {self.iteration_count}: Portfolio=${portfolio_value:.2f}, Cash=${self.portfolio_manager.cash:.2f}, Positions={len(self.portfolio_manager.positions)}", "INFO")
             
             # Configurable tick rate for optimal agent training
-            # Default 0.1s (100ms) allows ~10 updates/second for precise agent reactions
-            # Set to 0 for maximum speed (limited only by computation time)
-            # In live mode, WebSocket provides real-time data without artificial delays
+            # Default 0.1s (100ms) sets a theoretical maximum of 10 updates/second,
+            # but the actual update rate is lower and depends on both tick_rate and computation time per iteration.
+            # Set to 0 for maximum speed (limited only by computation time).
+            # In live mode, WebSocket provides real-time data without artificial delays.
             if self.tick_rate > 0:
                 time.sleep(self.tick_rate)
     
