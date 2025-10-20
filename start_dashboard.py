@@ -5112,6 +5112,8 @@ class NextGenDashboard:
             
             # Initialize variables that may be used later (for GAN feeding, etc.)
             reward = 0.0
+            current_price = self.current_prices.get(selected_symbol, 100.0)
+            portfolio_value = self.portfolio_manager.get_portfolio_value(self.current_prices)
             rsi = 50.0
             macd = 0.0
             volume = 100000
