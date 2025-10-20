@@ -3913,8 +3913,9 @@ class NextGenDashboard:
         """Create Decision & Consensus panel with real-time voting calculations."""
         # Get consensus data from consensus_engine
         try:
-            # Core agent list based on actual agents in the system
-            agents = ['PPO', 'DQN', 'DT']
+            # Expanded agent list with specialized agents + DT (11 agents total)
+            agents = ['PPO', 'DQN', 'DT', 'Conservative', 'Aggressive', 'Momentum', 
+                     'Mean Reversion', 'Contrarian', 'Volatility', 'Volume', 'Tech Pattern']
             # Expanded decisions with position sizing
             decisions = ['BUY_SMALL', 'BUY_MED', 'BUY_LARGE', 'SELL_PART', 'SELL_ALL', 'HOLD', 'REBAL']
             
