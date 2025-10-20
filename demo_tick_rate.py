@@ -23,7 +23,7 @@ def demo_tick_rate(tick_rate: float, duration: int = 5):
         tick_rate: Tick rate in seconds
         duration: How long to run in seconds
     """
-    rate_name = f"{tick_rate * 1000:.0f}ms" if tick_rate > 0 else "Max speed"
+    rate_name = f"{tick_rate * 1000:.2f}ms" if tick_rate > 0 else "Max speed"
     ticks_per_sec = f"~{1/tick_rate:.1f} ticks/s" if tick_rate > 0 else "unlimited"
     
     print(f"\n{'=' * 70}")
