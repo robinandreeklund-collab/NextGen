@@ -3579,7 +3579,7 @@ class NextGenDashboard:
             
             # Count how many agents agreed with final decision
             agreements = sum(1 for a in actions_list if a == final_base)
-            agreement_pct = (agreements / 3.0) * 100  # 3 agents total
+            agreement_pct = (agreements / float(len(actions_list))) * 100  # Use dynamic agent count
             
             # Determine conflict type based on disagreement pattern
             unique_actions = set(actions_list)
