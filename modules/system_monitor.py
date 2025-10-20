@@ -56,6 +56,10 @@ class SystemMonitor:
         self.message_bus.subscribe('vote_matrix', self._on_vote_activity)
         self.message_bus.subscribe('tuned_reward', self._on_reward_tuner_activity)
         
+        # Subscribe to feedback_router and risk_manager activities
+        self.message_bus.subscribe('high_priority_feedback', self._on_feedback_router_activity)
+        self.message_bus.subscribe('risk_profile', self._on_risk_manager_activity)
+        
         # Sprint 8: Subscribe to DQN, GAN, GNN activities
         self.message_bus.subscribe('dqn_metrics', self._on_dqn_activity)
         self.message_bus.subscribe('dqn_action_response', self._on_dqn_activity)
@@ -86,7 +90,7 @@ class SystemMonitor:
             'strategy_engine', 'portfolio_manager', 'rl_controller',
             'reward_tuner', 'decision_engine', 'consensus_engine',
             'vote_engine', 'execution_engine', 'timespan_tracker',
-            'action_chain_engine'
+            'action_chain_engine', 'risk_manager', 'feedback_router'
         ]
         # Sprint 8 modules
         expected_modules.extend(['dqn_controller', 'gan_evolution', 'gnn_analyzer'])
@@ -222,6 +226,16 @@ class SystemMonitor:
         self._track_module_activity('gnn_analyzer')
         self.system_metrics['last_update'] = time.time()
     
+    def _on_feedback_router_activity(self, data: Dict[str, Any]):
+        """Track feedback router activity."""
+        self._track_module_activity('feedback_router')
+        self.system_metrics['last_update'] = time.time()
+    
+    def _on_risk_manager_activity(self, data: Dict[str, Any]):
+        """Track risk manager activity."""
+        self._track_module_activity('risk_manager')
+        self.system_metrics['last_update'] = time.time()
+    
     def get_system_view(self) -> Dict[str, Any]:
         """
         Get complete system overview.
@@ -308,7 +322,7 @@ class SystemMonitor:
         
         for module_name, status in self.module_status.items():
             last_update = status.get('last_update', 0)
-            if current_time - last_update > 60:  # 1 minute stale threshold
+            if current_time - last_update > 120:  # 2 minute stale threshold (increased from 60s)
                 stale_modules.append(module_name)
             else:
                 active_modules.append(module_name)
