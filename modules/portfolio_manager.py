@@ -83,6 +83,7 @@ class PortfolioManager:
         self.trade_history: List[Dict[str, Any]] = []
         self.sold_history: List[Dict[str, Any]] = []  # Track sold stocks with P/L
         self.previous_portfolio_value = start_capital
+        self.last_action = None  # Track last action for reward calculation (BUY/SELL/HOLD)
         
         # Prenumerera på execution_result
         self.message_bus.subscribe('execution_result', self._on_execution_result)
@@ -108,12 +109,17 @@ class PortfolioManager:
         """
         # Ignorera misslyckade trades
         if not execution_result.get('success', False):
+            self.last_action = None  # No action taken on failed trades
             return
             
         symbol = execution_result['symbol']
         action = execution_result['action']
         quantity = execution_result['quantity']
         executed_price = execution_result['executed_price']
+        
+        # Track the action for reward calculation
+        self.last_action = action
+        self.last_sell_pnl = 0.0  # Reset for each update
         
         # Beräkna transaktionskostnad
         trade_value = executed_price * quantity
@@ -126,12 +132,16 @@ class PortfolioManager:
                 self.cash -= total_cost
                 
                 # Uppdatera eller skapa position
+                # Include fee in average price calculation for accurate P&L on sell
+                avg_price_with_fee = (trade_value + fee) / quantity
+                
                 if symbol in self.positions:
                     # Uppdatera genomsnittspris
                     current_qty = self.positions[symbol]['quantity']
                     current_avg = self.positions[symbol]['avg_price']
                     new_qty = current_qty + quantity
-                    new_avg = ((current_avg * current_qty) + (executed_price * quantity)) / new_qty
+                    # Weight both positions by their total cost
+                    new_avg = ((current_avg * current_qty) + (avg_price_with_fee * quantity)) / new_qty
                     self.positions[symbol] = {
                         'quantity': new_qty,
                         'avg_price': new_avg
@@ -139,10 +149,11 @@ class PortfolioManager:
                 else:
                     self.positions[symbol] = {
                         'quantity': quantity,
-                        'avg_price': executed_price
+                        'avg_price': avg_price_with_fee
                     }
             else:
                 # Otillräckligt kapital - trade misslyckades
+                self.last_action = None  # No action taken on failed trades
                 return
         
         elif action == 'SELL':
@@ -158,6 +169,9 @@ class PortfolioManager:
                 return_pct = (net_profit / cost_basis) * 100 if cost_basis > 0 else 0.0
                 
                 self.cash += revenue
+                
+                # Store P&L for reward calculation
+                self.last_sell_pnl = net_profit
                 
                 # Track sold stock with details
                 sold_record = {
@@ -186,6 +200,7 @@ class PortfolioManager:
                     del self.positions[symbol]
             else:
                 # Otillräckligt innehav - trade misslyckades
+                self.last_action = None  # No action taken on failed trades
                 return
         
         # Spara current prices för portfolio value calculation
@@ -304,17 +319,32 @@ class PortfolioManager:
     def calculate_and_publish_reward(self) -> None:
         """
         Beräknar reward för RL-controller och publicerar.
-        Reward baserat på portfolio value change.
+        
+        Reward calculation based on action type:
+        - BUY: reward = 0.0 (outcome unknown until position closed)
+        - SELL: reward = actual P&L (profit/loss - fees)
+        - HOLD or None: reward = 0.0 (no action taken)
+        
         Sprint 4.4: Publicerar base_reward istället för reward (går via RewardTunerAgent)
         """
-        current_value = self.get_portfolio_value()
-        reward = current_value - self.previous_portfolio_value
-        self.previous_portfolio_value = current_value
+        # Calculate reward based on last action
+        if self.last_action == 'BUY':
+            # BUY always gives 0.0 reward (outcome unknown until position closed)
+            reward = 0.0
+        elif self.last_action == 'SELL':
+            # SELL gives the actual P&L from the sale
+            reward = self.last_sell_pnl
+        else:
+            # HOLD or no action gives 0.0 reward
+            reward = 0.0
+        
+        # Reset last_action for next iteration
+        self.last_action = None
         
         reward_data = {
             'reward': reward,
             'source': 'portfolio_manager',
-            'portfolio_value': current_value,
+            'portfolio_value': self.get_portfolio_value(),
             'num_trades': len(self.trade_history),
             'timestamp': time.time()
         }
