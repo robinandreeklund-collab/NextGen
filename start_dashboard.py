@@ -5880,7 +5880,7 @@ class NextGenDashboard:
                     # Publish to GAN via message bus
                     self.message_bus.publish('agent_performance', {
                         'parameters': agent_params.tolist(),
-                        'performance_score': float(np.clip((base_reward + 100) / 200, 0, 1)),  # Normalize to [0,1]
+                        'performance_score': float(np.clip((base_reward_proxy + 100) / 200, 0, 1)),  # Normalize to [0,1]
                         'timestamp': time.time()
                     })
                 except Exception as e:
