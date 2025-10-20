@@ -159,7 +159,7 @@ class DataIngestion:
         Öppnar WebSocket-ström för en symbol.
         
         Args:
-            symbol: Aktiesymbol att starta ström för
+            symbol: Stock symbol to start stream for
         """
         # This is now handled by start_websocket
         pass
