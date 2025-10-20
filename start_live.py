@@ -32,7 +32,8 @@ def main():
     # Create dashboard in live mode (live_mode=True)
     # In live mode, tick_rate only affects agent processing loop
     # WebSocket data arrives in real-time regardless of tick_rate
-    # tick_rate=0.1 allows agents to process data 10 times per second
+    # tick_rate=0.1 adds a *minimum* 100ms delay between agent iterations,
+    # resulting in a *maximum* of ~10 iterations/second; actual rate may be lower if processing takes longer
     dashboard = NextGenDashboard(live_mode=True, tick_rate=0.1)
     
     # Run dashboard
