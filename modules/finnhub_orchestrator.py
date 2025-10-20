@@ -213,7 +213,13 @@ class FinnhubOrchestrator:
         
         # File handler for audit log
         if self.config['audit_logging']['enabled']:
-            handler = logging.FileHandler(self.config['audit_logging']['log_file'])
+            log_file = self.config['audit_logging']['log_file']
+            # Ensure the log directory exists
+            log_dir = os.path.dirname(log_file)
+            if log_dir and not os.path.exists(log_dir):
+                os.makedirs(log_dir, exist_ok=True)
+            
+            handler = logging.FileHandler(log_file)
             formatter = logging.Formatter(
                 '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
             )
