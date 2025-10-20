@@ -185,6 +185,7 @@ class NextGenDashboard:
             'performance': [],     # Track performance metrics
             'statistics': []       # Track aggregated statistics
         }
+        self.agent_votes_history = []  # Track ALL decision_vote messages for voting matrix
         self.conflict_history = []
         self.decision_history = []
         self.execution_history = []  # Track all executed trades
@@ -317,6 +318,7 @@ class NextGenDashboard:
         
         # Subscribe to specialized agents events
         self.message_bus.subscribe('agent_state', self._handle_agent_state)
+        self.message_bus.subscribe('decision_vote', self._handle_decision_vote)
         
         print("✅ Message bus subscriptions configured")
         
@@ -453,6 +455,21 @@ class NextGenDashboard:
         # Keep last 200 entries (8 agents * ~25 samples)
         if len(self.specialized_agents_history['performance']) > 200:
             self.specialized_agents_history['performance'].pop(0)
+    
+    def _handle_decision_vote(self, vote: Dict[str, Any]):
+        """Handle decision vote from any agent (including specialized agents)."""
+        # Track all votes for voting matrix display
+        self.agent_votes_history.append({
+            'timestamp': datetime.now().timestamp(),
+            'agent_id': vote.get('agent_id', 'unknown'),
+            'symbol': vote.get('symbol', 'unknown'),
+            'action': vote.get('action', 'HOLD'),
+            'confidence': vote.get('confidence', 0.5),
+            'reasoning': vote.get('reasoning', '')
+        })
+        # Keep last 500 votes (for voting matrix over time)
+        if len(self.agent_votes_history) > 500:
+            self.agent_votes_history.pop(0)
     
     
     def setup_layout(self) -> None:
@@ -3957,13 +3974,11 @@ class NextGenDashboard:
             # Expanded decisions with position sizing
             decisions = ['BUY_SMALL', 'BUY_MED', 'BUY_LARGE', 'SELL_PART', 'SELL_ALL', 'HOLD', 'REBAL']
             
-            # Calculate voting matrix using REAL vote data from specialized_agents_history
-            voting_data = []
-            recent_decisions = self.decision_history[-50:] if len(self.decision_history) >= 50 else self.decision_history
-            core_agents = ['PPO', 'DQN', 'DT']
-            
             # Map display names to agent IDs for specialized agents
             agent_id_map = {
+                'PPO': 'PPO',
+                'DQN': 'DQN',
+                'DT': 'DT',
                 'Momentum': 'momentum_agent',
                 'MeanRev': 'mean_reversion_agent',
                 'Trend': 'trend_following_agent',
@@ -3974,60 +3989,42 @@ class NextGenDashboard:
                 'Sentiment': 'sentiment_agent'
             }
             
-            # Get recent specialized agent performance data
-            recent_agent_performance = self.specialized_agents_history['performance'][-100:] if len(self.specialized_agents_history['performance']) > 0 else []
+            # Calculate voting matrix using REAL vote data from agent_votes_history
+            voting_data = []
+            recent_decisions = self.decision_history[-50:] if len(self.decision_history) >= 50 else self.decision_history
+            recent_votes = self.agent_votes_history[-200:] if len(self.agent_votes_history) > 0 else []
             
-            for agent in agents:
+            for agent_display_name in agents:
                 # Count how many times this agent voted for each decision type
                 votes = []
-                
-                # Check if this is a core agent with real decision data
-                is_core_agent = agent in core_agents
+                agent_id = agent_id_map.get(agent_display_name, agent_display_name)
                 
                 for decision_type in decisions:
-                    if is_core_agent:
-                        # Use real decision history for core agents
-                        decision_base = decision_type.split('_')[0] if '_' in decision_type else decision_type
+                    decision_base = decision_type.split('_')[0] if '_' in decision_type else decision_type
+                    
+                    # Count votes from agent_votes_history
+                    vote_count = 0
+                    for vote in recent_votes:
+                        vote_agent_id = vote.get('agent_id', '')
+                        vote_action = vote.get('action', '')
                         
-                        vote_count = 0
+                        # Match agent
+                        if agent_id in vote_agent_id or vote_agent_id in agent_id:
+                            # Match action
+                            if decision_type in vote_action or decision_base in vote_action or vote_action == decision_base:
+                                vote_count += 1
+                    
+                    # For core agents (PPO, DQN, DT), also check decision_history as fallback
+                    if agent_display_name in ['PPO', 'DQN', 'DT'] and vote_count == 0:
                         for dec in recent_decisions:
                             dec_agent = dec.get('agent', '')
                             dec_action = dec.get('action', '')
                             
-                            if agent in dec_agent:
+                            if agent_display_name in dec_agent:
                                 if decision_type in dec_action or decision_base in dec_action:
                                     vote_count += 1
-                        
-                        votes.append(vote_count)
-                    else:
-                        # For specialized agents, use REAL data from their performance history
-                        # Count trades based on their actual trading activity
-                        agent_id = agent_id_map.get(agent, agent.lower().replace(' ', '_') + '_agent')
-                        decision_base = decision_type.split('_')[0] if '_' in decision_type else decision_type
-                        
-                        # Count total trades for this agent from performance history
-                        agent_perf = [p for p in recent_agent_performance if p.get('agent_id') == agent_id]
-                        
-                        if len(agent_perf) > 0:
-                            # Use actual trade count - distribute across decision types based on typical patterns
-                            latest_perf = agent_perf[-1]
-                            total_trades = latest_perf.get('total_trades', 0)
-                            
-                            # Distribute trades across decision types (rough approximation)
-                            if decision_type == 'HOLD':
-                                # HOLD is most common
-                                votes.append(int(total_trades * 0.4))
-                            elif decision_base == 'BUY':
-                                # BUY variants
-                                votes.append(int(total_trades * 0.25))
-                            elif decision_base == 'SELL':
-                                # SELL variants
-                                votes.append(int(total_trades * 0.25))
-                            else:
-                                votes.append(int(total_trades * 0.1))
-                        else:
-                            # No data yet, use zero
-                            votes.append(0)
+                    
+                    votes.append(vote_count)
                 
                 voting_data.append(votes)
             
