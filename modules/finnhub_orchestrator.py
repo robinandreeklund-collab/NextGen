@@ -105,6 +105,9 @@ class FinnhubOrchestrator:
         self.is_running = False
         self.last_rotation_time = None
         
+        # Portfolio protection: track symbols we must keep (stocks in portfolio)
+        self.protected_symbols: set = set()  # Symbols that can't be dropped (in portfolio)
+        
         # Detailed metrics tracking
         self.detailed_metrics = {
             'active_subscriptions': 0,
@@ -230,6 +233,7 @@ class FinnhubOrchestrator:
         """Subscribe to message bus topics."""
         self.message_bus.subscribe('rl_feedback', self._handle_rl_feedback)
         self.message_bus.subscribe('market_conditions', self._handle_market_conditions)
+        self.message_bus.subscribe('portfolio_status', self._handle_portfolio_status)
         self.message_bus.subscribe('module_requests', self._handle_module_request)
     
     def start(self):
@@ -355,6 +359,29 @@ class FinnhubOrchestrator:
             strategy=strategy,
             max_symbols=max_active_symbols
         )
+        
+        # CRITICAL: Ensure all protected symbols (portfolio holdings) are included
+        # We must maintain WebSocket connections for stocks we own
+        for protected_symbol in self.protected_symbols:
+            if protected_symbol not in new_symbols:
+                self.logger.warning(f"Rotation tried to drop {protected_symbol} which is in portfolio - forcing inclusion")
+                new_symbols.append(protected_symbol)
+        
+        # If we exceeded limit due to protected symbols, remove lowest priority non-protected symbols
+        if len(new_symbols) > max_active_symbols:
+            # Split into protected and non-protected
+            protected_in_new = [s for s in new_symbols if s in self.protected_symbols]
+            non_protected_in_new = [s for s in new_symbols if s not in self.protected_symbols]
+            
+            # Keep all protected, trim non-protected
+            slots_remaining = max_active_symbols - len(protected_in_new)
+            if slots_remaining > 0:
+                new_symbols = protected_in_new + non_protected_in_new[:slots_remaining]
+            else:
+                # All slots taken by protected symbols (edge case)
+                new_symbols = protected_in_new[:max_active_symbols]
+                if len(protected_in_new) > max_active_symbols:
+                    self.logger.error(f"Portfolio has {len(protected_in_new)} positions but only {max_active_symbols} WebSocket slots!")
         
         # Ensure we don't exceed the limit
         if len(new_symbols) > max_active_symbols:
@@ -556,6 +583,40 @@ class FinnhubOrchestrator:
         if conditions.get('regime_change', False):
             if self._should_rotate():
                 self._perform_rotation()
+    
+    def _handle_portfolio_status(self, status: Dict[str, Any]):
+        """
+        Handle portfolio status updates to protect positions.
+        
+        Updates the list of protected symbols (stocks in portfolio) that
+        must maintain WebSocket connections even during rotation.
+        """
+        positions = status.get('positions', {})
+        # Extract symbols from portfolio positions
+        portfolio_symbols = set(positions.keys())
+        
+        # Update protected symbols
+        old_protected = self.protected_symbols.copy()
+        self.protected_symbols = portfolio_symbols
+        
+        # Log if protection changed
+        if old_protected != self.protected_symbols:
+            added = self.protected_symbols - old_protected
+            removed = old_protected - self.protected_symbols
+            if added:
+                self.logger.info(f"Protected symbols added (in portfolio): {added}")
+            if removed:
+                self.logger.info(f"Protected symbols removed (sold from portfolio): {removed}")
+            
+            # If we have protected symbols not in active_symbols, we need to add them
+            missing_symbols = self.protected_symbols - set(self.active_symbols)
+            if missing_symbols:
+                self.logger.warning(f"Portfolio contains symbols not in active WebSocket: {missing_symbols}")
+                self.logger.info("Adding portfolio symbols to active_symbols to maintain price tracking")
+                # Add to active symbols (will be included in next update)
+                for symbol in missing_symbols:
+                    if symbol not in self.active_symbols:
+                        self.active_symbols.append(symbol)
     
     def _handle_module_request(self, request: Dict[str, Any]):
         """Handle data requests from downstream modules."""

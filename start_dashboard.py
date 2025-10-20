@@ -123,8 +123,8 @@ class NextGenDashboard:
         # Setup modules (including orchestrator)
         self.setup_modules()
         
-        # Get active symbols from orchestrator for simulation
-        if not live_mode and hasattr(self, 'orchestrator'):
+        # Get active symbols from orchestrator (works in both demo and live mode)
+        if hasattr(self, 'orchestrator'):
             orch_symbols = getattr(self.orchestrator, 'active_symbols', [])
             if orch_symbols and len(orch_symbols) > 0:
                 self.symbols = orch_symbols
@@ -136,7 +136,8 @@ class NextGenDashboard:
                         self.current_prices[symbol] = self.base_prices[symbol]
                     if symbol not in self.price_trends:
                         self.price_trends[symbol] = 0.0
-                print(f"📊 Using orchestrator symbols for simulation: {len(self.symbols)} active symbols")
+                mode_str = "live" if live_mode else "simulation"
+                print(f"📊 Using orchestrator symbols for {mode_str}: {len(self.symbols)} active symbols")
         
         # Initialize data ingestion based on mode (after orchestrator symbols are set)
         if live_mode:
@@ -153,6 +154,10 @@ class NextGenDashboard:
         self.ws_thread = None
         self.single_symbol_mode = False  # Toggle for single symbol mode
         self.single_symbol = 'AMD'  # Default single symbol
+        
+        # Live mode WebSocket tracking
+        self.websocket_ready = False  # Flag to track if we have real price data
+        self.symbols_with_real_data = set()  # Track which symbols have received real prices
         
         # Data history for charts (update with current symbols)
         self.price_history = {symbol: [] for symbol in self.symbols}
@@ -310,6 +315,9 @@ class NextGenDashboard:
         self.message_bus.subscribe('rl_scores', self._handle_rl_scores)
         self.message_bus.subscribe('replay_event', self._handle_replay_event)
         
+        # Subscribe to market data (for live WebSocket price updates)
+        self.message_bus.subscribe('market_data', self._handle_market_data)
+        
         # Subscribe to DT and ensemble events
         self.message_bus.subscribe('dt_action', self._handle_dt_action)
         self.message_bus.subscribe('dt_metrics', self._handle_dt_metrics)
@@ -360,19 +368,29 @@ class NextGenDashboard:
         if len(self.orchestrator_metrics['symbol_rotations']) > 50:
             self.orchestrator_metrics['symbol_rotations'].pop(0)
         
-        # Update simulation symbols if in demo mode
-        if not self.live_mode and hasattr(self, 'data_ingestion'):
-            new_symbols = event.get('new_symbols', [])
-            if new_symbols and hasattr(self.data_ingestion, 'update_symbols'):
-                self.data_ingestion.update_symbols(new_symbols)
-                # Update dashboard tracking
-                self.symbols = new_symbols
-                # Initialize price/volume history for new symbols
-                for symbol in new_symbols:
-                    if symbol not in self.price_history:
-                        self.price_history[symbol] = []
-                    if symbol not in self.volume_history:
-                        self.volume_history[symbol] = []
+        # Update symbols in both demo and live mode
+        new_symbols = event.get('new_symbols', [])
+        if new_symbols:
+            # Update dashboard tracking
+            self.symbols = new_symbols
+            # Initialize price/volume history for new symbols
+            for symbol in new_symbols:
+                if symbol not in self.price_history:
+                    self.price_history[symbol] = []
+                if symbol not in self.volume_history:
+                    self.volume_history[symbol] = []
+                # Initialize price tracking if needed
+                if symbol not in self.base_prices:
+                    self.base_prices[symbol] = 100.0 + random.uniform(-20, 20)
+                if symbol not in self.current_prices:
+                    self.current_prices[symbol] = self.base_prices[symbol]
+                if symbol not in self.price_trends:
+                    self.price_trends[symbol] = 0.0
+            
+            # Update data ingestion in demo mode
+            if not self.live_mode and hasattr(self, 'data_ingestion'):
+                if hasattr(self.data_ingestion, 'update_symbols'):
+                    self.data_ingestion.update_symbols(new_symbols)
     
     def _handle_rl_scores(self, scores: Dict[str, Any]):
         """Handle RL score updates."""
@@ -387,6 +405,56 @@ class NextGenDashboard:
         # Keep only last 50 events to prevent memory leak
         if len(self.orchestrator_metrics['replay_events']) > 50:
             self.orchestrator_metrics['replay_events'].pop(0)
+    
+    def _handle_market_data(self, data: Dict[str, Any]):
+        """Handle real-time market data from WebSocket (live mode only)."""
+        if not self.live_mode:
+            return  # Only process in live mode
+        
+        try:
+            symbol = data.get('symbol', data.get('s'))  # Finnhub uses 's' for symbol
+            price = data.get('price', data.get('p'))     # Finnhub uses 'p' for price
+            volume = data.get('volume', data.get('v', 100000))  # Finnhub uses 'v' for volume
+            
+            if symbol and price:
+                # Mark that we've received real data for this symbol
+                self.symbols_with_real_data.add(symbol)
+                
+                # Check if we have enough symbols with real data to start trading
+                if not self.websocket_ready and len(self.symbols_with_real_data) >= min(5, len(self.symbols)):
+                    self.websocket_ready = True
+                    print(f"✅ WebSocket ready: Received real data for {len(self.symbols_with_real_data)} symbols - trading enabled")
+                
+                # Update current price
+                self.current_prices[symbol] = float(price)
+                
+                # Initialize tracking structures if symbol is new
+                if symbol not in self.price_history:
+                    self.price_history[symbol] = []
+                if symbol not in self.volume_history:
+                    self.volume_history[symbol] = []
+                if symbol not in self.base_prices:
+                    self.base_prices[symbol] = float(price)
+                if symbol not in self.price_trends:
+                    # Calculate trend from price history if available
+                    if len(self.price_history[symbol]) >= 2:
+                        old_price = self.price_history[symbol][-1]
+                        self.price_trends[symbol] = ((float(price) - old_price) / old_price * 100) if old_price != 0 else 0.0
+                    else:
+                        self.price_trends[symbol] = 0.0
+                
+                # Update price history
+                self.price_history[symbol].append(float(price))
+                if len(self.price_history[symbol]) > 100:
+                    self.price_history[symbol].pop(0)
+                
+                # Update volume history
+                self.volume_history[symbol].append(float(volume))
+                if len(self.volume_history[symbol]) > 100:
+                    self.volume_history[symbol].pop(0)
+                    
+        except Exception as e:
+            print(f"Error processing market data: {e}")
     
     def _handle_dt_action(self, action: Dict[str, Any]):
         """Handle Decision Transformer action updates."""
@@ -5109,20 +5177,36 @@ class NextGenDashboard:
             # Start orchestrator
             self.orchestrator.start()
             
-            # Update simulation symbols from orchestrator (demo mode only)
-            if not self.live_mode and hasattr(self, 'data_ingestion'):
-                orch_symbols = getattr(self.orchestrator, 'active_symbols', [])
-                if orch_symbols and len(orch_symbols) > 0:
-                    self.symbols = orch_symbols
+            # Update symbols from orchestrator after it starts (works in both demo and live mode)
+            orch_symbols = getattr(self.orchestrator, 'active_symbols', [])
+            if orch_symbols and len(orch_symbols) > 0:
+                self.symbols = orch_symbols
+                # Initialize price/volume history for orchestrator symbols
+                for symbol in orch_symbols:
+                    if symbol not in self.price_history:
+                        self.price_history[symbol] = []
+                    if symbol not in self.volume_history:
+                        self.volume_history[symbol] = []
+                    # Initialize price tracking if needed
+                    if symbol not in self.base_prices:
+                        self.base_prices[symbol] = 100.0 + random.uniform(-20, 20)
+                    if symbol not in self.current_prices:
+                        self.current_prices[symbol] = self.base_prices[symbol]
+                    if symbol not in self.price_trends:
+                        self.price_trends[symbol] = 0.0
+                
+                mode_str = "live" if self.live_mode else "demo"
+                print(f"📊 Synchronized {mode_str} mode with orchestrator: {len(orch_symbols)} active symbols")
+                
+                # Start WebSocket in live mode or update data ingestion in demo mode
+                if self.live_mode and hasattr(self, 'data_ingestion'):
+                    if hasattr(self.data_ingestion, 'start_websocket'):
+                        self.data_ingestion.start_websocket(orch_symbols)
+                        print("⏳ Waiting for real WebSocket price data before trading...")
+                        print("   Trading will start once data is received for at least 5 symbols")
+                elif not self.live_mode and hasattr(self, 'data_ingestion'):
                     if hasattr(self.data_ingestion, 'update_symbols'):
                         self.data_ingestion.update_symbols(orch_symbols)
-                    # Initialize price/volume history for orchestrator symbols
-                    for symbol in orch_symbols:
-                        if symbol not in self.price_history:
-                            self.price_history[symbol] = []
-                        if symbol not in self.volume_history:
-                            self.volume_history[symbol] = []
-                    print(f"📊 Synchronized simulation with orchestrator: {len(orch_symbols)} active symbols")
             
             self.simulation_thread = threading.Thread(target=self.simulation_loop, daemon=True)
             self.simulation_thread.start()
@@ -5134,6 +5218,11 @@ class NextGenDashboard:
         
         # Stop orchestrator
         self.orchestrator.stop()
+        
+        # Close WebSocket in live mode
+        if self.live_mode and hasattr(self, 'data_ingestion'):
+            if hasattr(self.data_ingestion, 'close_streams'):
+                self.data_ingestion.close_streams()
         
         if self.simulation_thread:
             self.simulation_thread.join(timeout=2)
@@ -5174,7 +5263,7 @@ class NextGenDashboard:
                 
                 # Simulate volume (in real system, this would come from market data)
                 # Volume varies with price volatility
-                if len(self.price_history[symbol]) >= 2:
+                if len(self.price_history[symbol]) >= 2 and self.price_history[symbol][-2] != 0:
                     price_change_pct = abs((price - self.price_history[symbol][-2]) / self.price_history[symbol][-2])
                     base_volume = 100000
                     volume = base_volume * (1 + price_change_pct * 10) * random.uniform(0.8, 1.2)
@@ -5186,6 +5275,12 @@ class NextGenDashboard:
                     self.volume_history[symbol].pop(0)
             
             # === TRADING DECISIONS WITH ACTUAL MODULES ===
+            # In live mode, wait for WebSocket data before trading
+            if self.live_mode and not self.websocket_ready:
+                # Skip trading until we have real price data from WebSocket
+                time.sleep(0.5)  # Wait a bit for data
+                continue
+            
             # Select symbol based on mode
             if self.single_symbol_mode:
                 # Single symbol mode - use configured symbol (AMD)
@@ -5193,6 +5288,11 @@ class NextGenDashboard:
             else:
                 # Multi symbol mode - random selection
                 selected_symbol = random.choice(self.symbols)
+            
+            # In live mode, only trade symbols with real WebSocket data
+            if self.live_mode and selected_symbol not in self.symbols_with_real_data:
+                # Skip this symbol - no real price data yet
+                continue
             
             # Initialize variables that may be used later (for GAN feeding, etc.)
             reward = 0.0
@@ -5221,7 +5321,7 @@ class NextGenDashboard:
                     portfolio_value = self.portfolio_manager.get_portfolio_value(self.current_prices)
                     
                     # 1. Price change (momentum)
-                    price_change = (current_price - prices[-2]) / prices[-2] if len(prices) >= 2 else 0
+                    price_change = (current_price - prices[-2]) / prices[-2] if len(prices) >= 2 and prices[-2] != 0 else 0
                     
                     # 2. RSI (momentum indicator)
                     changes = [prices[i] - prices[i-1] for i in range(1, len(prices))]
@@ -5229,12 +5329,12 @@ class NextGenDashboard:
                     losses = [-c if c < 0 else 0 for c in changes[-14:]]
                     avg_gain = sum(gains) / 14 if gains else 0.01
                     avg_loss = sum(losses) / 14 if losses else 0.01
-                    rs = avg_gain / avg_loss
+                    rs = avg_gain / avg_loss if avg_loss != 0 else 1.0
                     rsi = 100 - (100 / (1 + rs))
                     
                     # 3. MACD (trend strength)
-                    sma_12 = sum(prices[-12:]) / 12
-                    sma_26 = sum(prices[-26:]) / 26
+                    sma_12 = sum(prices[-12:]) / 12 if len(prices) >= 12 else current_price
+                    sma_26 = sum(prices[-26:]) / 26 if len(prices) >= 26 else current_price
                     macd = sma_12 - sma_26
                     
                     # 4. ATR (volatility/risk measure) - Average True Range
@@ -5245,8 +5345,8 @@ class NextGenDashboard:
                     atr = sum(true_ranges) / len(true_ranges) if true_ranges else 0.01
                     
                     # 5. Bollinger Band position (price relative to bands)
-                    sma_20 = sum(prices[-20:]) / 20
-                    std_dev = (sum([(p - sma_20)**2 for p in prices[-20:]]) / 20) ** 0.5
+                    sma_20 = sum(prices[-20:]) / 20 if len(prices) >= 20 else current_price
+                    std_dev = (sum([(p - sma_20)**2 for p in prices[-20:]]) / 20) ** 0.5 if len(prices) >= 20 else 0.01
                     upper_band = sma_20 + (2 * std_dev)
                     lower_band = sma_20 - (2 * std_dev)
                     bb_position = (current_price - lower_band) / (upper_band - lower_band) if (upper_band - lower_band) > 0 else 0.5
@@ -5262,8 +5362,8 @@ class NextGenDashboard:
                     
                     # 8. Volume trend (increasing/decreasing)
                     if len(volumes) >= 10:
-                        recent_vol = sum(volumes[-5:]) / 5
-                        older_vol = sum(volumes[-10:-5]) / 5
+                        recent_vol = sum(volumes[-5:]) / 5 if len(volumes[-5:]) > 0 else 100000
+                        older_vol = sum(volumes[-10:-5]) / 5 if len(volumes[-10:-5]) > 0 else 100000
                         volume_trend = (recent_vol - older_vol) / older_vol if older_vol > 0 else 0
                     else:
                         volume_trend = 0
@@ -5276,7 +5376,7 @@ class NextGenDashboard:
                     
                     # 10. Volatility index (recent price swings)
                     if len(prices) >= 10:
-                        recent_returns = [(prices[-i] - prices[-i-1]) / prices[-i-1] for i in range(1, 10)]
+                        recent_returns = [(prices[-i] - prices[-i-1]) / prices[-i-1] if prices[-i-1] != 0 else 0 for i in range(1, 10)]
                         volatility_index = (sum([r**2 for r in recent_returns]) / 9) ** 0.5
                     else:
                         volatility_index = 0
@@ -5476,7 +5576,7 @@ class NextGenDashboard:
                         
                         # Calculate how many shares we can afford with size fraction
                         affordable_cash = self.portfolio_manager.cash * size_fraction
-                        max_quantity = int(affordable_cash / (current_price * 1.0025))
+                        max_quantity = int(affordable_cash / (current_price * 1.0025)) if current_price > 0 else 0
                         max_quantity = min(max_quantity, 10)  # Max 10 shares per trade
                         
                         # Only proceed if we have enough cash for at least 1 share
@@ -5544,7 +5644,7 @@ class NextGenDashboard:
                             if position_value < target_value * 0.9:  # More than 10% below target
                                 # Buy more
                                 needed_value = target_value - position_value
-                                quantity = int(needed_value / (current_price * 1.0025))
+                                quantity = int(needed_value / (current_price * 1.0025)) if current_price > 0 else 0
                                 quantity = min(quantity, 5)  # Max 5 shares for rebalancing
                                 if quantity > 0 and self.portfolio_manager.cash >= quantity * current_price * 1.0025:
                                     final_action = 'BUY'  # Convert to BUY for execution
@@ -5561,7 +5661,7 @@ class NextGenDashboard:
                             elif position_value > target_value * 1.1:  # More than 10% above target
                                 # Sell some
                                 excess_value = position_value - target_value
-                                quantity = int(excess_value / current_price)
+                                quantity = int(excess_value / current_price) if current_price > 0 else 0
                                 quantity = min(quantity, 5, current_position)  # Max 5 shares for rebalancing
                                 if quantity > 0:
                                     final_action = 'SELL'  # Convert to SELL for execution
