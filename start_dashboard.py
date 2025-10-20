@@ -1984,15 +1984,22 @@ class NextGenDashboard:
         portfolio_value_history = []
         time_labels = []
         
+        # Time interval constants
+        SECONDS_PER_ITERATION = 2
+        ITERATIONS_PER_HOUR = int(3600 / SECONDS_PER_ITERATION)      # 1800
+        ITERATIONS_PER_DAY = int(24 * ITERATIONS_PER_HOUR)           # 43200
+        ITERATIONS_PER_7DAYS = int(7 * ITERATIONS_PER_DAY)           # 302400
+        ITERATIONS_PER_30DAYS = int(30 * ITERATIONS_PER_DAY)         # 1296000
+        
         # Get the number of data points based on iteration count
         total_iterations = self.iteration_count
         
         # Map intervals to number of data points
         interval_map = {
-            '1H': min(30, total_iterations),   # Last 30 iterations (~1 hour at 2s intervals)
-            '24H': min(720, total_iterations),  # Last 720 iterations (~24 hours)
-            '7D': min(5040, total_iterations),  # Last 5040 iterations (~7 days)
-            '30D': min(21600, total_iterations) # Last 21600 iterations (~30 days)
+            '1H': min(ITERATIONS_PER_HOUR, total_iterations),      # Last 1800 iterations (~1 hour at 2s intervals)
+            '24H': min(ITERATIONS_PER_DAY, total_iterations),      # Last 43200 iterations (~24 hours)
+            '7D': min(ITERATIONS_PER_7DAYS, total_iterations),    # Last 302400 iterations (~7 days)
+            '30D': min(ITERATIONS_PER_30DAYS, total_iterations)   # Last 1296000 iterations (~30 days)
         }
         
         num_points = interval_map.get(selected_interval, 720)
