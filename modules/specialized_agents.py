@@ -1,46 +1,46 @@
 """
 specialized_agents.py - 8 Specialized Trading Agents
 
-Beskrivning:
-    Implementerar 8 distinkta trading-agenter med unika strategier.
-    Varje agent hanterar sitt eget state (position, capital) och röstar
-    oberoende genom ensemble voting-systemet.
+Description:
+    Implements 8 distinct trading agents with unique strategies.
+    Each agent manages its own state (positions, capital) and votes
+    independently through the ensemble voting system.
 
-Agenter:
-    1. MomentumAgent - Följer stark prismomentum
-    2. MeanReversionAgent - Handlar på reversals till medelvärde
-    3. TrendFollowingAgent - Identifierar och följer trender
-    4. VolatilityAgent - Drar nytta av volatilitet
-    5. BreakoutAgent - Handlar på tekniska breakouts
-    6. SwingAgent - Fångar swing-rörelser
-    7. ArbitrageAgent - Söker arbitragemöjligheter
-    8. SentimentAgent - Baserat på marknadssentiment och analystdata
+Agents:
+    1. MomentumAgent - Follows strong price momentum
+    2. MeanReversionAgent - Trades on reversals to the mean
+    3. TrendFollowingAgent - Identifies and follows trends
+    4. VolatilityAgent - Exploits volatility
+    5. BreakoutAgent - Trades on technical breakouts
+    6. SwingAgent - Captures swing movements
+    7. ArbitrageAgent - Seeks arbitrage opportunities
+    8. SentimentAgent - Based on market sentiment and analyst data
 
-Roll:
-    - Varje agent analyserar marknadsdata oberoende
-    - Hanterar eget state (positions, capital, performance)
-    - Genererar vote (BUY/SELL/HOLD) med confidence
-    - Publicerar votes till ensemble voting system
+Role:
+    - Each agent analyzes market data independently
+    - Manages its own state (positions, capital, performance)
+    - Generates a vote (BUY/SELL/HOLD) with confidence
+    - Publishes votes to the ensemble voting system
     
 Inputs:
-    - market_data: Prisdata och volym
-    - indicator_data: Tekniska indikatorer
-    - portfolio_status: Global portföljstatus
+    - market_data: Price and volume data
+    - indicator_data: Technical indicators
+    - portfolio_status: Global portfolio status
     
 Outputs:
-    - agent_vote: Röst för ensemble system
-    - agent_state: Agentens tillstånd och performance
+    - agent_vote: Vote for the ensemble system
+    - agent_state: Agent's state and performance
 
-Publicerar till message_bus:
-    - agent_vote: Till vote_engine
-    - agent_state: För monitoring och analys
+Publishes to message_bus:
+    - agent_vote: To vote_engine
+    - agent_state: For monitoring and analysis
     
-Prenumererar på:
+Subscribes to:
     - market_data
     - indicator_data
     - portfolio_status
     
-Används i Sprint: Custom (8 Trading Agents)
+Used in Sprint: Custom (8 Trading Agents)
 """
 
 from typing import Dict, Any, List, Optional
