@@ -66,10 +66,10 @@ class DataIngestion:
     
     def start_websocket(self, symbols: List[str]) -> None:
         """
-        Startar WebSocket-anslutning och prenumererar på symboler.
+        Starts WebSocket connection and subscribes to symbols.
         
         Args:
-            symbols: Lista med symboler att prenumerera på
+            symbols: List of symbols to subscribe to
         """
         if self.running:
             print("⚠️  WebSocket already running")
