@@ -620,8 +620,157 @@ python -c "from start_dashboard import NextGenDashboard; print('OK')"
 | Sprint 8 | ✅ Färdig | DQN, GAN, GNN – Hybridiserad RL & Temporal Intelligence |
 | Sprint 9 | ✅ Färdig | Finnhub Orchestrator – Central datakoordinering och RL-driven symbolrotation |
 | Sprint 10 | ✅ Färdig | Decision Transformer – Sequence-based RL & 5-agent ensemble |
+| 8 Trading Agents | ✅ Färdig | Specialized trading agents med ensemble voting |
 
 **Testresultat:** ✅ 415/415 tester passerar (100%)
+
+---
+
+## 🎯 8 Specialized Trading Agents
+
+**Ny implementation** - System med 8 distinkta trading-agenter som tillsammans bildar ett robust ensemble.
+
+### Översikt
+
+Varje agent hanterar sitt eget state (position, capital, performance) och röstar oberoende genom ensemble voting-systemet. Agenterna analyserar samma marknadsdata men med unika strategier och beslutslogik.
+
+### Agenter
+
+1. **MomentumAgent** - Följer stark prismomentum
+   - Strategi: Identifierar bullish/bearish momentum via RSI
+   - Trigger: RSI > 60 (buy) eller RSI < 40 (sell)
+   - Fokus: Rate of Change och trendstyrka
+
+2. **MeanReversionAgent** - Handlar på reversals till medelvärde
+   - Strategi: Köper vid översålt, säljer vid överköpt
+   - Trigger: RSI < 30 (buy) eller RSI > 70 (sell)
+   - Fokus: Extrema lägen som tenderar att reversa
+
+3. **TrendFollowingAgent** - Identifierar och följer trender
+   - Strategi: Följer etablerade trender via MACD
+   - Trigger: MACD histogram > 1.0 (buy) eller < -1.0 (sell)
+   - Fokus: Långsiktiga trendrörelser
+
+4. **VolatilityAgent** - Drar nytta av hög volatilitet
+   - Strategi: Köper dips och säljer rallies i volatila marknader
+   - Trigger: ATR > 5.0 kombinerat med RSI-lägen
+   - Fokus: Risk-adjusted trading i volatila perioder
+
+5. **BreakoutAgent** - Handlar på tekniska breakouts
+   - Strategi: Identifierar breakouts och breakdowns
+   - Trigger: RSI > 65 + MACD > 0.5 (buy) eller RSI < 35 + MACD < -0.5 (sell)
+   - Fokus: Tekniska breakout-mönster
+
+6. **SwingAgent** - Fångar swing-rörelser (2-5 dagar)
+   - Strategi: Timing av early swings
+   - Trigger: RSI 40-50 + MACD > 0.3 (buy) eller RSI 50-60 + MACD < -0.3 (sell)
+   - Fokus: Medium-term swing trading
+
+7. **ArbitrageAgent** - Söker arbitragemöjligheter
+   - Strategi: Detekterar och handlar på snabba prisändringar
+   - Trigger: Rapid price change > ±2%
+   - Fokus: Mean reversion på kortsiktiga prisavvikelser
+
+8. **SentimentAgent** - Baserat på marknadssentiment
+   - Strategi: Följer analyst recommendations
+   - Trigger: Analyst consensus (BUY, SELL, HOLD)
+   - Fokus: Fundamental och sentiment-analys
+
+### Funktioner
+
+**State Management:**
+- Varje agent hanterar sitt eget kapital (default: $10,000 per agent)
+- Oberoende positions tracking per symbol
+- Performance metrics (win rate, ROI, P&L)
+- Trade history och performance tracking
+
+**Ensemble Voting:**
+- Varje agent genererar vote (BUY/SELL/HOLD) med confidence
+- Votes publiceras till `vote_engine` och `ensemble_coordinator`
+- Agent performance används som viktning i ensemble
+- Automatisk aggregering av votes för final decision
+
+**Integration:**
+- Integrerad i `sim_test.py` simulation loop
+- Automatisk triggering vid market data updates
+- Publicerar state och votes till message_bus
+- Fullständig statistik och monitoring
+
+### Användning
+
+```python
+from modules.specialized_agents import SpecializedAgentsCoordinator
+from modules.message_bus import MessageBus
+
+message_bus = MessageBus()
+
+# Skapa coordinator med alla 8 agenter
+agents = SpecializedAgentsCoordinator(
+    message_bus=message_bus,
+    initial_capital_per_agent=10000.0
+)
+
+# Agenterna lyssnar automatiskt på market_data och indicator_data
+# och publicerar votes till ensemble system
+
+# Hämta aggregerad statistik
+stats = agents.get_aggregated_statistics()
+print(f"Total portfolio value: ${stats['total_portfolio_value']:.2f}")
+print(f"Total trades: {stats['total_trades']}")
+
+# Individual agent performance
+for agent_stat in stats['agent_statistics']:
+    print(f"{agent_stat['agent_id']}: ROI {agent_stat['roi']*100:.2f}%")
+```
+
+### Testning
+
+Omfattande testsvit med 50+ tester täcker:
+- Agent initialization och state management
+- Vote generation för olika marknadsförhållanden
+- Trade execution (buy/sell)
+- Performance tracking (win rate, ROI, P&L)
+- Ensemble integration och voting
+- Message bus integration
+
+```bash
+# Kör agent-tester
+pytest tests/test_specialized_agents.py -v
+
+# Resultat: 50+ tester för alla agenter
+```
+
+### Dashboard Integration
+
+Agentstatistik visas i simulation output:
+- Combined portfolio value för alla agenter
+- Individual agent ROI och win rates
+- Trade counts per agent
+- Real-time performance comparison
+
+### Arkitektur
+
+```
+Market Data → Specialized Agents (8 st)
+    ↓
+Each Agent:
+    - Analyzes indicators
+    - Generates vote (BUY/SELL/HOLD)
+    - Manages own positions & capital
+    ↓
+Votes → Vote Engine → Ensemble Coordinator
+    ↓
+Final Decision (weighted ensemble)
+```
+
+### Performance
+
+Med 8 oberoende agenter:
+- Diversifierad riskspridning
+- Robust decision making via ensemble
+- Olika strategier för olika marknadsförhållanden
+- Självständig state management per agent
+- Transparent performance tracking
 
 ---
 
@@ -701,6 +850,7 @@ http://localhost:8050
 | `stream_ontology_mapper.py` | Datanormalisering från olika källor | Sprint 9 |
 | `decision_transformer_agent.py` | Decision Transformer för sequence-based RL | Sprint 10 |
 | `ensemble_coordinator.py` | Koordinerar 5-agent ensemble (PPO, DQN, DT, GAN, GNN) | Sprint 10 |
+| `specialized_agents.py` | 8 specialized trading agents med oberoende state | Custom |
 | `data_ingestion.py` | WebSocket-dataflöde från Finnhub | Sprint 1 |
 | `data_ingestion_sim.py` | Simulerad marknadsdata för demo-läge | Sprint 1 |
 | `strategy_engine.py` | Genererar tradeförslag baserat på indikatorer | Sprint 1-2 |
