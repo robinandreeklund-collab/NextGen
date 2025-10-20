@@ -5330,7 +5330,7 @@ class NextGenDashboard:
                     avg_gain = sum(gains) / 14 if gains else 0.01
                     avg_loss = sum(losses) / 14 if losses else 0.01
                     rs = avg_gain / avg_loss if avg_loss != 0 else 1.0
-                    rsi = 100 - (100 / (1 + rs)) if rs >= 0 else 50.0
+                    rsi = 100 - (100 / (1 + rs))
                     
                     # 3. MACD (trend strength)
                     sma_12 = sum(prices[-12:]) / 12 if len(prices) >= 12 else current_price
