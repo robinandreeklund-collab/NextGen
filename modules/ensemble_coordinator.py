@@ -112,7 +112,7 @@ class EnsembleCoordinator:
         self.message_bus.subscribe('dqn_action', self._on_dqn_action)
         self.message_bus.subscribe('dt_action', self._on_dt_action)
         self.message_bus.subscribe('gan_candidate', self._on_gan_candidate)
-        self.message_bus.subscribe('gnn_insight', self._on_gnn_insight)
+        self.message_bus.subscribe('gnn_insights', self._on_gnn_insight)
         self.message_bus.subscribe('parameter_adjustment', self._on_parameter_adjustment)
         self.message_bus.subscribe('reward', self._on_reward)
         
