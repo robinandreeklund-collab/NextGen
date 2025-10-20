@@ -277,7 +277,7 @@ dt_analysis_panel:
         - state_embedding_y
         
     ensemble_metrics:
-      topic: ensemble_performance
+      topic: ensemble_metrics
       fields:
         - ppo_accuracy
         - dqn_accuracy
