@@ -178,7 +178,7 @@ class DataIngestion:
         })
     
     def close_streams(self) -> None:
-        """Stänger alla aktiva WebSocket-strömmar."""
+        """Closes all active WebSocket streams."""
         self.running = False
         if self.ws:
             self.ws.close()
