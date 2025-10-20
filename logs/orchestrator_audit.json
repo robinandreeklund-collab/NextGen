@@ -5649,3 +5649,282 @@ ValueError: Sample larger than population or is negative
 2025-10-19 23:11:24,072 - FinnhubOrchestrator - INFO - Orchestrator started
 2025-10-19 23:16:24,204 - FinnhubOrchestrator - INFO - Performing symbol rotation
 2025-10-19 23:16:24,204 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-19 23:20:00,982 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 23:20:00,982 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 23:20:01,170 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 23:20:01,170 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 23:20:01,170 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 23:25:59,675 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-19 23:25:59,675 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-19 23:31:00,209 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-19 23:31:00,210 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-19 23:35:01,708 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 23:35:01,708 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 23:35:02,008 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 23:35:02,008 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 23:35:02,008 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 23:40:02,314 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-19 23:40:02,314 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-19 23:45:02,831 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-19 23:45:02,832 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-19 23:45:25,306 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-19 23:45:25,306 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-19 23:45:25,671 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-19 23:45:25,671 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-19 23:45:25,671 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-19 23:50:26,149 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-19 23:50:26,149 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-19 23:55:26,442 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-19 23:55:26,442 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 00:00:27,126 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 00:00:27,126 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 00:05:27,640 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 00:05:27,640 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 00:10:27,998 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 00:10:28,000 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 00:15:28,084 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 00:15:28,084 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 00:20:28,292 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 00:20:28,292 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 00:25:28,519 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 00:25:28,519 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 00:30:28,844 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 00:30:28,844 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 00:35:02,529 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-20 00:35:02,529 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-20 00:35:02,889 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-20 00:35:02,889 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-20 00:35:02,889 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-20 00:40:03,068 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 00:40:03,068 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 00:45:03,572 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 00:45:03,574 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 00:50:03,963 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 00:50:03,963 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 00:55:04,144 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 00:55:04,144 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 01:00:04,421 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 01:00:04,422 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 01:05:05,359 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 01:05:05,359 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 01:10:06,287 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 01:10:06,287 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 01:15:07,233 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 01:15:07,233 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 01:20:08,187 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 01:20:08,187 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 01:25:09,152 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 01:25:09,152 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 01:30:09,239 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 01:30:09,239 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 01:35:09,353 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 01:35:09,353 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 01:40:09,442 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 01:40:09,442 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 01:45:09,675 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 01:45:09,675 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 01:50:09,850 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 01:50:09,850 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 01:55:09,966 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 01:55:09,966 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 02:00:10,199 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 02:00:10,200 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 02:05:10,433 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 02:05:10,433 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 02:10:10,884 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 02:10:10,884 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 02:15:11,178 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 02:15:11,178 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 02:20:11,422 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 02:20:11,422 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 02:25:11,688 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 02:25:11,688 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 02:30:11,966 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 02:30:11,966 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 02:35:12,369 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 02:35:12,369 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 02:40:12,617 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 02:40:12,617 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 02:45:12,885 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 02:45:12,885 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 02:50:13,173 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 02:50:13,173 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 02:55:13,452 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 02:55:13,452 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 03:00:13,725 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 03:00:13,727 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 03:05:13,937 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 03:05:13,937 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 03:10:14,141 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 03:10:14,141 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 03:15:14,354 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 03:15:14,354 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 03:20:14,587 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 03:20:14,587 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 03:25:14,838 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 03:25:14,838 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 03:30:15,105 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 03:30:15,105 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 03:35:15,367 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 03:35:15,367 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 03:40:15,603 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 03:40:15,603 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 03:45:15,808 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 03:45:15,808 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 03:50:16,028 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 03:50:16,028 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 03:55:16,240 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 03:55:16,240 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 04:00:16,448 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 04:00:16,448 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 04:05:16,752 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 04:05:16,752 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 04:10:16,968 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 04:10:16,968 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 04:15:17,160 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 04:15:17,160 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 04:20:17,403 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 04:20:17,403 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 04:25:17,666 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 04:25:17,666 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 04:30:17,872 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 04:30:17,873 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 04:35:18,111 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 04:35:18,111 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 04:40:18,368 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 04:40:18,368 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 04:45:18,629 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 04:45:18,629 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 04:50:19,118 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 04:50:19,118 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 04:55:19,357 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 04:55:19,357 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 05:00:19,570 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 05:00:19,570 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 05:05:19,807 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 05:05:19,808 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 05:10:20,006 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 05:10:20,006 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 05:15:20,209 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 05:15:20,209 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 05:20:20,404 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 05:20:20,404 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 05:25:20,659 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 05:25:20,659 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 05:30:21,455 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 05:30:21,456 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 05:35:21,682 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 05:35:21,682 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 05:40:21,931 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 05:40:21,932 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 05:45:22,236 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 05:45:22,236 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 05:50:22,429 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 05:50:22,429 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 05:55:22,675 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 05:55:22,675 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 06:00:22,882 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 06:00:22,882 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 06:05:23,126 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 06:05:23,126 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 06:10:23,361 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 06:10:23,361 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 06:15:23,608 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 06:15:23,608 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 06:20:23,821 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 06:20:23,821 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 06:25:24,244 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 06:25:24,245 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 06:30:24,529 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 06:30:24,529 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 06:35:24,763 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 06:35:24,763 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 06:40:24,959 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 06:40:24,959 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 06:45:25,204 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 06:45:25,204 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 06:50:25,344 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 06:50:25,344 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 06:55:25,351 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 06:55:25,351 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 07:00:25,437 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 07:00:25,437 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 07:05:26,392 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 07:05:26,392 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 07:10:27,382 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 07:10:27,382 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 07:15:27,548 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 07:15:27,548 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 07:20:28,546 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 07:20:28,546 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 07:25:29,510 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 07:25:29,510 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 07:30:29,758 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 07:30:29,758 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 07:35:30,038 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 07:35:30,038 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 07:40:30,398 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 07:40:30,399 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 07:45:30,678 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 07:45:30,678 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 07:50:31,026 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 07:50:31,026 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 07:55:31,419 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 07:55:31,419 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 07:58:16,145 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-20 07:58:16,145 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-20 07:58:16,312 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-20 07:58:16,312 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-20 07:58:16,312 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-20 08:03:17,210 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 08:03:17,210 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 08:08:17,467 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 08:08:17,467 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 08:13:18,453 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 08:13:18,453 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 08:18:18,508 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 08:18:18,508 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 08:23:19,482 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 08:23:19,482 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 08:28:20,426 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 08:28:20,426 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 08:33:21,374 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 08:33:21,374 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 08:38:22,323 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 08:38:22,323 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 08:42:14,547 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-20 08:42:14,547 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-20 08:42:14,730 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-20 08:42:14,730 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-20 08:42:14,731 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-20 08:47:14,912 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 08:47:14,912 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 08:52:15,390 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 08:52:15,391 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 08:57:15,520 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 08:57:15,520 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 09:02:15,726 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 09:02:15,726 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 09:07:16,189 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 09:07:16,189 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 09:12:16,379 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 09:12:16,379 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 09:13:28,381 - FinnhubOrchestrator - INFO - All submodules initialized
+2025-10-20 09:13:28,381 - FinnhubOrchestrator - INFO - FinnhubOrchestrator initialized (live_mode=False)
+2025-10-20 09:13:28,577 - FinnhubOrchestrator - INFO - Initialized priorities for 49 symbols
+2025-10-20 09:13:28,577 - FinnhubOrchestrator - INFO - Starting with 49 active symbols (limit: 50)
+2025-10-20 09:13:28,577 - FinnhubOrchestrator - INFO - Orchestrator started
+2025-10-20 09:18:29,565 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 09:18:29,565 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 09:23:30,488 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 09:23:30,489 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 09:28:31,442 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 09:28:31,443 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 09:33:32,397 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 09:33:32,397 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 09:38:33,386 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 09:38:33,386 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 09:43:33,437 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 09:43:33,437 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
+2025-10-20 09:48:34,380 - FinnhubOrchestrator - INFO - Performing symbol rotation
+2025-10-20 09:48:34,380 - FinnhubOrchestrator - INFO - Rotation completed: 49 active symbols
