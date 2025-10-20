@@ -95,26 +95,77 @@ adaptive_parameters_sprint8:
       default: 32
       description: Input dimension för node features
       
+  dt_parameters:
+    dt_learning_rate:
+      range: [0.00001, 0.001]
+      default: 0.0001
+      description: Learning rate för Decision Transformer optimizer
+      
+    dt_sequence_length:
+      range: [10, 50]
+      default: 20
+      description: Sequence length för temporal modeling
+      
+    dt_num_layers:
+      range: [2, 6]
+      default: 3
+      description: Antal transformer layers
+      
+    dt_target_return_weight:
+      range: [0.5, 2.0]
+      default: 1.0
+      description: Weight för target return influence
+      
+    dt_embed_dim:
+      range: [64, 256]
+      default: 128
+      description: Embedding dimension för transformer
+      
+    dt_num_heads:
+      range: [2, 8]
+      default: 4
+      description: Antal attention heads
+      
+    dt_dropout:
+      range: [0.0, 0.3]
+      default: 0.1
+      description: Dropout rate för regularization
+      
   hybrid_rl_parameters:
     ppo_weight:
       range: [0.0, 1.0]
-      default: 0.5
+      default: 0.3
       description: Vikt för PPO i hybrid decisions
       
     dqn_weight:
       range: [0.0, 1.0]
-      default: 0.5
+      default: 0.3
       description: Vikt för DQN i hybrid decisions
+      
+    dt_weight:
+      range: [0.0, 1.0]
+      default: 0.2
+      description: Vikt för DT i hybrid decisions
+      
+    gan_weight:
+      range: [0.0, 1.0]
+      default: 0.1
+      description: Vikt för GAN i hybrid decisions
+      
+    gnn_weight:
+      range: [0.0, 1.0]
+      default: 0.1
+      description: Vikt för GNN i hybrid decisions
       
     conflict_resolution_strategy:
       options: [weighted, consensus, best_performer, random]
       default: weighted
-      description: Strategi för att lösa PPO/DQN konflikter
+      description: Strategi för att lösa konflikter mellan agenter
       
     reward_split_strategy:
       options: [equal, performance_based, adaptive]
       default: equal
-      description: Hur rewards fördelas mellan PPO och DQN
+      description: Hur rewards fördelas mellan agenter
 
 parameter_groups:
   reinforcement_learning:
@@ -122,6 +173,9 @@ parameter_groups:
     - dqn_parameters.discount_factor
     - dqn_parameters.epsilon
     - dqn_parameters.epsilon_decay
+    - dt_parameters.dt_learning_rate
+    - dt_parameters.dt_sequence_length
+    - dt_parameters.dt_target_return_weight
     
   generative_models:
     - gan_parameters.generator_lr
@@ -135,9 +189,18 @@ parameter_groups:
     - gnn_parameters.attention_heads
     - gnn_parameters.temporal_window
     
+  transformer_models:
+    - dt_parameters.dt_num_layers
+    - dt_parameters.dt_embed_dim
+    - dt_parameters.dt_num_heads
+    - dt_parameters.dt_dropout
+    
   hybrid_control:
     - hybrid_rl_parameters.ppo_weight
     - hybrid_rl_parameters.dqn_weight
+    - hybrid_rl_parameters.dt_weight
+    - hybrid_rl_parameters.gan_weight
+    - hybrid_rl_parameters.gnn_weight
     - hybrid_rl_parameters.conflict_resolution_strategy
 
 adaptation_strategy:
@@ -152,26 +215,36 @@ adaptation_strategy:
     
   constraints:
     - epsilon >= epsilon_min
-    - ppo_weight + dqn_weight = 1.0
+    - ppo_weight + dqn_weight + dt_weight + gan_weight + gnn_weight = 1.0
     - replay_buffer_size > batch_size * 10
     - temporal_window >= num_decision_lookback
+    - dt_sequence_length <= buffer_size
     
 integration_points:
   with_reward_tuner:
     - DQN receives tuned_reward from reward_tuner
+    - DT receives tuned_reward from reward_tuner
     - GAN uses performance data influenced by reward_tuner
     
   with_meta_agent_evolution:
     - GAN candidates feed into meta_agent_evolution_engine
     - Evolution engine selects best GAN candidates
+    - DT participates in agent evolution ensemble
+    
+  with_strategic_memory:
+    - DT uses decision sequences from strategic_memory_engine
+    - Memory provides state-action-reward trajectories
+    - Return-to-go calculated from historical rewards
     
   with_timespan_tracker:
     - GNN integrates with timespan_tracker for temporal analysis
     - Timeline data feeds GNN graph construction
+    - DT uses temporal patterns from timespan analysis
     
   with_consensus_engine:
     - Hybrid RL conflicts resolved via consensus_engine
-    - Vote engine handles PPO vs DQN disagreements
+    - Vote engine handles PPO vs DQN vs DT disagreements
+    - 5-agent ensemble voting (PPO, DQN, DT, GAN, GNN)
 
 monitoring:
   dqn_metrics:
@@ -180,6 +253,14 @@ monitoring:
     - avg_loss
     - buffer_size
     - q_value_trends
+    
+  dt_metrics:
+    - training_steps
+    - avg_loss
+    - sequence_length
+    - target_return
+    - attention_weights
+    - prediction_confidence
     
   gan_metrics:
     - g_loss
@@ -195,7 +276,8 @@ monitoring:
     - graph_size
     
   hybrid_metrics:
-    - ppo_dqn_agreement_rate
+    - agent_agreement_rate
     - conflict_frequency
     - combined_performance
     - individual_contributions
+    - ensemble_diversity
