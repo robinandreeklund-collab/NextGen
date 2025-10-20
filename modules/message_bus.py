@@ -26,7 +26,7 @@ Används av Sprint: 1, 2, 3, 4, 5, 6, 7
 """
 
 from typing import Dict, List, Callable, Any
-from collections import defaultdict
+from collections import defaultdict, deque
 
 
 class MessageBus:
@@ -35,7 +35,8 @@ class MessageBus:
     def __init__(self):
         """Initialiserar meddelandebussen med tomma prenumerationslistor."""
         self.subscribers: Dict[str, List[Callable]] = defaultdict(list)
-        self.message_log: List[Dict[str, Any]] = []
+        # Use deque with maxlen for efficient memory management
+        self.message_log: deque = deque(maxlen=10000)
     
     def subscribe(self, topic: str, callback: Callable) -> None:
         """
@@ -61,10 +62,8 @@ class MessageBus:
             'message': message
         })
         
-        # Limit message log to prevent memory leak (keep last 10000)
-        # With websocket: 100+ messages/sec → log grows to 360k/hour without limit
-        if len(self.message_log) > 10000:
-            self.message_log = self.message_log[-10000:]
+        # Deque automatically maintains size limit of 10000
+        # No manual cleanup needed - more efficient than list slicing
         
         # Distribuera till alla prenumeranter
         for callback in self.subscribers.get(topic, []):

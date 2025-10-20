@@ -1,0 +1,160 @@
+# 8 Trading Agents Architecture Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          Market Data Flow                                    │
+│                                                                              │
+│  Market Data (Finnhub/Sim) → Message Bus → Indicator Registry              │
+│                                    ↓                                         │
+│                          indicator_data + market_data                        │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    8 Specialized Trading Agents                              │
+│                    (via SpecializedAgentsCoordinator)                        │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌────────────────────┐  ┌────────────────────┐  ┌────────────────────┐   │
+│  │ 1. MomentumAgent   │  │ 2. MeanReversion   │  │ 3. TrendFollowing  │   │
+│  │                    │  │    Agent           │  │    Agent           │   │
+│  │ Strategy: RSI      │  │ Strategy: RSI      │  │ Strategy: MACD     │   │
+│  │ momentum           │  │ extremes           │  │ histogram          │   │
+│  │                    │  │                    │  │                    │   │
+│  │ State:             │  │ State:             │  │ State:             │   │
+│  │ • Capital: $10k    │  │ • Capital: $10k    │  │ • Capital: $10k    │   │
+│  │ • Positions: {...} │  │ • Positions: {...} │  │ • Positions: {...} │   │
+│  │ • P&L: $xyz        │  │ • P&L: $xyz        │  │ • P&L: $xyz        │   │
+│  └────────────────────┘  └────────────────────┘  └────────────────────┘   │
+│           ↓                       ↓                       ↓                 │
+│        VOTE: BUY              VOTE: SELL             VOTE: BUY              │
+│                                                                              │
+│  ┌────────────────────┐  ┌────────────────────┐  ┌────────────────────┐   │
+│  │ 4. VolatilityAgent │  │ 5. BreakoutAgent   │  │ 6. SwingAgent      │   │
+│  │                    │  │                    │  │                    │   │
+│  │ Strategy: ATR +    │  │ Strategy: RSI +    │  │ Strategy: RSI +    │   │
+│  │ RSI                │  │ MACD combo         │  │ MACD timing        │   │
+│  │                    │  │                    │  │                    │   │
+│  │ State:             │  │ State:             │  │ State:             │   │
+│  │ • Capital: $10k    │  │ • Capital: $10k    │  │ • Capital: $10k    │   │
+│  │ • Positions: {...} │  │ • Positions: {...} │  │ • Positions: {...} │   │
+│  │ • P&L: $xyz        │  │ • P&L: $xyz        │  │ • P&L: $xyz        │   │
+│  └────────────────────┘  └────────────────────┘  └────────────────────┘   │
+│           ↓                       ↓                       ↓                 │
+│        VOTE: HOLD             VOTE: BUY              VOTE: HOLD             │
+│                                                                              │
+│  ┌────────────────────┐  ┌────────────────────┐                            │
+│  │ 7. ArbitrageAgent  │  │ 8. SentimentAgent  │                            │
+│  │                    │  │                    │                            │
+│  │ Strategy: Rapid    │  │ Strategy: Analyst  │                            │
+│  │ price changes      │  │ consensus          │                            │
+│  │                    │  │                    │                            │
+│  │ State:             │  │ State:             │                            │
+│  │ • Capital: $10k    │  │ • Capital: $10k    │                            │
+│  │ • Positions: {...} │  │ • Positions: {...} │                            │
+│  │ • P&L: $xyz        │  │ • P&L: $xyz        │                            │
+│  └────────────────────┘  └────────────────────┘                            │
+│           ↓                       ↓                                         │
+│        VOTE: HOLD             VOTE: HOLD                                    │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    ↓
+                    All votes published to message_bus
+                                    ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         Ensemble Voting System                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌──────────────────┐                                                       │
+│  │  Vote Engine     │  Collects all votes                                   │
+│  │                  │  Creates vote matrix                                   │
+│  │  Votes: 8        │  Weights by agent_performance                          │
+│  │  BUY: 3          │                                                        │
+│  │  SELL: 1         │                                                        │
+│  │  HOLD: 4         │                                                        │
+│  └────────┬─────────┘                                                       │
+│           │                                                                  │
+│           ↓                                                                  │
+│  ┌──────────────────────────────────────────────────────────────────────┐  │
+│  │  Ensemble Coordinator                                                 │  │
+│  │                                                                       │  │
+│  │  Weighted Average:                                                    │  │
+│  │  • BUY votes: 3 × weighted_confidence = 0.45                          │  │
+│  │  • SELL votes: 1 × weighted_confidence = 0.15                         │  │
+│  │  • HOLD votes: 4 × weighted_confidence = 0.40                         │  │
+│  │                                                                       │  │
+│  │  Final Decision: BUY (confidence: 0.45)                               │  │
+│  └───────────────────────────────────────────────────────────────────────┘  │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    ↓
+                          ensemble_decision published
+                                    ↓
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    Decision Engine & Execution                               │
+│                                                                              │
+│  Final ensemble decision combined with:                                     │
+│  • Risk Manager adjustments                                                 │
+│  • Portfolio Manager constraints                                            │
+│  • Strategic Memory insights                                                │
+│                                                                              │
+│  → Execution Engine → Portfolio Manager → Reward System                     │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+
+Key Features:
+═════════════
+
+✓ Independent State Management
+  - Each agent maintains own capital, positions, P&L
+  - No shared state between agents
+  - Isolated risk per agent
+
+✓ Diverse Strategies
+  - 8 distinct trading approaches
+  - Different indicators and signals
+  - Coverage of multiple market conditions
+
+✓ Ensemble Voting
+  - Democratic decision making
+  - Performance-weighted votes
+  - Conflict resolution via majority
+
+✓ Message Bus Integration
+  - Subscribe to market_data, indicator_data
+  - Publish decision_vote, agent_state
+  - Async, non-blocking communication
+
+✓ Performance Tracking
+  - Win rate per agent
+  - ROI calculation
+  - Trade history
+  - P&L tracking
+
+✓ Scalability
+  - Easy to add new agents
+  - Configurable capital per agent
+  - Cooldown mechanism to prevent spam
+
+
+Example Vote Flow:
+═══════════════════
+
+1. Market data published: AAPL @ $150.00, RSI=68, MACD=1.5
+2. All 8 agents analyze independently:
+   - MomentumAgent: BUY (RSI > 60)
+   - MeanReversionAgent: SELL (RSI > 70? No, wait for extreme)
+   - TrendFollowingAgent: BUY (MACD > 1.0)
+   - VolatilityAgent: HOLD (ATR not high enough)
+   - BreakoutAgent: BUY (RSI + MACD combo)
+   - SwingAgent: HOLD (waiting for better entry)
+   - ArbitrageAgent: HOLD (no rapid change)
+   - SentimentAgent: HOLD (neutral consensus)
+
+3. Votes aggregated:
+   - BUY: 3 votes (avg confidence 0.75)
+   - SELL: 0 votes
+   - HOLD: 5 votes (avg confidence 0.50)
+
+4. Weighted ensemble: BUY wins (higher confidence)
+5. Decision published to execution pipeline
+```

@@ -160,6 +160,10 @@ class PPOAgent:
         # Lägg till reward i episodhistorik
         self.episode_rewards.append(reward)
         
+        # Limit episode_rewards to prevent memory leak (keep last 1000)
+        if len(self.episode_rewards) > 1000:
+            self.episode_rewards = self.episode_rewards[-1000:]
+        
         # Increment episode counter every 10 steps (approximate episode length)
         if self.training_steps % 10 == 0:
             self.episodes += 1

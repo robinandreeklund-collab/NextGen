@@ -51,6 +51,7 @@ from modules.system_monitor import SystemMonitor  # Sprint 6
 from modules.dqn_controller import DQNController  # Sprint 8
 from modules.gan_evolution_engine import GANEvolutionEngine  # Sprint 8
 from modules.gnn_timespan_analyzer import GNNTimespanAnalyzer  # Sprint 8
+from modules.specialized_agents import SpecializedAgentsCoordinator  # 8 Trading Agents
 
 
 class SimulatedTester:
@@ -115,6 +116,10 @@ class SimulatedTester:
         self.dqn_metrics_history = []
         self.gan_candidates_history = []
         self.gnn_patterns_history = []
+        
+        # 8 Trading Agents: Spåra agent statistik
+        self.agent_votes_history = []
+        self.agent_states_history = []
     
     def setup_modules(self) -> None:
         """Initialiserar alla Sprint 1-6 moduler."""
@@ -177,6 +182,12 @@ class SimulatedTester:
         self.gan_evolution = GANEvolutionEngine(self.message_bus, latent_dim=64, param_dim=16)
         self.gnn_analyzer = GNNTimespanAnalyzer(self.message_bus, input_dim=32, temporal_window=20)
         
+        # 8 Trading Agents module
+        self.specialized_agents = SpecializedAgentsCoordinator(
+            self.message_bus, 
+            initial_capital_per_agent=1000.0
+        )
+        
         # Sprint 4.3: Prenumerera på parameter_adjustment
         self.message_bus.subscribe('parameter_adjustment', self._on_parameter_adjustment)
         
@@ -192,7 +203,10 @@ class SimulatedTester:
         self.message_bus.subscribe('gan_candidates', self._on_gan_candidates)
         self.message_bus.subscribe('gnn_analysis_response', self._on_gnn_analysis)
         
-        print("✅ Alla moduler initialiserade (inkl. Sprint 8: DQN, GAN, GNN)")
+        # 8 Trading Agents: Prenumerera på agent events
+        self.message_bus.subscribe('agent_state', self._on_agent_state)
+        
+        print("✅ Alla moduler initialiserade (inkl. Sprint 8: DQN, GAN, GNN + 8 Trading Agents)")
     
     def _on_parameter_adjustment(self, adjustment: Dict[str, Any]) -> None:
         """
@@ -300,6 +314,20 @@ class SimulatedTester:
         # Behåll senaste 50
         if len(self.gnn_patterns_history) > 50:
             self.gnn_patterns_history = self.gnn_patterns_history[-50:]
+    
+    def _on_agent_state(self, state: Dict[str, Any]) -> None:
+        """
+        Callback för agent state (8 Trading Agents).
+        Loggar agenternas tillstånd.
+        """
+        self.agent_states_history.append({
+            'timestamp': time.time(),
+            'state': state
+        })
+        
+        # Behåll senaste 100 (8 agents * ~10 states each)
+        if len(self.agent_states_history) > 100:
+            self.agent_states_history = self.agent_states_history[-100:]
     
     def generate_aggressive_price_movement(self, symbol: str) -> float:
         """
@@ -1009,6 +1037,40 @@ class SimulatedTester:
         print(f"   DQN training steps: {dqn_metrics['training_steps']}")
         print(f"   DQN epsilon: {dqn_metrics['epsilon']:.4f}")
         print(f"   Parallel execution: Active")
+        
+        print(f"{'='*90}\n")
+        
+        # 8 Trading Agents Section
+        print(f"\n{'='*90}")
+        print(f"🎯 8 SPECIALIZED TRADING AGENTS")
+        print(f"{'='*90}")
+        
+        # Get aggregated statistics
+        agents_stats = self.specialized_agents.get_aggregated_statistics()
+        print(f"\n📊 Aggregated Agent Statistics:")
+        print(f"   Total agents: {agents_stats['num_agents']}")
+        print(f"   Combined capital: ${agents_stats['total_capital']:.2f}")
+        print(f"   Combined portfolio value: ${agents_stats['total_portfolio_value']:.2f}")
+        print(f"   Combined trades: {agents_stats['total_trades']}")
+        
+        # Individual agent performance
+        print(f"\n🤖 Individual Agent Performance:")
+        for agent_stat in agents_stats['agent_statistics']:
+            agent_id = agent_stat['agent_id']
+            pv = agent_stat['portfolio_value']
+            capital = agent_stat['capital']
+            roi = agent_stat['roi']
+            trades = agent_stat['total_trades']
+            win_rate = agent_stat['win_rate']
+            
+            # Emoji based on performance
+            perf_emoji = "🟢" if roi > 0 else "🔴" if roi < 0 else "⚪"
+            
+            print(f"   {perf_emoji} {agent_id:25s}: "
+                  f"Value: ${pv:8.2f} | "
+                  f"ROI: {roi*100:+6.2f}% | "
+                  f"Trades: {trades:3d} | "
+                  f"Win Rate: {win_rate*100:5.1f}%")
         
         print(f"{'='*90}\n")
     

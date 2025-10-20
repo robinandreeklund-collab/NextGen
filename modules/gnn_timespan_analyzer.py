@@ -139,6 +139,11 @@ class GNNTimespanAnalyzer:
         # Keep only recent history
         if len(self.decision_history) > self.temporal_window:
             self.decision_history = self.decision_history[-self.temporal_window:]
+        
+        # Clear old detected patterns to prevent memory leak (keep last 100 per type)
+        for pattern_type in list(self.detected_patterns.keys()):
+            if len(self.detected_patterns[pattern_type]) > 100:
+                self.detected_patterns[pattern_type] = self.detected_patterns[pattern_type][-100:]
             
     def _handle_indicator(self, data: Dict[str, Any]):
         """Handle indicator data"""

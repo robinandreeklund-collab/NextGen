@@ -65,6 +65,7 @@ from modules.gnn_timespan_analyzer import GNNTimespanAnalyzer
 from modules.finnhub_orchestrator import FinnhubOrchestrator
 from modules.decision_transformer_agent import DecisionTransformerAgent
 from modules.ensemble_coordinator import EnsembleCoordinator
+from modules.specialized_agents import SpecializedAgentsCoordinator
 import numpy as np
 
 
@@ -179,6 +180,12 @@ class NextGenDashboard:
             'ensemble_confidence': [],
             'conflict_count': []
         }
+        self.specialized_agents_history = {
+            'votes': [],           # Track votes from 8 agents
+            'performance': [],     # Track performance metrics
+            'statistics': []       # Track aggregated statistics
+        }
+        self.agent_votes_history = []  # Track ALL decision_vote messages for voting matrix
         self.conflict_history = []
         self.decision_history = []
         self.execution_history = []  # Track all executed trades
@@ -279,8 +286,15 @@ class NextGenDashboard:
             gnn_weight=0.1
         )
         
+        # 8 Specialized Trading Agents
+        self.specialized_agents = SpecializedAgentsCoordinator(
+            message_bus=self.message_bus,
+            initial_capital_per_agent=1000.0
+        )
+        
         print("✅ Decision Transformer agent initialized")
         print("✅ Ensemble coordinator initialized (5 agents)")
+        print("✅ 8 Specialized Trading Agents initialized")
         
         # Track orchestrator metrics
         self.orchestrator_metrics = {
@@ -301,6 +315,10 @@ class NextGenDashboard:
         self.message_bus.subscribe('dt_metrics', self._handle_dt_metrics)
         self.message_bus.subscribe('ensemble_decision', self._handle_ensemble_decision)
         self.message_bus.subscribe('ensemble_metrics', self._handle_ensemble_metrics)
+        
+        # Subscribe to specialized agents events
+        self.message_bus.subscribe('agent_state', self._handle_agent_state)
+        self.message_bus.subscribe('decision_vote', self._handle_decision_vote)
         
         print("✅ Message bus subscriptions configured")
         
@@ -366,6 +384,9 @@ class NextGenDashboard:
     def _handle_replay_event(self, event: Dict[str, Any]):
         """Handle replay events."""
         self.orchestrator_metrics['replay_events'].append(event)
+        # Keep only last 50 events to prevent memory leak
+        if len(self.orchestrator_metrics['replay_events']) > 50:
+            self.orchestrator_metrics['replay_events'].pop(0)
     
     def _handle_dt_action(self, action: Dict[str, Any]):
         """Handle Decision Transformer action updates."""
@@ -422,6 +443,36 @@ class NextGenDashboard:
         for key in ['ppo_accuracy', 'dqn_accuracy', 'dt_accuracy', 'conflict_count']:
             if len(self.ensemble_metrics_history[key]) > 100:
                 self.ensemble_metrics_history[key].pop(0)
+    
+    def _handle_agent_state(self, state: Dict[str, Any]):
+        """Handle specialized agent state updates."""
+        # Track performance of individual specialized agents
+        self.specialized_agents_history['performance'].append({
+            'timestamp': datetime.now().timestamp(),
+            'agent_id': state.get('agent_id'),
+            'portfolio_value': state.get('portfolio_value'),
+            'roi': state.get('roi'),
+            'win_rate': state.get('win_rate'),
+            'total_trades': state.get('total_trades')
+        })
+        # Keep last 200 entries (8 agents * ~25 samples)
+        if len(self.specialized_agents_history['performance']) > 200:
+            self.specialized_agents_history['performance'].pop(0)
+    
+    def _handle_decision_vote(self, vote: Dict[str, Any]):
+        """Handle decision vote from any agent (including specialized agents)."""
+        # Track all votes for voting matrix display
+        self.agent_votes_history.append({
+            'timestamp': datetime.now().timestamp(),
+            'agent_id': vote.get('agent_id', 'unknown'),
+            'symbol': vote.get('symbol', 'unknown'),
+            'action': vote.get('action', 'HOLD'),
+            'confidence': vote.get('confidence', 0.5),
+            'reasoning': vote.get('reasoning', '')
+        })
+        # Keep last 200 votes to prevent memory leak (25 votes per agent * 8 agents)
+        if len(self.agent_votes_history) > 200:
+            self.agent_votes_history.pop(0)
     
     
     def setup_layout(self) -> None:
@@ -3920,46 +3971,63 @@ class NextGenDashboard:
         """Create Decision & Consensus panel with real-time voting calculations."""
         # Get consensus data from consensus_engine
         try:
-            # Expanded agent list with specialized agents + DT (11 agents total)
-            agents = ['PPO', 'DQN', 'DT', 'Conservative', 'Aggressive', 'Momentum', 
-                     'Mean Reversion', 'Contrarian', 'Volatility', 'Volume', 'Tech Pattern']
+            # Expanded agent list with 8 specialized agents + core RL agents (11 agents total)
+            agents = ['PPO', 'DQN', 'DT', 'Momentum', 'MeanRev', 'Trend', 
+                     'Volatility', 'Breakout', 'Swing', 'Arbitrage', 'Sentiment']
             # Expanded decisions with position sizing
             decisions = ['BUY_SMALL', 'BUY_MED', 'BUY_LARGE', 'SELL_PART', 'SELL_ALL', 'HOLD', 'REBAL']
             
-            # Calculate voting matrix - hybrid approach:
-            # - Use REAL decision history for core agents (PPO, DQN, DT)
-            # - Use simulated votes for specialized agents to show activity
+            # Map display names to agent IDs for specialized agents
+            agent_id_map = {
+                'PPO': 'PPO',
+                'DQN': 'DQN',
+                'DT': 'DT',
+                'Momentum': 'momentum_agent',
+                'MeanRev': 'mean_reversion_agent',
+                'Trend': 'trend_following_agent',
+                'Volatility': 'volatility_agent',
+                'Breakout': 'breakout_agent',
+                'Swing': 'swing_agent',
+                'Arbitrage': 'arbitrage_agent',
+                'Sentiment': 'sentiment_agent'
+            }
+            
+            # Calculate voting matrix using REAL vote data from agent_votes_history
             voting_data = []
             recent_decisions = self.decision_history[-50:] if len(self.decision_history) >= 50 else self.decision_history
-            core_agents = ['PPO', 'DQN', 'DT']
+            recent_votes = self.agent_votes_history[-200:] if len(self.agent_votes_history) > 0 else []
             
-            for agent in agents:
+            for agent_display_name in agents:
                 # Count how many times this agent voted for each decision type
                 votes = []
-                
-                # Check if this is a core agent with real decision data
-                is_core_agent = agent in core_agents
-                agent_has_data = any(agent in dec.get('agent', '') for dec in recent_decisions)
+                agent_id = agent_id_map.get(agent_display_name, agent_display_name)
                 
                 for decision_type in decisions:
-                    if is_core_agent or agent_has_data:
-                        # Use real decision history for core agents or agents with data
-                        decision_base = decision_type.split('_')[0] if '_' in decision_type else decision_type
+                    decision_base = decision_type.split('_')[0] if '_' in decision_type else decision_type
+                    
+                    # Count votes from agent_votes_history
+                    vote_count = 0
+                    for vote in recent_votes:
+                        vote_agent_id = vote.get('agent_id', '')
+                        vote_action = vote.get('action', '')
                         
-                        vote_count = 0
+                        # Match agent
+                        if agent_id in vote_agent_id or vote_agent_id in agent_id:
+                            # Match action
+                            if decision_type in vote_action or decision_base in vote_action or vote_action == decision_base:
+                                vote_count += 1
+                    
+                    # For core agents (PPO, DQN, DT), also check decision_history as fallback
+                    if agent_display_name in ['PPO', 'DQN', 'DT'] and vote_count == 0:
                         for dec in recent_decisions:
                             dec_agent = dec.get('agent', '')
                             dec_action = dec.get('action', '')
                             
-                            if agent in dec_agent:
+                            if agent_display_name in dec_agent:
                                 if decision_type in dec_action or decision_base in dec_action:
                                     vote_count += 1
-                        
-                        votes.append(vote_count)
-                    else:
-                        # Simulate votes for specialized agents to show they're "active"
-                        # Use smaller random values to indicate lower activity
-                        votes.append(random.randint(0, 5))
+                    
+                    votes.append(vote_count)
                 
                 voting_data.append(votes)
             
@@ -5276,6 +5344,37 @@ class NextGenDashboard:
                         'timestamp': datetime.now().timestamp()
                     })
                     
+                    # 8 Specialized Trading Agents - Trigger analysis and voting
+                    # The agents automatically subscribe to market_data, but we manually trigger here
+                    # to ensure they analyze the current symbol with up-to-date indicators
+                    for agent in self.specialized_agents.agents:
+                        # Update agent's indicator data for this symbol
+                        agent.indicator_data[selected_symbol] = {
+                            'technical': {
+                                'RSI': rsi,
+                                'MACD': {'histogram': macd},
+                                'ATR': atr
+                            },
+                            'fundamental': {
+                                'AnalystRatings': {'consensus': 'HOLD'}  # Default, could be enhanced
+                            }
+                        }
+                        agent.market_data[selected_symbol] = {'price': current_price}
+                    
+                    # Trigger voting from all 8 agents
+                    self.specialized_agents.analyze_and_vote_all(selected_symbol)
+                    
+                    # Track specialized agents statistics
+                    agent_stats = self.specialized_agents.get_aggregated_statistics()
+                    self.specialized_agents_history['statistics'].append({
+                        'timestamp': datetime.now().timestamp(),
+                        'total_portfolio_value': agent_stats['total_portfolio_value'],
+                        'total_trades': agent_stats['total_trades'],
+                        'num_agents': agent_stats['num_agents']
+                    })
+                    if len(self.specialized_agents_history['statistics']) > 100:
+                        self.specialized_agents_history['statistics'].pop(0)
+                    
                     # Expanded action map with position sizing (7 actions)
                     action_map_full = ['BUY_SMALL', 'BUY_MEDIUM', 'BUY_LARGE', 'SELL_PARTIAL', 'SELL_ALL', 'HOLD', 'REBALANCE']
                     # PPO and DT use 3 actions (for backward compatibility)
@@ -5483,8 +5582,9 @@ class NextGenDashboard:
                     portfolio_value_after = self.portfolio_manager.get_portfolio_value(self.current_prices)
                     
                     # Calculate reward based on actual P/L for this symbol
+                    # IMPORTANT: All agents must use the SAME reward logic for consistent training!
                     # For SELL: reward is the actual profit/loss from the trade
-                    # For BUY: reward is negative (cost of buying)
+                    # For BUY: reward is portfolio value change (NOT negative cost!)
                     # For HOLD/REBALANCE: reward is portfolio value change
                     reward = 0.0
                     if final_action in ['SELL', 'SELL_PARTIAL', 'SELL_ALL']:
@@ -5510,10 +5610,11 @@ class NextGenDashboard:
                                 fee = revenue * 0.0025
                                 net_profit = revenue - cost_basis - fee
                                 reward = net_profit
-                    elif final_action == 'BUY':
-                        # For BUY, reward is negative (money spent)
-                        if execution_result and execution_result.get('success'):
-                            reward = -execution_result.get('total_cost', 0)
+                    elif final_action in ['BUY', 'BUY_SMALL', 'BUY_MEDIUM', 'BUY_LARGE']:
+                        # For BUY, reward is portfolio value change (NOT negative cost!)
+                        # Using negative cost would train agents to never buy
+                        # All agents (PPO, DQN, DT, Ensemble) must use the same logic
+                        reward = portfolio_value_after - portfolio_value
                     elif final_action in ['HOLD', 'REBALANCE']:
                         # For HOLD/REBALANCE, reward is portfolio value change
                         reward = portfolio_value_after - portfolio_value

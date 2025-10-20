@@ -433,7 +433,9 @@ class DecisionTransformerAgent:
         self.current_sequence = {
             'states': [],
             'actions': [],
-            'rewards': []
+            'rewards': [],
+            'returns_to_go': [],
+            'timesteps': []
         }
         
         # Increment episode count
