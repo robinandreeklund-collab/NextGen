@@ -5120,20 +5120,31 @@ class NextGenDashboard:
             # Start orchestrator
             self.orchestrator.start()
             
-            # Update simulation symbols from orchestrator (demo mode only)
-            if not self.live_mode and hasattr(self, 'data_ingestion'):
-                orch_symbols = getattr(self.orchestrator, 'active_symbols', [])
-                if orch_symbols and len(orch_symbols) > 0:
-                    self.symbols = orch_symbols
+            # Update symbols from orchestrator after it starts (works in both demo and live mode)
+            orch_symbols = getattr(self.orchestrator, 'active_symbols', [])
+            if orch_symbols and len(orch_symbols) > 0:
+                self.symbols = orch_symbols
+                # Initialize price/volume history for orchestrator symbols
+                for symbol in orch_symbols:
+                    if symbol not in self.price_history:
+                        self.price_history[symbol] = []
+                    if symbol not in self.volume_history:
+                        self.volume_history[symbol] = []
+                    # Initialize price tracking if needed
+                    if symbol not in self.base_prices:
+                        self.base_prices[symbol] = 100.0 + random.uniform(-20, 20)
+                    if symbol not in self.current_prices:
+                        self.current_prices[symbol] = self.base_prices[symbol]
+                    if symbol not in self.price_trends:
+                        self.price_trends[symbol] = 0.0
+                
+                mode_str = "live" if self.live_mode else "demo"
+                print(f"📊 Synchronized {mode_str} mode with orchestrator: {len(orch_symbols)} active symbols")
+                
+                # Update data ingestion in demo mode
+                if not self.live_mode and hasattr(self, 'data_ingestion'):
                     if hasattr(self.data_ingestion, 'update_symbols'):
                         self.data_ingestion.update_symbols(orch_symbols)
-                    # Initialize price/volume history for orchestrator symbols
-                    for symbol in orch_symbols:
-                        if symbol not in self.price_history:
-                            self.price_history[symbol] = []
-                        if symbol not in self.volume_history:
-                            self.volume_history[symbol] = []
-                    print(f"📊 Synchronized simulation with orchestrator: {len(orch_symbols)} active symbols")
             
             self.simulation_thread = threading.Thread(target=self.simulation_loop, daemon=True)
             self.simulation_thread.start()
@@ -5185,7 +5196,7 @@ class NextGenDashboard:
                 
                 # Simulate volume (in real system, this would come from market data)
                 # Volume varies with price volatility
-                if len(self.price_history[symbol]) >= 2:
+                if len(self.price_history[symbol]) >= 2 and self.price_history[symbol][-2] != 0:
                     price_change_pct = abs((price - self.price_history[symbol][-2]) / self.price_history[symbol][-2])
                     base_volume = 100000
                     volume = base_volume * (1 + price_change_pct * 10) * random.uniform(0.8, 1.2)
@@ -5232,7 +5243,7 @@ class NextGenDashboard:
                     portfolio_value = self.portfolio_manager.get_portfolio_value(self.current_prices)
                     
                     # 1. Price change (momentum)
-                    price_change = (current_price - prices[-2]) / prices[-2] if len(prices) >= 2 else 0
+                    price_change = (current_price - prices[-2]) / prices[-2] if len(prices) >= 2 and prices[-2] != 0 else 0
                     
                     # 2. RSI (momentum indicator)
                     changes = [prices[i] - prices[i-1] for i in range(1, len(prices))]
@@ -5287,7 +5298,7 @@ class NextGenDashboard:
                     
                     # 10. Volatility index (recent price swings)
                     if len(prices) >= 10:
-                        recent_returns = [(prices[-i] - prices[-i-1]) / prices[-i-1] for i in range(1, 10)]
+                        recent_returns = [(prices[-i] - prices[-i-1]) / prices[-i-1] if prices[-i-1] != 0 else 0 for i in range(1, 10)]
                         volatility_index = (sum([r**2 for r in recent_returns]) / 9) ** 0.5
                     else:
                         volatility_index = 0
