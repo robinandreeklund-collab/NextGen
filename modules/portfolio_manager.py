@@ -333,7 +333,7 @@ class PortfolioManager:
             reward = 0.0
         elif self.last_action == 'SELL':
             # SELL gives the actual P&L from the sale
-            reward = self.last_sell_pnl if hasattr(self, 'last_sell_pnl') else 0.0
+            reward = self.last_sell_pnl
         else:
             # HOLD or no action gives 0.0 reward
             reward = 0.0
