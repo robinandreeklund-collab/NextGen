@@ -5582,8 +5582,9 @@ class NextGenDashboard:
                     portfolio_value_after = self.portfolio_manager.get_portfolio_value(self.current_prices)
                     
                     # Calculate reward based on actual P/L for this symbol
+                    # IMPORTANT: All agents must use the SAME reward logic for consistent training!
                     # For SELL: reward is the actual profit/loss from the trade
-                    # For BUY: reward is negative (cost of buying)
+                    # For BUY: reward is portfolio value change (NOT negative cost!)
                     # For HOLD/REBALANCE: reward is portfolio value change
                     reward = 0.0
                     if final_action in ['SELL', 'SELL_PARTIAL', 'SELL_ALL']:
@@ -5609,10 +5610,11 @@ class NextGenDashboard:
                                 fee = revenue * 0.0025
                                 net_profit = revenue - cost_basis - fee
                                 reward = net_profit
-                    elif final_action == 'BUY':
-                        # For BUY, reward is negative (money spent)
-                        if execution_result and execution_result.get('success'):
-                            reward = -execution_result.get('total_cost', 0)
+                    elif final_action in ['BUY', 'BUY_SMALL', 'BUY_MEDIUM', 'BUY_LARGE']:
+                        # For BUY, reward is portfolio value change (NOT negative cost!)
+                        # Using negative cost would train agents to never buy
+                        # All agents (PPO, DQN, DT, Ensemble) must use the same logic
+                        reward = portfolio_value_after - portfolio_value
                     elif final_action in ['HOLD', 'REBALANCE']:
                         # For HOLD/REBALANCE, reward is portfolio value change
                         reward = portfolio_value_after - portfolio_value
