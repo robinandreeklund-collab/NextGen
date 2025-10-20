@@ -5304,12 +5304,12 @@ class NextGenDashboard:
                     losses = [-c if c < 0 else 0 for c in changes[-14:]]
                     avg_gain = sum(gains) / 14 if gains else 0.01
                     avg_loss = sum(losses) / 14 if losses else 0.01
-                    rs = avg_gain / avg_loss
-                    rsi = 100 - (100 / (1 + rs))
+                    rs = avg_gain / avg_loss if avg_loss != 0 else 1.0
+                    rsi = 100 - (100 / (1 + rs)) if rs >= 0 else 50.0
                     
                     # 3. MACD (trend strength)
-                    sma_12 = sum(prices[-12:]) / 12
-                    sma_26 = sum(prices[-26:]) / 26
+                    sma_12 = sum(prices[-12:]) / 12 if len(prices) >= 12 else current_price
+                    sma_26 = sum(prices[-26:]) / 26 if len(prices) >= 26 else current_price
                     macd = sma_12 - sma_26
                     
                     # 4. ATR (volatility/risk measure) - Average True Range
@@ -5320,8 +5320,8 @@ class NextGenDashboard:
                     atr = sum(true_ranges) / len(true_ranges) if true_ranges else 0.01
                     
                     # 5. Bollinger Band position (price relative to bands)
-                    sma_20 = sum(prices[-20:]) / 20
-                    std_dev = (sum([(p - sma_20)**2 for p in prices[-20:]]) / 20) ** 0.5
+                    sma_20 = sum(prices[-20:]) / 20 if len(prices) >= 20 else current_price
+                    std_dev = (sum([(p - sma_20)**2 for p in prices[-20:]]) / 20) ** 0.5 if len(prices) >= 20 else 0.01
                     upper_band = sma_20 + (2 * std_dev)
                     lower_band = sma_20 - (2 * std_dev)
                     bb_position = (current_price - lower_band) / (upper_band - lower_band) if (upper_band - lower_band) > 0 else 0.5
@@ -5337,8 +5337,8 @@ class NextGenDashboard:
                     
                     # 8. Volume trend (increasing/decreasing)
                     if len(volumes) >= 10:
-                        recent_vol = sum(volumes[-5:]) / 5
-                        older_vol = sum(volumes[-10:-5]) / 5
+                        recent_vol = sum(volumes[-5:]) / 5 if len(volumes[-5:]) > 0 else 100000
+                        older_vol = sum(volumes[-10:-5]) / 5 if len(volumes[-10:-5]) > 0 else 100000
                         volume_trend = (recent_vol - older_vol) / older_vol if older_vol > 0 else 0
                     else:
                         volume_trend = 0
@@ -5551,7 +5551,7 @@ class NextGenDashboard:
                         
                         # Calculate how many shares we can afford with size fraction
                         affordable_cash = self.portfolio_manager.cash * size_fraction
-                        max_quantity = int(affordable_cash / (current_price * 1.0025))
+                        max_quantity = int(affordable_cash / (current_price * 1.0025)) if current_price > 0 else 0
                         max_quantity = min(max_quantity, 10)  # Max 10 shares per trade
                         
                         # Only proceed if we have enough cash for at least 1 share
@@ -5619,7 +5619,7 @@ class NextGenDashboard:
                             if position_value < target_value * 0.9:  # More than 10% below target
                                 # Buy more
                                 needed_value = target_value - position_value
-                                quantity = int(needed_value / (current_price * 1.0025))
+                                quantity = int(needed_value / (current_price * 1.0025)) if current_price > 0 else 0
                                 quantity = min(quantity, 5)  # Max 5 shares for rebalancing
                                 if quantity > 0 and self.portfolio_manager.cash >= quantity * current_price * 1.0025:
                                     final_action = 'BUY'  # Convert to BUY for execution
@@ -5636,7 +5636,7 @@ class NextGenDashboard:
                             elif position_value > target_value * 1.1:  # More than 10% above target
                                 # Sell some
                                 excess_value = position_value - target_value
-                                quantity = int(excess_value / current_price)
+                                quantity = int(excess_value / current_price) if current_price > 0 else 0
                                 quantity = min(quantity, 5, current_position)  # Max 5 shares for rebalancing
                                 if quantity > 0:
                                     final_action = 'SELL'  # Convert to SELL for execution
