@@ -416,8 +416,8 @@ class NextGenDashboard:
             self.ensemble_metrics_history['dqn_accuracy'].append(agent_accuracy['dqn_accuracy'])
         if 'dt_accuracy' in agent_accuracy:
             self.ensemble_metrics_history['dt_accuracy'].append(agent_accuracy['dt_accuracy'])
-        if 'conflict_frequency' in metrics:
-            self.ensemble_metrics_history['conflict_count'].append(metrics['conflict_frequency'])
+        if 'conflict_rate' in metrics:
+            self.ensemble_metrics_history['conflict_count'].append(metrics['conflict_rate'])
         # Keep last 100 entries
         for key in ['ppo_accuracy', 'dqn_accuracy', 'dt_accuracy', 'conflict_count']:
             if len(self.ensemble_metrics_history[key]) > 100:
