@@ -155,6 +155,10 @@ class NextGenDashboard:
         self.single_symbol_mode = False  # Toggle for single symbol mode
         self.single_symbol = 'AMD'  # Default single symbol
         
+        # Live mode WebSocket tracking
+        self.websocket_ready = False  # Flag to track if we have real price data
+        self.symbols_with_real_data = set()  # Track which symbols have received real prices
+        
         # Data history for charts (update with current symbols)
         self.price_history = {symbol: [] for symbol in self.symbols}
         self.volume_history = {symbol: [] for symbol in self.symbols}  # Track volume for expanded state
@@ -413,6 +417,14 @@ class NextGenDashboard:
             volume = data.get('volume', data.get('v', 100000))  # Finnhub uses 'v' for volume
             
             if symbol and price:
+                # Mark that we've received real data for this symbol
+                self.symbols_with_real_data.add(symbol)
+                
+                # Check if we have enough symbols with real data to start trading
+                if not self.websocket_ready and len(self.symbols_with_real_data) >= min(5, len(self.symbols)):
+                    self.websocket_ready = True
+                    print(f"✅ WebSocket ready: Received real data for {len(self.symbols_with_real_data)} symbols - trading enabled")
+                
                 # Update current price
                 self.current_prices[symbol] = float(price)
                 
@@ -5190,6 +5202,8 @@ class NextGenDashboard:
                 if self.live_mode and hasattr(self, 'data_ingestion'):
                     if hasattr(self.data_ingestion, 'start_websocket'):
                         self.data_ingestion.start_websocket(orch_symbols)
+                        print("⏳ Waiting for real WebSocket price data before trading...")
+                        print("   Trading will start once data is received for at least 5 symbols")
                 elif not self.live_mode and hasattr(self, 'data_ingestion'):
                     if hasattr(self.data_ingestion, 'update_symbols'):
                         self.data_ingestion.update_symbols(orch_symbols)
@@ -5261,6 +5275,12 @@ class NextGenDashboard:
                     self.volume_history[symbol].pop(0)
             
             # === TRADING DECISIONS WITH ACTUAL MODULES ===
+            # In live mode, wait for WebSocket data before trading
+            if self.live_mode and not self.websocket_ready:
+                # Skip trading until we have real price data from WebSocket
+                time.sleep(0.5)  # Wait a bit for data
+                continue
+            
             # Select symbol based on mode
             if self.single_symbol_mode:
                 # Single symbol mode - use configured symbol (AMD)
@@ -5268,6 +5288,11 @@ class NextGenDashboard:
             else:
                 # Multi symbol mode - random selection
                 selected_symbol = random.choice(self.symbols)
+            
+            # In live mode, only trade symbols with real WebSocket data
+            if self.live_mode and selected_symbol not in self.symbols_with_real_data:
+                # Skip this symbol - no real price data yet
+                continue
             
             # Initialize variables that may be used later (for GAN feeding, etc.)
             reward = 0.0
