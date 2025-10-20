@@ -123,8 +123,8 @@ class NextGenDashboard:
         # Setup modules (including orchestrator)
         self.setup_modules()
         
-        # Get active symbols from orchestrator for simulation
-        if not live_mode and hasattr(self, 'orchestrator'):
+        # Get active symbols from orchestrator (works in both demo and live mode)
+        if hasattr(self, 'orchestrator'):
             orch_symbols = getattr(self.orchestrator, 'active_symbols', [])
             if orch_symbols and len(orch_symbols) > 0:
                 self.symbols = orch_symbols
@@ -136,7 +136,8 @@ class NextGenDashboard:
                         self.current_prices[symbol] = self.base_prices[symbol]
                     if symbol not in self.price_trends:
                         self.price_trends[symbol] = 0.0
-                print(f"📊 Using orchestrator symbols for simulation: {len(self.symbols)} active symbols")
+                mode_str = "live" if live_mode else "simulation"
+                print(f"📊 Using orchestrator symbols for {mode_str}: {len(self.symbols)} active symbols")
         
         # Initialize data ingestion based on mode (after orchestrator symbols are set)
         if live_mode:
@@ -360,19 +361,29 @@ class NextGenDashboard:
         if len(self.orchestrator_metrics['symbol_rotations']) > 50:
             self.orchestrator_metrics['symbol_rotations'].pop(0)
         
-        # Update simulation symbols if in demo mode
-        if not self.live_mode and hasattr(self, 'data_ingestion'):
-            new_symbols = event.get('new_symbols', [])
-            if new_symbols and hasattr(self.data_ingestion, 'update_symbols'):
-                self.data_ingestion.update_symbols(new_symbols)
-                # Update dashboard tracking
-                self.symbols = new_symbols
-                # Initialize price/volume history for new symbols
-                for symbol in new_symbols:
-                    if symbol not in self.price_history:
-                        self.price_history[symbol] = []
-                    if symbol not in self.volume_history:
-                        self.volume_history[symbol] = []
+        # Update symbols in both demo and live mode
+        new_symbols = event.get('new_symbols', [])
+        if new_symbols:
+            # Update dashboard tracking
+            self.symbols = new_symbols
+            # Initialize price/volume history for new symbols
+            for symbol in new_symbols:
+                if symbol not in self.price_history:
+                    self.price_history[symbol] = []
+                if symbol not in self.volume_history:
+                    self.volume_history[symbol] = []
+                # Initialize price tracking if needed
+                if symbol not in self.base_prices:
+                    self.base_prices[symbol] = 100.0 + random.uniform(-20, 20)
+                if symbol not in self.current_prices:
+                    self.current_prices[symbol] = self.base_prices[symbol]
+                if symbol not in self.price_trends:
+                    self.price_trends[symbol] = 0.0
+            
+            # Update data ingestion in demo mode
+            if not self.live_mode and hasattr(self, 'data_ingestion'):
+                if hasattr(self.data_ingestion, 'update_symbols'):
+                    self.data_ingestion.update_symbols(new_symbols)
     
     def _handle_rl_scores(self, scores: Dict[str, Any]):
         """Handle RL score updates."""
