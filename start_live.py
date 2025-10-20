@@ -11,6 +11,7 @@ Then open http://localhost:8050 in your browser.
 """
 
 from start_dashboard import NextGenDashboard
+from market_constants import MARKET_SYMBOLS
 
 
 def main():
@@ -26,8 +27,8 @@ def main():
     print("⚠️  Ensure you have a valid Finnhub API key configured")
     print()
     
-    # Define the 5 fixed stocks supported by the market
-    market_symbols = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA']
+    # Use the 5 fixed stocks supported by the market (from market_constants)
+    market_symbols = MARKET_SYMBOLS
     
     print(f"📊 Market symbols: {', '.join(market_symbols)}")
     print(f"📡 Will establish {len(market_symbols)} WebSocket connections")

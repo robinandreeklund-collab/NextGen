@@ -13,6 +13,7 @@ import os
 import pytest
 
 from start_dashboard import NextGenDashboard, THEME_COLORS
+from market_constants import MARKET_SYMBOLS
 
 
 class TestNextGenDashboard:
@@ -40,7 +41,8 @@ class TestNextGenDashboard:
     
     def test_dashboard_initialization_with_market_symbols(self):
         """Test dashboard initialization with custom market symbols in live mode."""
-        market_symbols = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA']
+        # Use the shared constant to ensure consistency
+        market_symbols = MARKET_SYMBOLS
         dashboard = NextGenDashboard(live_mode=True, market_symbols=market_symbols)
         
         assert dashboard.live_mode is True
