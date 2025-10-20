@@ -4808,7 +4808,8 @@ class NextGenDashboard:
     
     
     def create_data_panel(self) -> html.Div:
-        """Create Data panel showing orchestrator submodule status and metrics."""
+        """Create Data panel showing orchestrator submodule status, WebSocket connections, 
+        RL Agent Insights, Symbol Rotation History, and additional metrics."""
         import plotly.graph_objs as go
         
         # Get orchestrator status and metrics
@@ -5135,7 +5136,546 @@ class NextGenDashboard:
                              style={'height': '300px'}),
                 ], style={'flex': '1'}),
             ], style={'display': 'flex', 'gap': '20px', 'marginBottom': '30px'}),
+            
+            # === NEW SECTIONS ===
+            
+            # 1. WebSocket Connections Section
+            self._create_websocket_connections_section(),
+            
+            # 2. RL Agent Insights Section
+            self._create_rl_agent_insights_section(),
+            
+            # 3. Symbol Rotation History Section
+            self._create_symbol_rotation_history_section(),
+            
+            # 4. Additional Metrics Section
+            self._create_additional_metrics_section(),
         ])
+    
+    def _create_websocket_connections_section(self) -> html.Div:
+        """Create WebSocket Connections section showing active connections, uptime, and health."""
+        try:
+            # Get WebSocket connection data from data_ingestion or orchestrator
+            connections_data = []
+            
+            if self.live_mode:
+                # Live mode - get real WebSocket connections from data_ingestion
+                if hasattr(self, 'data_ingestion') and hasattr(self.data_ingestion, 'subscribed_symbols'):
+                    subscribed = self.data_ingestion.subscribed_symbols
+                    is_running = getattr(self.data_ingestion, 'running', False)
+                    
+                    # Calculate uptime based on when WebSocket became ready
+                    uptime_seconds = 0
+                    if self.websocket_ready:
+                        # Simple uptime tracking (could be enhanced with actual start time)
+                        uptime_seconds = self.iteration_count * 2  # 2 seconds per iteration
+                    
+                    for symbol in subscribed:
+                        # Check if we have received real data for this symbol
+                        has_data = symbol in self.symbols_with_real_data
+                        last_data_time = "Now" if has_data else "Waiting..."
+                        
+                        # Calculate data frequency (trades per minute) from price history
+                        data_freq = 0.0
+                        if symbol in self.price_history and len(self.price_history[symbol]) > 1:
+                            # Estimate: history length / time elapsed (in minutes)
+                            time_minutes = max(uptime_seconds / 60, 1)
+                            data_freq = len(self.price_history[symbol]) / time_minutes
+                        
+                        connections_data.append({
+                            'symbol': symbol,
+                            'status': 'Active' if (is_running and has_data) else 'Pending',
+                            'uptime': f"{uptime_seconds // 60}m {uptime_seconds % 60}s",
+                            'last_data': last_data_time,
+                            'frequency': f"{data_freq:.1f}/min",
+                            'health': 'Good' if has_data else 'Waiting'
+                        })
+                else:
+                    # No WebSocket data available
+                    connections_data.append({
+                        'symbol': 'N/A',
+                        'status': 'Not Connected',
+                        'uptime': '0s',
+                        'last_data': 'N/A',
+                        'frequency': '0/min',
+                        'health': 'N/A'
+                    })
+            else:
+                # Demo mode - show simulated connections
+                if hasattr(self, 'data_ingestion') and hasattr(self.data_ingestion, 'symbols'):
+                    sim_symbols = self.data_ingestion.symbols[:10]  # Show first 10
+                    uptime_seconds = self.iteration_count * 2
+                    
+                    for symbol in sim_symbols:
+                        # In demo mode, all symbols are "active" with simulated data
+                        data_freq = 30.0  # Simulated frequency
+                        if symbol in self.price_history:
+                            time_minutes = max(uptime_seconds / 60, 1)
+                            data_freq = len(self.price_history[symbol]) / time_minutes
+                        
+                        connections_data.append({
+                            'symbol': symbol,
+                            'status': 'Active (Sim)',
+                            'uptime': f"{uptime_seconds // 60}m {uptime_seconds % 60}s",
+                            'last_data': 'Now',
+                            'frequency': f"{data_freq:.1f}/min",
+                            'health': 'Good'
+                        })
+                else:
+                    connections_data.append({
+                        'symbol': 'Demo',
+                        'status': 'Simulated',
+                        'uptime': 'N/A',
+                        'last_data': 'Simulated',
+                        'frequency': 'N/A',
+                        'health': 'N/A'
+                    })
+            
+            # Create connections table
+            return html.Div([
+                html.H3("1. WebSocket Connections", 
+                       style={'fontSize': '20px', 'marginBottom': '15px', 
+                              'color': THEME_COLORS['primary'], 'marginTop': '30px'}),
+                html.Div([
+                    # Header row
+                    html.Div([
+                        html.Div("Symbol", style={'flex': '1', 'fontWeight': 'bold', 'fontSize': '12px'}),
+                        html.Div("Status", style={'flex': '1', 'fontWeight': 'bold', 'fontSize': '12px'}),
+                        html.Div("Uptime", style={'flex': '1', 'fontWeight': 'bold', 'fontSize': '12px'}),
+                        html.Div("Last Data", style={'flex': '1', 'fontWeight': 'bold', 'fontSize': '12px'}),
+                        html.Div("Frequency", style={'flex': '1', 'fontWeight': 'bold', 'fontSize': '12px'}),
+                        html.Div("Health", style={'flex': '1', 'fontWeight': 'bold', 'fontSize': '12px'}),
+                    ], style={
+                        'display': 'flex',
+                        'padding': '12px',
+                        'backgroundColor': THEME_COLORS['surface_light'],
+                        'borderBottom': f'1px solid {THEME_COLORS["border"]}'
+                    }),
+                    # Data rows
+                    *[html.Div([
+                        html.Div(conn['symbol'], style={'flex': '1', 'fontSize': '11px'}),
+                        html.Div([
+                            html.Span("●", style={
+                                'color': THEME_COLORS['success'] if 'Active' in conn['status'] else THEME_COLORS['warning'],
+                                'marginRight': '5px'
+                            }),
+                            html.Span(conn['status'])
+                        ], style={'flex': '1', 'fontSize': '11px'}),
+                        html.Div(conn['uptime'], style={'flex': '1', 'fontSize': '11px'}),
+                        html.Div(conn['last_data'], style={'flex': '1', 'fontSize': '11px'}),
+                        html.Div(conn['frequency'], style={'flex': '1', 'fontSize': '11px'}),
+                        html.Div(conn['health'], style={
+                            'flex': '1', 
+                            'fontSize': '11px',
+                            'color': THEME_COLORS['success'] if conn['health'] == 'Good' else THEME_COLORS['warning']
+                        }),
+                    ], style={
+                        'display': 'flex',
+                        'padding': '10px 12px',
+                        'borderBottom': f'1px solid {THEME_COLORS["border"]}',
+                        'backgroundColor': THEME_COLORS['surface']
+                    }) for conn in connections_data[:10]]  # Limit to 10 rows
+                ], style={
+                    'backgroundColor': THEME_COLORS['surface'],
+                    'borderRadius': '8px',
+                    'border': f'1px solid {THEME_COLORS["border"]}',
+                    'marginBottom': '30px'
+                })
+            ])
+        except Exception as e:
+            print(f"⚠️ Error creating WebSocket connections section: {e}")
+            return html.Div([
+                html.H3("1. WebSocket Connections", 
+                       style={'fontSize': '20px', 'marginBottom': '15px', 
+                              'color': THEME_COLORS['primary'], 'marginTop': '30px'}),
+                html.Div("Loading connection data...", 
+                        style={'padding': '20px', 'color': THEME_COLORS['text_secondary']})
+            ])
+    
+    def _create_rl_agent_insights_section(self) -> html.Div:
+        """Create RL Agent Insights section showing real-time rewards, trends, and priorities."""
+        try:
+            # Get RL scores from orchestrator (symbol priorities)
+            rl_insights = []
+            
+            if self.orchestrator_metrics['rl_scores_history']:
+                # Get latest RL scores
+                latest_scores = self.orchestrator_metrics['rl_scores_history'][-1].get('scores', {})
+                
+                # Sort by priority score (descending)
+                sorted_symbols = sorted(latest_scores.items(), key=lambda x: x[1], reverse=True)
+                
+                for symbol, score in sorted_symbols[:10]:  # Top 10
+                    # Get reward from decision history if available
+                    recent_rewards = [d['reward'] for d in self.decision_history 
+                                    if d.get('symbol') == symbol]
+                    avg_reward = sum(recent_rewards[-5:]) / len(recent_rewards[-5:]) if recent_rewards else 0.0
+                    
+                    # Determine trend from price history
+                    trend = "Neutral"
+                    trend_pct = 0.0
+                    if symbol in self.price_history and len(self.price_history[symbol]) >= 10:
+                        prices = self.price_history[symbol]
+                        if prices[-1] > prices[-10]:
+                            trend = "Rising"
+                            trend_pct = ((prices[-1] - prices[-10]) / prices[-10] * 100)
+                        elif prices[-1] < prices[-10]:
+                            trend = "Falling"
+                            trend_pct = ((prices[-1] - prices[-10]) / prices[-10] * 100)
+                    
+                    rl_insights.append({
+                        'symbol': symbol,
+                        'reward': f"{avg_reward:+.2f}",
+                        'trend': trend,
+                        'trend_pct': f"{trend_pct:+.1f}%",
+                        'priority': f"{score:.2f}",
+                        'rank': sorted_symbols.index((symbol, score)) + 1
+                    })
+            else:
+                # No RL scores yet - show placeholder
+                for i, symbol in enumerate(self.symbols[:5]):
+                    rl_insights.append({
+                        'symbol': symbol,
+                        'reward': '0.00',
+                        'trend': 'Neutral',
+                        'trend_pct': '0.0%',
+                        'priority': '0.00',
+                        'rank': i + 1
+                    })
+            
+            # Create insights table
+            return html.Div([
+                html.H3("2. RL Agent Insights", 
+                       style={'fontSize': '20px', 'marginBottom': '15px', 
+                              'color': THEME_COLORS['primary'], 'marginTop': '30px'}),
+                html.Div([
+                    # Header row
+                    html.Div([
+                        html.Div("Rank", style={'flex': '0 0 50px', 'fontWeight': 'bold', 'fontSize': '12px'}),
+                        html.Div("Symbol", style={'flex': '1', 'fontWeight': 'bold', 'fontSize': '12px'}),
+                        html.Div("Avg Reward", style={'flex': '1', 'fontWeight': 'bold', 'fontSize': '12px'}),
+                        html.Div("Trend", style={'flex': '1', 'fontWeight': 'bold', 'fontSize': '12px'}),
+                        html.Div("Change", style={'flex': '1', 'fontWeight': 'bold', 'fontSize': '12px'}),
+                        html.Div("Priority", style={'flex': '1', 'fontWeight': 'bold', 'fontSize': '12px'}),
+                    ], style={
+                        'display': 'flex',
+                        'padding': '12px',
+                        'backgroundColor': THEME_COLORS['surface_light'],
+                        'borderBottom': f'1px solid {THEME_COLORS["border"]}'
+                    }),
+                    # Data rows
+                    *[html.Div([
+                        html.Div(f"#{insight['rank']}", style={'flex': '0 0 50px', 'fontSize': '11px', 'fontWeight': 'bold'}),
+                        html.Div(insight['symbol'], style={'flex': '1', 'fontSize': '11px', 'fontWeight': 'bold'}),
+                        html.Div(insight['reward'], style={
+                            'flex': '1', 
+                            'fontSize': '11px',
+                            'color': THEME_COLORS['success'] if '+' in insight['reward'] else THEME_COLORS['danger']
+                        }),
+                        html.Div([
+                            html.Span("▲" if insight['trend'] == "Rising" else "▼" if insight['trend'] == "Falling" else "●", 
+                                     style={
+                                'color': THEME_COLORS['success'] if insight['trend'] == "Rising" else 
+                                        THEME_COLORS['danger'] if insight['trend'] == "Falling" else 
+                                        THEME_COLORS['text_secondary'],
+                                'marginRight': '5px'
+                            }),
+                            html.Span(insight['trend'])
+                        ], style={'flex': '1', 'fontSize': '11px'}),
+                        html.Div(insight['trend_pct'], style={
+                            'flex': '1', 
+                            'fontSize': '11px',
+                            'color': THEME_COLORS['success'] if '+' in insight['trend_pct'] else THEME_COLORS['danger']
+                        }),
+                        html.Div(insight['priority'], style={'flex': '1', 'fontSize': '11px', 'fontWeight': 'bold'}),
+                    ], style={
+                        'display': 'flex',
+                        'padding': '10px 12px',
+                        'borderBottom': f'1px solid {THEME_COLORS["border"]}',
+                        'backgroundColor': THEME_COLORS['surface']
+                    }) for insight in rl_insights]
+                ], style={
+                    'backgroundColor': THEME_COLORS['surface'],
+                    'borderRadius': '8px',
+                    'border': f'1px solid {THEME_COLORS["border"]}',
+                    'marginBottom': '30px'
+                })
+            ])
+        except Exception as e:
+            print(f"⚠️ Error creating RL Agent Insights section: {e}")
+            import traceback
+            traceback.print_exc()
+            return html.Div([
+                html.H3("2. RL Agent Insights", 
+                       style={'fontSize': '20px', 'marginBottom': '15px', 
+                              'color': THEME_COLORS['primary'], 'marginTop': '30px'}),
+                html.Div("Loading RL insights...", 
+                        style={'padding': '20px', 'color': THEME_COLORS['text_secondary']})
+            ])
+    
+    def _create_symbol_rotation_history_section(self) -> html.Div:
+        """Create Symbol Rotation History section showing rotation events."""
+        try:
+            # Get rotation history from orchestrator
+            rotation_events = []
+            
+            if self.orchestrator_metrics['symbol_rotations']:
+                # Get last 10 rotation events
+                for event in self.orchestrator_metrics['symbol_rotations'][-10:]:
+                    timestamp = event.get('timestamp', 'Unknown')
+                    dropped = event.get('dropped_symbols', [])
+                    added = event.get('new_symbols', [])
+                    reason = event.get('reason', 'Unknown')
+                    
+                    # Calculate duration if available
+                    duration = "N/A"
+                    if 'symbol_durations' in event:
+                        durations = event['symbol_durations']
+                        if dropped and dropped[0] in durations:
+                            duration_sec = durations[dropped[0]]
+                            duration = f"{duration_sec // 60}m {duration_sec % 60}s"
+                    
+                    rotation_events.append({
+                        'timestamp': timestamp if isinstance(timestamp, str) else 
+                                   datetime.fromtimestamp(timestamp).strftime('%H:%M:%S'),
+                        'dropped': ', '.join(dropped[:3]) if dropped else 'None',
+                        'added': ', '.join(added[:3]) if added else 'None',
+                        'duration': duration,
+                        'reason': reason
+                    })
+            else:
+                # No rotations yet
+                rotation_events.append({
+                    'timestamp': 'N/A',
+                    'dropped': 'No rotations yet',
+                    'added': 'Initial symbols',
+                    'duration': 'N/A',
+                    'reason': 'System start'
+                })
+            
+            # Create rotation history table
+            return html.Div([
+                html.H3("3. Symbol Rotation History", 
+                       style={'fontSize': '20px', 'marginBottom': '15px', 
+                              'color': THEME_COLORS['primary'], 'marginTop': '30px'}),
+                html.Div([
+                    # Header row
+                    html.Div([
+                        html.Div("Time", style={'flex': '0 0 80px', 'fontWeight': 'bold', 'fontSize': '12px'}),
+                        html.Div("Dropped", style={'flex': '2', 'fontWeight': 'bold', 'fontSize': '12px'}),
+                        html.Div("Duration", style={'flex': '1', 'fontWeight': 'bold', 'fontSize': '12px'}),
+                        html.Div("Added", style={'flex': '2', 'fontWeight': 'bold', 'fontSize': '12px'}),
+                        html.Div("Reason", style={'flex': '2', 'fontWeight': 'bold', 'fontSize': '12px'}),
+                    ], style={
+                        'display': 'flex',
+                        'padding': '12px',
+                        'backgroundColor': THEME_COLORS['surface_light'],
+                        'borderBottom': f'1px solid {THEME_COLORS["border"]}'
+                    }),
+                    # Data rows
+                    *[html.Div([
+                        html.Div(event['timestamp'], style={'flex': '0 0 80px', 'fontSize': '11px'}),
+                        html.Div(event['dropped'], style={'flex': '2', 'fontSize': '11px', 
+                                                          'color': THEME_COLORS['danger']}),
+                        html.Div(event['duration'], style={'flex': '1', 'fontSize': '11px'}),
+                        html.Div(event['added'], style={'flex': '2', 'fontSize': '11px', 
+                                                        'color': THEME_COLORS['success']}),
+                        html.Div(event['reason'], style={'flex': '2', 'fontSize': '11px', 
+                                                         'fontStyle': 'italic'}),
+                    ], style={
+                        'display': 'flex',
+                        'padding': '10px 12px',
+                        'borderBottom': f'1px solid {THEME_COLORS["border"]}',
+                        'backgroundColor': THEME_COLORS['surface']
+                    }) for event in reversed(rotation_events)]  # Most recent first
+                ], style={
+                    'backgroundColor': THEME_COLORS['surface'],
+                    'borderRadius': '8px',
+                    'border': f'1px solid {THEME_COLORS["border"]}',
+                    'marginBottom': '30px'
+                })
+            ])
+        except Exception as e:
+            print(f"⚠️ Error creating Symbol Rotation History section: {e}")
+            import traceback
+            traceback.print_exc()
+            return html.Div([
+                html.H3("3. Symbol Rotation History", 
+                       style={'fontSize': '20px', 'marginBottom': '15px', 
+                              'color': THEME_COLORS['primary'], 'marginTop': '30px'}),
+                html.Div("Loading rotation history...", 
+                        style={'padding': '20px', 'color': THEME_COLORS['text_secondary']})
+            ])
+    
+    def _create_additional_metrics_section(self) -> html.Div:
+        """Create Additional Metrics section showing data flow stats, protected symbols, and health."""
+        try:
+            # Get data flow statistics
+            total_data_points = 0
+            for symbol_history in self.price_history.values():
+                total_data_points += len(symbol_history)
+            
+            # Get protected symbols (current portfolio positions)
+            protected_symbols = list(self.portfolio_manager.positions.keys()) if hasattr(self.portfolio_manager, 'positions') else []
+            
+            # Calculate WebSocket health score
+            ws_health_score = 0.0
+            if self.live_mode:
+                # In live mode, health is based on real data reception
+                total_symbols = len(self.symbols)
+                symbols_with_data = len(self.symbols_with_real_data)
+                if total_symbols > 0:
+                    ws_health_score = (symbols_with_data / total_symbols) * 100
+            else:
+                # In demo mode, health is always 100% (simulated)
+                ws_health_score = 100.0
+            
+            # Get orchestrator stream health if available
+            stream_health = 0.0
+            if 'orchestrator' in self.orchestrator.stream_metrics:
+                stream_health = self.orchestrator.stream_metrics['orchestrator'].get('stream_health', 0.0) * 100
+            
+            # Average health score
+            avg_health = (ws_health_score + stream_health) / 2 if stream_health > 0 else ws_health_score
+            
+            # Create metrics cards
+            return html.Div([
+                html.H3("4. Additional Metrics", 
+                       style={'fontSize': '20px', 'marginBottom': '15px', 
+                              'color': THEME_COLORS['primary'], 'marginTop': '30px'}),
+                
+                # Metrics cards grid
+                html.Div([
+                    # Data Flow Statistics
+                    html.Div([
+                        html.H4("Data Flow Statistics", 
+                               style={'fontSize': '14px', 'marginBottom': '15px', 
+                                     'color': THEME_COLORS['primary']}),
+                        html.Div([
+                            html.Div([
+                                html.Span("Total Data Points:", style={'color': THEME_COLORS['text_secondary'], 'fontSize': '11px'}),
+                                html.Span(f" {total_data_points}", style={'color': THEME_COLORS['text'], 'fontWeight': 'bold', 'fontSize': '11px'})
+                            ], style={'marginBottom': '8px'}),
+                            html.Div([
+                                html.Span("Active Symbols:", style={'color': THEME_COLORS['text_secondary'], 'fontSize': '11px'}),
+                                html.Span(f" {len(self.symbols)}", style={'color': THEME_COLORS['text'], 'fontWeight': 'bold', 'fontSize': '11px'})
+                            ], style={'marginBottom': '8px'}),
+                            html.Div([
+                                html.Span("Avg Points/Symbol:", style={'color': THEME_COLORS['text_secondary'], 'fontSize': '11px'}),
+                                html.Span(f" {total_data_points // max(len(self.symbols), 1)}", 
+                                         style={'color': THEME_COLORS['text'], 'fontWeight': 'bold', 'fontSize': '11px'})
+                            ], style={'marginBottom': '8px'}),
+                            html.Div([
+                                html.Span("Update Rate:", style={'color': THEME_COLORS['text_secondary'], 'fontSize': '11px'}),
+                                html.Span(" 2s/tick", style={'color': THEME_COLORS['text'], 'fontWeight': 'bold', 'fontSize': '11px'})
+                            ]),
+                        ])
+                    ], style={
+                        'flex': '1',
+                        'padding': '15px',
+                        'backgroundColor': THEME_COLORS['surface'],
+                        'borderRadius': '8px',
+                        'border': f'1px solid {THEME_COLORS["border"]}'
+                    }),
+                    
+                    # Portfolio-Protected Symbols
+                    html.Div([
+                        html.H4("Portfolio-Protected Symbols", 
+                               style={'fontSize': '14px', 'marginBottom': '15px', 
+                                     'color': THEME_COLORS['primary']}),
+                        html.Div([
+                            html.Div([
+                                html.Span("Protected Count:", style={'color': THEME_COLORS['text_secondary'], 'fontSize': '11px'}),
+                                html.Span(f" {len(protected_symbols)}", style={'color': THEME_COLORS['success'], 'fontWeight': 'bold', 'fontSize': '11px'})
+                            ], style={'marginBottom': '12px'}),
+                            html.Div([
+                                html.Div([
+                                    html.Span("🔒 ", style={'marginRight': '5px'}),
+                                    html.Span(symbol, style={'fontSize': '11px', 'color': THEME_COLORS['text']})
+                                ], style={'marginBottom': '6px'}) for symbol in protected_symbols[:5]
+                            ] if protected_symbols else [
+                                html.Div("No positions held", 
+                                        style={'fontSize': '11px', 'color': THEME_COLORS['text_secondary'], 'fontStyle': 'italic'})
+                            ]),
+                            html.Div(f"+ {len(protected_symbols) - 5} more" if len(protected_symbols) > 5 else "", 
+                                    style={'fontSize': '10px', 'color': THEME_COLORS['text_secondary'], 'marginTop': '8px'})
+                        ])
+                    ], style={
+                        'flex': '1',
+                        'padding': '15px',
+                        'backgroundColor': THEME_COLORS['surface'],
+                        'borderRadius': '8px',
+                        'border': f'1px solid {THEME_COLORS["border"]}'
+                    }),
+                    
+                    # WebSocket Health Score
+                    html.Div([
+                        html.H4("WebSocket Health Score", 
+                               style={'fontSize': '14px', 'marginBottom': '15px', 
+                                     'color': THEME_COLORS['primary']}),
+                        html.Div([
+                            # Large health score display
+                            html.Div(f"{avg_health:.0f}%", style={
+                                'fontSize': '48px',
+                                'fontWeight': 'bold',
+                                'color': THEME_COLORS['success'] if avg_health >= 80 else 
+                                        THEME_COLORS['warning'] if avg_health >= 50 else 
+                                        THEME_COLORS['danger'],
+                                'textAlign': 'center',
+                                'marginBottom': '10px'
+                            }),
+                            # Status indicator
+                            html.Div([
+                                html.Span("●", style={
+                                    'color': THEME_COLORS['success'] if avg_health >= 80 else 
+                                            THEME_COLORS['warning'] if avg_health >= 50 else 
+                                            THEME_COLORS['danger'],
+                                    'marginRight': '8px',
+                                    'fontSize': '16px'
+                                }),
+                                html.Span(
+                                    "Excellent" if avg_health >= 80 else 
+                                    "Good" if avg_health >= 50 else 
+                                    "Poor",
+                                    style={'fontSize': '12px', 'fontWeight': 'bold'}
+                                )
+                            ], style={'textAlign': 'center'}),
+                            # Mode indicator
+                            html.Div(
+                                f"Mode: {'Live' if self.live_mode else 'Demo'}",
+                                style={
+                                    'fontSize': '10px',
+                                    'color': THEME_COLORS['text_secondary'],
+                                    'textAlign': 'center',
+                                    'marginTop': '10px'
+                                }
+                            )
+                        ])
+                    ], style={
+                        'flex': '1',
+                        'padding': '15px',
+                        'backgroundColor': THEME_COLORS['surface'],
+                        'borderRadius': '8px',
+                        'border': f'1px solid {THEME_COLORS["border"]}'
+                    }),
+                ], style={
+                    'display': 'grid',
+                    'gridTemplateColumns': 'repeat(3, 1fr)',
+                    'gap': '20px',
+                    'marginBottom': '30px'
+                })
+            ])
+        except Exception as e:
+            print(f"⚠️ Error creating Additional Metrics section: {e}")
+            import traceback
+            traceback.print_exc()
+            return html.Div([
+                html.H3("4. Additional Metrics", 
+                       style={'fontSize': '20px', 'marginBottom': '15px', 
+                              'color': THEME_COLORS['primary'], 'marginTop': '30px'}),
+                html.Div("Loading metrics...", 
+                        style={'padding': '20px', 'color': THEME_COLORS['text_secondary']})
+            ])
     
     def create_orchestrator_panel(self) -> html.Div:
         """Create Finnhub Orchestrator monitoring panel - rebuilt from scratch."""

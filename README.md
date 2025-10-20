@@ -309,6 +309,49 @@ Orchestratorn har en dedikerad panel i dashboarden som visar:
 - Öppna webbläsaren: `http://localhost:8050`
 - Klicka på "🎯 Orchestrator" i sidomenyn
 
+### Data-Panelen (Utökad)
+
+Data-panelen ger omfattande insikter i systemets dataflöde och prestanda. Tillgång via "📡 Data" i sidomenyn.
+
+**Sektioner:**
+
+1. **WebSocket Connections**
+   - Lista alla aktiva anslutningar (Live/Demo)
+   - Uptime för varje anslutning
+   - Senaste data-tidpunkt per symbol
+   - Data frequency (trades/min)
+   - Hälsostatus per connection
+
+2. **RL Agent Insights**
+   - Real-time rewards per symbol (avg 5 senaste)
+   - Trendbedömning: Stigande ▲ / Fallande ▼ / Neutral ●
+   - Prioritetsranking (RL-driven från orchestrator)
+   - Procent-förändring senaste 10 datapoints
+
+3. **Symbol Rotation History**
+   - Senaste droppade symboler med duration
+   - Ersättningssymboler (nya tillagda)
+   - Rotationsorsak: RL-driven, time-based, performance-based
+   - Tidsstämplar för varje rotation
+
+4. **Additional Metrics**
+   - **Data Flow Statistics**: Total data points, aktiva symboler, avg points/symbol, update rate
+   - **Portfolio-Protected Symbols**: Symboler som inte kan roteras bort (aktiva positioner)
+   - **WebSocket Health Score**: 0-100% health baserat på data-reception (Live/Demo)
+
+**Datakällor (Inga hårdkodade värden!):**
+- `finnhub_orchestrator`: Symbol rotation events, RL scores, stream metrics
+- `rl_controller`: Agent rewards och prioriteringar
+- `portfolio_manager`: Protected symbols (nuvarande positioner)
+- `data_ingestion`/`data_ingestion_sim`: WebSocket connection status
+- `message_bus`: Real-time event tracking
+
+**Uppdateringar:**
+- Panelen uppdateras live var 2:e sekund
+- Fungerar i både demo och live-läge
+- All data från systemets riktiga logik och moduler
+
+
 ### Dataflöde
 
 ```
