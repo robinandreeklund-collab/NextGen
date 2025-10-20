@@ -1,12 +1,12 @@
 """
 Tests for Specialized Trading Agents
 
-Testar:
-- Initialization av alla 8 agenter
+Tests:
+- Initialization of all 8 agents
 - State management (positions, capital)
-- Vote generation för olika marknadsförhållanden
+- Vote generation for different market conditions
 - Performance tracking
-- Integration med ensemble voting system
+- Integration with ensemble voting system
 """
 
 import pytest
