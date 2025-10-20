@@ -25,9 +25,16 @@ def main():
     print("⚠️  Warning: This connects to external WebSocket services")
     print("⚠️  Ensure you have a valid Finnhub API key configured")
     print()
+    print("⚡ Real-time WebSocket data - no artificial delays")
+    print("   Agents react to market events as they occur")
+    print()
     
     # Create dashboard in live mode (live_mode=True)
-    dashboard = NextGenDashboard(live_mode=True)
+    # In live mode, tick_rate only affects agent processing loop
+    # WebSocket data arrives in real-time regardless of tick_rate
+    # tick_rate=0.1 adds a *minimum* 100ms delay between agent iterations,
+    # resulting in a *maximum* of ~10 iterations/second; actual rate may be lower if processing takes longer
+    dashboard = NextGenDashboard(live_mode=True, tick_rate=0.1)
     
     # Run dashboard
     dashboard.run(host='0.0.0.0', port=8050, debug=False)
