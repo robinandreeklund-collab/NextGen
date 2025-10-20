@@ -621,7 +621,7 @@ python -c "from start_dashboard import NextGenDashboard; print('OK')"
 | Sprint 9 | ✅ Färdig | Finnhub Orchestrator – Central datakoordinering och RL-driven symbolrotation |
 | Sprint 10 | ✅ Färdig | Decision Transformer – Sequence-based RL & 5-agent ensemble |
 
-**Testresultat:** ✅ 396/396 tester passerar (100%)
+**Testresultat:** ✅ 415/415 tester passerar (100%)
 
 ---
 
