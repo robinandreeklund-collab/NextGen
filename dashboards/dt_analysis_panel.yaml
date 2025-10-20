@@ -1,0 +1,328 @@
+# Decision Transformer Analysis Panel for NextGen Dashboard
+
+dt_analysis_panel:
+  version: 1.0
+  panel_id: dt_analysis
+  title: "🤖 Decision Transformer Analysis"
+  description: "Sequence-based decision making with transformer architecture"
+  
+  layout:
+    type: tab
+    position: 11  # After existing 10 panels
+    refresh_rate: 2000  # 2 seconds
+    grid:
+      columns: 12
+      rows: auto
+      
+  sections:
+    # Section 1: Action Predictions
+    action_predictions:
+      title: "Action Predictions & Confidence"
+      position:
+        row: 1
+        col: 1
+        width: 6
+        height: 4
+      
+      components:
+        - type: indicator
+          id: current_action
+          title: "Current DT Action"
+          data_source: dt_action
+          fields:
+            - action_type
+          style:
+            size: large
+            color_map:
+              BUY: success
+              SELL: danger
+              HOLD: warning
+              
+        - type: gauge
+          id: action_confidence
+          title: "Action Confidence"
+          data_source: dt_metrics
+          fields:
+            - confidence
+          range: [0, 1]
+          thresholds:
+            - value: 0.3
+              color: danger
+            - value: 0.6
+              color: warning
+            - value: 0.8
+              color: success
+              
+        - type: bar_chart
+          id: action_probabilities
+          title: "Action Probability Distribution"
+          data_source: dt_action
+          fields:
+            - action_probs
+          x_axis: ["HOLD", "BUY", "SELL"]
+          colors: ["#ffd43b", "#51cf66", "#ff6b6b"]
+          
+    # Section 2: Return-to-Go Analysis
+    return_to_go:
+      title: "Return-to-Go (RTG) Tracking"
+      position:
+        row: 1
+        col: 7
+        width: 6
+        height: 4
+        
+      components:
+        - type: line_chart
+          id: target_vs_predicted_rtg
+          title: "Target vs Predicted Return-to-Go"
+          data_source: dt_metrics
+          fields:
+            - target_return: "Target RTG"
+            - predicted_return: "Predicted RTG"
+          x_axis: timestep
+          colors: ["#4dabf7", "#845ef7"]
+          show_legend: true
+          
+        - type: number_card
+          id: target_rtg_value
+          title: "Target RTG"
+          data_source: dt_metrics
+          field: target_return
+          format: "+.2f"
+          trend: true
+          
+        - type: number_card
+          id: rtg_achievement
+          title: "RTG Achievement Rate"
+          data_source: dt_metrics
+          field: rtg_achievement_rate
+          format: ".1%"
+          
+    # Section 3: Attention Heatmap
+    attention_analysis:
+      title: "Attention Mechanism Analysis"
+      position:
+        row: 5
+        col: 1
+        width: 8
+        height: 5
+        
+      components:
+        - type: heatmap
+          id: attention_weights
+          title: "Multi-Head Attention Weights"
+          data_source: dt_metrics
+          field: attention_weights
+          x_label: "Sequence Position"
+          y_label: "Attention Head"
+          colorscale: "Viridis"
+          annotations: true
+          
+        - type: line_chart
+          id: attention_distribution
+          title: "Average Attention per Layer"
+          data_source: dt_metrics
+          field: attention_weights
+          aggregation: mean
+          x_axis: layer
+          
+    # Section 4: Training Progress
+    training_progress:
+      title: "Training Loss & Progress"
+      position:
+        row: 5
+        col: 9
+        width: 4
+        height: 5
+        
+      components:
+        - type: line_chart
+          id: training_loss
+          title: "Training Loss Over Time"
+          data_source: dt_metrics
+          fields:
+            - avg_loss: "Average Loss"
+          x_axis: training_steps
+          colors: ["#ff6b6b"]
+          
+        - type: number_card
+          id: total_training_steps
+          title: "Training Steps"
+          data_source: dt_metrics
+          field: training_steps
+          format: ",.0f"
+          
+        - type: number_card
+          id: buffer_size
+          title: "Sequence Buffer Size"
+          data_source: dt_metrics
+          field: buffer_size
+          format: ",.0f"
+          
+        - type: progress_bar
+          id: buffer_utilization
+          title: "Buffer Utilization"
+          data_source: dt_metrics
+          field: buffer_utilization
+          max_value: 1000
+          
+    # Section 5: Agent Comparison
+    agent_comparison:
+      title: "DT vs Other Agents Performance"
+      position:
+        row: 10
+        col: 1
+        width: 12
+        height: 5
+        
+      components:
+        - type: bar_chart
+          id: agent_accuracy
+          title: "Prediction Accuracy by Agent"
+          data_source: ensemble_metrics
+          fields:
+            - agent_accuracy.ppo_accuracy: "PPO"
+            - agent_accuracy.dqn_accuracy: "DQN"
+            - agent_accuracy.dt_accuracy: "DT"
+            - agent_accuracy.gan_accuracy: "GAN"
+            - agent_accuracy.gnn_accuracy: "GNN"
+          colors: ["#4dabf7", "#51cf66", "#845ef7", "#ff6b6b", "#ffd43b"]
+          
+        - type: line_chart
+          id: agent_rewards_comparison
+          title: "Cumulative Rewards by Agent"
+          data_source: ensemble_metrics
+          fields:
+            - ppo_rewards: "PPO"
+            - dqn_rewards: "DQN"
+            - dt_rewards: "DT"
+          x_axis: timestep
+          colors: ["#4dabf7", "#51cf66", "#845ef7"]
+          show_legend: true
+          
+        - type: table
+          id: agent_performance_table
+          title: "Agent Performance Summary"
+          data_source: ensemble_metrics
+          columns:
+            - name: agent_name
+              label: "Agent"
+            - name: avg_reward
+              label: "Avg Reward"
+              format: "+.2f"
+            - name: accuracy
+              label: "Accuracy"
+              format: ".1%"
+            - name: confidence
+              label: "Confidence"
+              format: ".1%"
+            - name: active
+              label: "Status"
+              type: badge
+              
+    # Section 6: Sequence Visualization
+    sequence_analysis:
+      title: "Decision Sequence Analysis"
+      position:
+        row: 15
+        col: 1
+        width: 12
+        height: 4
+        
+      components:
+        - type: timeline
+          id: decision_sequence
+          title: "Recent Decision Sequence"
+          data_source: dt_metrics
+          field: sequence_history
+          items_per_page: 20
+          show_actions: true
+          show_states: true
+          show_rewards: true
+          
+        - type: scatter_plot
+          id: state_action_space
+          title: "State-Action Space Visualization"
+          data_source: dt_metrics
+          x_field: state_embedding_x
+          y_field: state_embedding_y
+          color_field: action_type
+          size_field: confidence
+          
+  data_sources:
+    dt_action:
+      topic: dt_action
+      fields:
+        - action
+        - action_type
+        - confidence
+        - target_return
+        - timestamp
+        - action_probs
+        
+    dt_metrics:
+      topic: dt_metrics
+      fields:
+        - training_steps
+        - avg_loss
+        - buffer_size
+        - target_return
+        - predicted_return
+        - attention_weights
+        - confidence
+        - sequence_length
+        - buffer_utilization
+        - sequence_history
+        - state_embedding_x
+        - state_embedding_y
+        
+    ensemble_metrics:
+      topic: ensemble_metrics
+      fields:
+        - ppo_accuracy
+        - dqn_accuracy
+        - dt_accuracy
+        - gan_accuracy
+        - gnn_accuracy
+        - ppo_rewards
+        - dqn_rewards
+        - dt_rewards
+        - agent_name
+        - avg_reward
+        - accuracy
+        - confidence
+        - active
+        
+  interactions:
+    # Click on sequence item to show details
+    - event: click
+      source: decision_sequence
+      action: show_details
+      target: modal
+      
+    # Hover on attention heatmap to show values
+    - event: hover
+      source: attention_weights
+      action: show_tooltip
+      
+  styling:
+    theme: dark
+    background: "#0a0e1a"
+    card_background: "#141b2d"
+    text_color: "#ffffff"
+    accent_color: "#845ef7"
+    
+  responsive:
+    mobile:
+      hide_sections:
+        - attention_analysis
+        - sequence_analysis
+    tablet:
+      stack_vertical: true
+      
+  export:
+    enabled: true
+    formats:
+      - csv
+      - json
+      - png

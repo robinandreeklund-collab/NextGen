@@ -619,8 +619,9 @@ python -c "from start_dashboard import NextGenDashboard; print('OK')"
 | Sprint 7 | ✅ Färdig | Indikatorvisualisering och systemöversikt |
 | Sprint 8 | ✅ Färdig | DQN, GAN, GNN – Hybridiserad RL & Temporal Intelligence |
 | Sprint 9 | ✅ Färdig | Finnhub Orchestrator – Central datakoordinering och RL-driven symbolrotation |
+| Sprint 10 | ✅ Färdig | Decision Transformer – Sequence-based RL & 5-agent ensemble |
 
-**Testresultat:** ✅ 368/368 tester passerar (100%)
+**Testresultat:** ✅ 415/415 tester passerar (100%)
 
 ---
 
@@ -698,6 +699,8 @@ http://localhost:8050
 | `stream_strategy_agent.py` | RL-agent för streaming-optimering | Sprint 9 |
 | `stream_replay_engine.py` | Reprisering av historisk data | Sprint 9 |
 | `stream_ontology_mapper.py` | Datanormalisering från olika källor | Sprint 9 |
+| `decision_transformer_agent.py` | Decision Transformer för sequence-based RL | Sprint 10 |
+| `ensemble_coordinator.py` | Koordinerar 5-agent ensemble (PPO, DQN, DT, GAN, GNN) | Sprint 10 |
 | `data_ingestion.py` | WebSocket-dataflöde från Finnhub | Sprint 1 |
 | `data_ingestion_sim.py` | Simulerad marknadsdata för demo-läge | Sprint 1 |
 | `strategy_engine.py` | Genererar tradeförslag baserat på indikatorer | Sprint 1-2 |
@@ -718,14 +721,23 @@ http://localhost:8050
 | `gnn_timespan_analyzer.py` | Graph Neural Network för temporal analys | Sprint 8 |
 | `strategic_memory_engine.py` | Beslutshistorik och analys | Sprint 4 |
 | `meta_agent_evolution_engine.py` | Agentevolution | Sprint 4 |
-| `agent_manager.py` | Agentprofiler och versioner | Sprint 4 |
+| `agent_manager.py` | Agentprofiler och versioner | Sprint 4, 10 |
 | `feedback_router.py` | Intelligent feedback-routing | Sprint 3 |
 | `feedback_analyzer.py` | Mönsteranalys i feedback | Sprint 3 |
 | `introspection_panel.py` | Dashboard-data för visualisering | Sprint 3, 7 |
 
 ### Adaptiva Parametrar
 
-Systemet har **16 adaptiva parametrar** som justeras automatiskt via RL/PPO:
+Systemet har **23+ adaptiva parametrar** som justeras automatiskt via RL/PPO:
+
+**Sprint 10 (Decision Transformer):**
+- dt_learning_rate (0.00001-0.001)
+- dt_sequence_length (10-50)
+- dt_num_layers (2-6)
+- dt_target_return_weight (0.5-2.0)
+- dt_embed_dim (64-256)
+- dt_num_heads (2-8)
+- dt_dropout (0.0-0.3)
 
 **Sprint 4.4 (RewardTunerAgent):**
 - reward_scaling_factor (0.5-2.0)
@@ -1004,6 +1016,113 @@ För detaljerad information om sprintar, implementationer och arkitektur:
 | **6** | Timeline | Timeline tracking, Action chains, System monitor |
 | **7** | Visualisering | **analyzer_debug.py**, Resource planner, Teams |
 | **8** | Hybrid RL & Deep Learning | DQN, GAN, GNN, Temporal intelligence |
+| **9** | Finnhub Orchestrator | RL-driven symbolrotation och datakoordinering |
+| **10** | Decision Transformer | Sequence-based RL med transformer-arkitektur |
+
+---
+
+## 🆕 Sprint 10: Decision Transformer – Sequence-Based RL
+
+Sprint 10 integrerar Decision Transformer (DT) för sekvensbaserad reinforcement learning:
+
+### Nya Moduler
+
+**1. Decision Transformer Agent (`decision_transformer_agent.py`)**
+- Transformer-arkitektur för sekvensbaserad RL
+- Multi-head attention mechanism för temporal dependencies
+- Processar (state, action, reward, return-to-go) sekvenser
+- Offline learning från historiska trajectories
+- Integreras i 5-agent ensemble med PPO, DQN, GAN, GNN
+
+**2. Ensemble Coordinator (`ensemble_coordinator.py`)**
+- Koordinerar beslut från alla agenter (PPO, DQN, DT, GAN, GNN)
+- Weighted voting för final decisions
+- Konfliktdetektion och resolution
+- Performance tracking per agent
+- Adaptiva vikter baserat på agent performance
+
+### Decision Transformer Funktioner
+
+**Transformer Architecture:**
+- State embeddings: Linear projection till embed_dim
+- Action embeddings: Linear projection till embed_dim
+- Return-to-go embeddings: Target return representation
+- Positional encoding: För temporal order
+- Multi-head attention: 4 heads för parallel attention
+- 3 transformer layers: Deep sequence modeling
+- Action prediction head: Final action från state embedding
+
+**Sequence Processing:**
+- Max sequence length: 20 timesteps
+- Return-to-go calculation: Discounted cumulative rewards
+- Causal masking: Prevent future information leakage
+- Batch training: 32 sequences per batch
+- Experience replay: 1000 sequence buffer
+
+**Integration Points:**
+- Strategic Memory Engine: Provides decision histories
+- Reward Tuner: Supplies tuned rewards for training
+- Message Bus: Publishes actions and metrics
+- Ensemble Coordinator: Participates in voting
+
+### 5-Agent Ensemble Architecture
+
+**Agent Weights (default):**
+- PPO: 30% - Policy gradient optimization
+- DQN: 30% - Q-value optimization
+- DT: 20% - Sequence-based decisions
+- GAN: 10% - Evolution guidance
+- GNN: 10% - Temporal pattern insights
+
+**Conflict Resolution:**
+- Weighted average voting
+- Confidence-based weighting
+- Agreement score calculation
+- Entropy-based clarity measure
+- Adaptive weight adjustment
+
+**Performance Tracking:**
+- Individual agent rewards
+- Prediction accuracy per agent
+- Conflict frequency monitoring
+- Ensemble diversity metrics
+- Agent contribution analysis
+
+### Dashboard Integration
+
+**DT Analysis Panel (`dt_analysis_panel.yaml`):**
+1. **Action Predictions** - Current action, confidence, probability distribution
+2. **Return-to-Go Tracking** - Target vs predicted RTG, achievement rate
+3. **Attention Analysis** - Multi-head attention heatmap, per-layer distribution
+4. **Training Progress** - Loss curves, training steps, buffer utilization
+5. **Agent Comparison** - Performance comparison across PPO, DQN, DT, GAN, GNN
+6. **Sequence Visualization** - Decision sequence timeline, state-action space
+
+### Adaptive Parameters
+
+**DT-specific (controlled by RL):**
+- dt_learning_rate: 0.00001 - 0.001 (default 0.0001)
+- dt_sequence_length: 10 - 50 (default 20)
+- dt_num_layers: 2 - 6 (default 3)
+- dt_target_return_weight: 0.5 - 2.0 (default 1.0)
+- dt_embed_dim: 64 - 256 (default 128)
+- dt_num_heads: 2 - 8 (default 4)
+- dt_dropout: 0.0 - 0.3 (default 0.1)
+
+**Ensemble weights:**
+- ppo_weight, dqn_weight, dt_weight, gan_weight, gnn_weight
+- Constraint: Sum to 1.0
+- Adaptive adjustment based on performance
+
+### Testning
+
+**26 nya tester för Decision Transformer:**
+- Transformer block tests (2)
+- DT model tests (3)
+- DT agent tests (19)
+- Integration tests (2)
+
+**Total testning:** 396/396 tester passerar (100%)
 
 ---
 
@@ -1036,17 +1155,19 @@ Sprint 8 integrerar avancerade deep learning-tekniker för förbättrad beslutsf
 
 ### Hybrid RL-Arkitektur
 
-**PPO + DQN Parallell Exekvering:**
+**PPO + DQN + DT Parallell Exekvering:**
 - PPO (från Sprint 2-7): Policy gradient-optimering
 - DQN (Sprint 8): Q-value-optimering
-- Båda får samma rewards från portfolio_manager och reward_tuner
-- Koordinerad via message_bus
+- DT (Sprint 10): Sequence-based transformer
+- Alla får samma rewards från portfolio_manager och reward_tuner
+- Koordinerad via ensemble_coordinator och message_bus
 - Konfliktdetektion och resolution
 
 **Fördelar:**
 - PPO: Bra för kontinuerliga åtgärdsval
 - DQN: Bra för diskreta beslutsrum
-- Kombinerat: Robustare och mer stabilt
+- DT: Utmärkt för sekventiellt beslutsfattande
+- Kombinerat: Maximalt robust och stabilt
 
 ### GAN-driven Evolution
 

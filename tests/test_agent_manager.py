@@ -92,9 +92,10 @@ class TestAgentManager:
         """Testar att hämta alla profiles."""
         all_profiles = self.agent_manager.get_all_profiles()
         
-        assert len(all_profiles) == 4  # Default 4 agents
+        assert len(all_profiles) == 5  # Default 5 agents (including DT agent)
         assert 'strategy_agent' in all_profiles
         assert 'risk_agent' in all_profiles
+        assert 'dt_agent' in all_profiles
     
     def test_get_evolution_tree(self):
         """Testar generering av evolution tree."""
@@ -112,7 +113,7 @@ class TestAgentManager:
         
         tree = self.agent_manager.get_evolution_tree()
         
-        assert tree['total_agents'] == 4
+        assert tree['total_agents'] == 5  # Now includes DT agent
         assert 'strategy_agent' in tree['agents']
         assert tree['agents']['strategy_agent']['total_versions'] > 1
         # Sprint 4.2

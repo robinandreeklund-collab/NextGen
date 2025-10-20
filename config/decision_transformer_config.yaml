@@ -1,0 +1,87 @@
+# Decision Transformer Configuration
+
+dt_agent:
+  version: 1.0
+  description: Decision Transformer for sequence-based reinforcement learning
+  
+  # Model architecture
+  architecture:
+    state_dim: 10  # Dimension of state space (OHLC, volume, indicators, portfolio)
+    action_dim: 3  # BUY, SELL, HOLD
+    embed_dim: 128  # Embedding dimension for transformer
+    num_layers: 3  # Number of transformer layers
+    num_heads: 4  # Number of attention heads
+    max_sequence_length: 20  # Maximum sequence length to process
+    dropout: 0.1  # Dropout rate for regularization
+    
+  # Training parameters
+  training:
+    learning_rate: 0.0001  # Learning rate for optimizer
+    batch_size: 32  # Batch size for training
+    target_return_weight: 1.0  # Weight for target return in loss
+    gamma: 0.99  # Discount factor for return-to-go calculation
+    buffer_size: 1000  # Maximum sequences to store
+    training_frequency: 10  # Train every N episodes
+    
+  # Target return strategy
+  target_return:
+    initial: 100.0  # Initial target return
+    percentile: 75  # Use 75th percentile of recent returns
+    update_frequency: 50  # Update target every N episodes
+    
+  # Integration with ensemble
+  ensemble:
+    weight: 0.2  # Weight in ensemble voting (PPO: 0.3, DQN: 0.3, GAN: 0.1, GNN: 0.1, DT: 0.2)
+    consensus_threshold: 0.5  # Threshold for consensus participation
+    priority: 3  # Priority in conflict resolution (1=highest)
+    
+  # Message bus topics
+  topics:
+    subscribe:
+      - memory_insights  # From strategic_memory_engine
+      - reward  # From portfolio_manager
+      - tuned_reward  # From reward_tuner
+      - market_data  # From data_ingestion/data_ingestion_sim
+      - dt_action_request  # Action requests from decision_engine
+      - parameter_adjustment  # From rl_controller
+    publish:
+      - dt_action  # Action predictions
+      - dt_metrics  # Training metrics and attention analysis
+      - dt_status  # Agent status
+      
+  # Adaptive parameters (controlled by RL)
+  adaptive_parameters:
+    dt_learning_rate:
+      range: [0.00001, 0.001]
+      default: 0.0001
+      description: Learning rate for transformer optimizer
+      
+    dt_sequence_length:
+      range: [10, 50]
+      default: 20
+      description: Sequence length for temporal modeling
+      
+    dt_num_layers:
+      range: [2, 6]
+      default: 3
+      description: Number of transformer layers
+      
+    dt_target_return_weight:
+      range: [0.5, 2.0]
+      default: 1.0
+      description: Weight for target return influence
+      
+    dt_embed_dim:
+      range: [64, 256]
+      default: 128
+      description: Embedding dimension
+      
+    dt_num_heads:
+      range: [2, 8]
+      default: 4
+      description: Number of attention heads
+      
+    dt_dropout:
+      range: [0.0, 0.3]
+      default: 0.1
+      description: Dropout rate for regularization

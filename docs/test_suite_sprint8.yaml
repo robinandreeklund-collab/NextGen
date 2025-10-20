@@ -14,6 +14,32 @@ test_categories:
       - test_batch_training
       - test_loss_calculation
       
+    decision_transformer:
+      - test_transformer_block_initialization
+      - test_transformer_block_forward_pass
+      - test_dt_model_initialization
+      - test_dt_model_forward_pass
+      - test_dt_output_dimensions
+      - test_dt_agent_initialization
+      - test_extract_state
+      - test_encode_action
+      - test_decode_action
+      - test_calculate_returns_to_go
+      - test_predict_action_cold_start
+      - test_predict_action_with_history
+      - test_train_step_insufficient_data
+      - test_train_step_with_data
+      - test_on_reward
+      - test_on_tuned_reward
+      - test_on_market_data
+      - test_on_action_request
+      - test_on_parameter_adjustment
+      - test_update_target_return
+      - test_get_metrics
+      - test_message_bus_integration
+      - test_process_decision_history
+      - test_training_convergence
+      
     gan_evolution_engine:
       - test_gan_initialization
       - test_generator_forward_pass
@@ -43,6 +69,15 @@ test_categories:
       - test_coordinator_selection
       - test_weighted_combination
       - test_hybrid_training_loop
+      
+    dt_integration:
+      - test_dt_end_to_end_prediction
+      - test_dt_memory_insights_integration
+      - test_dt_ensemble_integration
+      - test_dt_consensus_participation
+      - test_dt_with_ppo_dqn
+      - test_dt_sequence_building
+      - test_dt_attention_mechanism
       
     hybrid_reward:
       - test_base_reward_split
