@@ -593,7 +593,7 @@ class FinnhubOrchestrator:
         """
         positions = status.get('positions', {})
         # Extract symbols from portfolio positions
-        portfolio_symbols = set(positions.keys()) if positions else set()
+        portfolio_symbols = set(positions.keys())
         
         # Update protected symbols
         old_protected = self.protected_symbols.copy()
