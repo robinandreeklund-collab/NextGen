@@ -5110,6 +5110,21 @@ class NextGenDashboard:
                 # Multi symbol mode - random selection
                 selected_symbol = random.choice(self.symbols)
             
+            # Initialize variables that may be used later (for GAN feeding, etc.)
+            reward = 0.0
+            rsi = 50.0
+            macd = 0.0
+            volume = 100000
+            sma_distance = 0.0
+            price_momentum = 0.0
+            volatility_index = 0.0
+            atr = 0.01
+            bb_position = 0.5
+            volume_ratio = 1.0
+            volume_trend = 0.0
+            position_size = 0.0
+            cash_ratio = 1.0
+            
             try:
                 # Calculate indicators (RSI, MACD, ATR, etc.)
                 prices = self.price_history[selected_symbol]
