@@ -3767,8 +3767,14 @@ class NextGenDashboard:
                                        style={'padding': '10px', 'textAlign': 'right', 'fontSize': '12px',
                                              'color': THEME_COLORS['success'] if dec.get('reward', 0) >= 0 
                                              else THEME_COLORS['danger'], 'fontWeight': '600'}),
-                                html.Td("PPO, DQN, DT",
-                                       style={'padding': '10px', 'fontSize': '11px', 'color': THEME_COLORS['text_secondary']}),
+                                html.Td(
+                                    (
+                                        ", ".join(dec.get('agents', []))
+                                        if dec.get('agents')
+                                        else dec.get('agent', 'N/A')
+                                    ),
+                                    style={'padding': '10px', 'fontSize': '11px', 'color': THEME_COLORS['text_secondary']}
+                                ),
                                 html.Td(f"{random.randint(60, 95)}%",
                                        style={'padding': '10px', 'textAlign': 'right', 'fontSize': '12px',
                                              'color': THEME_COLORS['text'], 'fontWeight': '600'}),
