@@ -5611,13 +5611,13 @@ class NextGenDashboard:
                                 net_profit = revenue - cost_basis - fee
                                 reward = net_profit
                     elif final_action in ['BUY', 'BUY_SMALL', 'BUY_MEDIUM', 'BUY_LARGE']:
-                        # For BUY, reward is portfolio value change (NOT negative cost!)
-                        # Using negative cost would train agents to never buy
-                        # All agents (PPO, DQN, DT, Ensemble) must use the same logic
-                        reward = portfolio_value_after - portfolio_value
+                        # For BUY, reward is always 0.0 (outcome unknown until position closed)
+                        # This is consistent with proper RL trading where we don't penalize taking positions
+                        # Reward is only given when the position is closed via SELL
+                        reward = 0.0
                     elif final_action in ['HOLD', 'REBALANCE']:
-                        # For HOLD/REBALANCE, reward is portfolio value change
-                        reward = portfolio_value_after - portfolio_value
+                        # For HOLD/REBALANCE, reward is 0.0 (no position change)
+                        reward = 0.0
                     
                     # Track execution ONLY if trade was actually executed successfully
                     # This means it went into the portfolio
@@ -5830,31 +5830,27 @@ class NextGenDashboard:
             
             # === COLLECT MODULE METRICS ===
             try:
-                # Portfolio and reward data
+                # Portfolio value for dashboard metrics
                 portfolio_value = self.portfolio_manager.get_portfolio_value(self.current_prices)
-                prev_value = self.reward_history['base'][-1] if self.reward_history['base'] else self.portfolio_manager.start_capital
-                base_reward = portfolio_value - prev_value
                 
-                # Publish base_reward to message_bus
-                # RewardTuner subscribes to 'base_reward' topic and publishes 'tuned_reward'
-                self.message_bus.publish('base_reward', {
-                    'reward': base_reward,
-                    'source': 'portfolio_manager',
-                    'portfolio_value': portfolio_value,
-                    'timestamp': time.time()
-                })
+                # Note: base_reward messages are now published by portfolio_manager itself
+                # when trades execute, using the correct action-based reward calculation.
+                # For dashboard metrics display, we track portfolio value change as a proxy
+                # but this is NOT the actual reward used for RL training.
+                prev_value = self.reward_history['base'][-1] if self.reward_history['base'] else self.portfolio_manager.start_capital
+                base_reward_proxy = portfolio_value - prev_value
                 
                 # For dashboard display, apply simple tuning estimate
-                # In production, this would come from reward_tuner via message_bus subscription
-                tuned_reward = base_reward * 1.2
+                # Note: Actual rewards for RL training come from portfolio_manager per trade
+                tuned_reward = base_reward_proxy * 1.2
                 
-                self.reward_history['base'].append(base_reward)
+                self.reward_history['base'].append(base_reward_proxy)
                 self.reward_history['tuned'].append(tuned_reward)
                 
                 # RL rewards from actual module state if available
                 # These should ideally come from the RL controllers themselves
-                ppo_reward = base_reward * (1 + random.gauss(0, 0.2))  # PPO performance variation
-                dqn_reward = base_reward * (1 + random.gauss(0, 0.15))  # DQN performance variation
+                ppo_reward = base_reward_proxy * (1 + random.gauss(0, 0.2))  # PPO performance variation
+                dqn_reward = base_reward_proxy * (1 + random.gauss(0, 0.15))  # DQN performance variation
                 self.reward_history['ppo'].append(ppo_reward)
                 self.reward_history['dqn'].append(dqn_reward)
                 
