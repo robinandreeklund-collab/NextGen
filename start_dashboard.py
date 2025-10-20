@@ -5571,7 +5571,7 @@ class NextGenDashboard:
                             ], style={'marginBottom': '8px'}),
                             html.Div([
                                 html.Span("Update Rate:", style={'color': THEME_COLORS['text_secondary'], 'fontSize': '11px'}),
-                                html.Span(f" {self.tick_rate * 1000:.0f}ms/tick" if self.tick_rate > 0 else " Max speed", 
+                                html.Span(f" {self.tick_rate * 1000:.2f}ms/tick" if self.tick_rate > 0 else " Max speed", 
                                          style={'color': THEME_COLORS['text'], 'fontWeight': 'bold', 'fontSize': '11px'})
                             ]),
                         ])
