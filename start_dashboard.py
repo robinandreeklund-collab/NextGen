@@ -311,6 +311,9 @@ class NextGenDashboard:
         self.message_bus.subscribe('rl_scores', self._handle_rl_scores)
         self.message_bus.subscribe('replay_event', self._handle_replay_event)
         
+        # Subscribe to market data (for live WebSocket price updates)
+        self.message_bus.subscribe('market_data', self._handle_market_data)
+        
         # Subscribe to DT and ensemble events
         self.message_bus.subscribe('dt_action', self._handle_dt_action)
         self.message_bus.subscribe('dt_metrics', self._handle_dt_metrics)
@@ -398,6 +401,48 @@ class NextGenDashboard:
         # Keep only last 50 events to prevent memory leak
         if len(self.orchestrator_metrics['replay_events']) > 50:
             self.orchestrator_metrics['replay_events'].pop(0)
+    
+    def _handle_market_data(self, data: Dict[str, Any]):
+        """Handle real-time market data from WebSocket (live mode only)."""
+        if not self.live_mode:
+            return  # Only process in live mode
+        
+        try:
+            symbol = data.get('symbol', data.get('s'))  # Finnhub uses 's' for symbol
+            price = data.get('price', data.get('p'))     # Finnhub uses 'p' for price
+            volume = data.get('volume', data.get('v', 100000))  # Finnhub uses 'v' for volume
+            
+            if symbol and price:
+                # Update current price
+                self.current_prices[symbol] = float(price)
+                
+                # Initialize tracking structures if symbol is new
+                if symbol not in self.price_history:
+                    self.price_history[symbol] = []
+                if symbol not in self.volume_history:
+                    self.volume_history[symbol] = []
+                if symbol not in self.base_prices:
+                    self.base_prices[symbol] = float(price)
+                if symbol not in self.price_trends:
+                    # Calculate trend from price history if available
+                    if len(self.price_history[symbol]) >= 2:
+                        old_price = self.price_history[symbol][-1]
+                        self.price_trends[symbol] = ((float(price) - old_price) / old_price * 100) if old_price != 0 else 0.0
+                    else:
+                        self.price_trends[symbol] = 0.0
+                
+                # Update price history
+                self.price_history[symbol].append(float(price))
+                if len(self.price_history[symbol]) > 100:
+                    self.price_history[symbol].pop(0)
+                
+                # Update volume history
+                self.volume_history[symbol].append(float(volume))
+                if len(self.volume_history[symbol]) > 100:
+                    self.volume_history[symbol].pop(0)
+                    
+        except Exception as e:
+            print(f"Error processing market data: {e}")
     
     def _handle_dt_action(self, action: Dict[str, Any]):
         """Handle Decision Transformer action updates."""
@@ -5141,8 +5186,11 @@ class NextGenDashboard:
                 mode_str = "live" if self.live_mode else "demo"
                 print(f"📊 Synchronized {mode_str} mode with orchestrator: {len(orch_symbols)} active symbols")
                 
-                # Update data ingestion in demo mode
-                if not self.live_mode and hasattr(self, 'data_ingestion'):
+                # Start WebSocket in live mode or update data ingestion in demo mode
+                if self.live_mode and hasattr(self, 'data_ingestion'):
+                    if hasattr(self.data_ingestion, 'start_websocket'):
+                        self.data_ingestion.start_websocket(orch_symbols)
+                elif not self.live_mode and hasattr(self, 'data_ingestion'):
                     if hasattr(self.data_ingestion, 'update_symbols'):
                         self.data_ingestion.update_symbols(orch_symbols)
             
@@ -5156,6 +5204,11 @@ class NextGenDashboard:
         
         # Stop orchestrator
         self.orchestrator.stop()
+        
+        # Close WebSocket in live mode
+        if self.live_mode and hasattr(self, 'data_ingestion'):
+            if hasattr(self.data_ingestion, 'close_streams'):
+                self.data_ingestion.close_streams()
         
         if self.simulation_thread:
             self.simulation_thread.join(timeout=2)
