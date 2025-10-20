@@ -384,6 +384,9 @@ class NextGenDashboard:
     def _handle_replay_event(self, event: Dict[str, Any]):
         """Handle replay events."""
         self.orchestrator_metrics['replay_events'].append(event)
+        # Keep only last 50 events to prevent memory leak
+        if len(self.orchestrator_metrics['replay_events']) > 50:
+            self.orchestrator_metrics['replay_events'].pop(0)
     
     def _handle_dt_action(self, action: Dict[str, Any]):
         """Handle Decision Transformer action updates."""
@@ -467,8 +470,8 @@ class NextGenDashboard:
             'confidence': vote.get('confidence', 0.5),
             'reasoning': vote.get('reasoning', '')
         })
-        # Keep last 500 votes (for voting matrix over time)
-        if len(self.agent_votes_history) > 500:
+        # Keep last 200 votes to prevent memory leak (25 votes per agent * 8 agents)
+        if len(self.agent_votes_history) > 200:
             self.agent_votes_history.pop(0)
     
     
