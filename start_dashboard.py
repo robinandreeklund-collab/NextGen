@@ -1291,15 +1291,26 @@ class NextGenDashboard:
         total_sold_trades = len(sold_trades)
         win_rate = (profitable_sold_trades / total_sold_trades * 100) if total_sold_trades > 0 else 0
         
-        # Average reward trend (last 50 vs first 50)
-        if len(self.decision_history) >= 100:
-            early_rewards = [d.get('reward', 0) for d in self.decision_history[:50]]
-            recent_rewards = [d.get('reward', 0) for d in self.decision_history[-50:]]
+        # Average reward trend (last N vs first N, where N = min(50, half of decisions))
+        if len(self.decision_history) >= 20:
+            # Use flexible window size based on available data
+            window_size = min(50, len(self.decision_history) // 2)
+            early_rewards = [d.get('reward', 0) for d in self.decision_history[:window_size]]
+            recent_rewards = [d.get('reward', 0) for d in self.decision_history[-window_size:]]
             avg_early = sum(early_rewards) / len(early_rewards) if early_rewards else 0
             avg_recent = sum(recent_rewards) / len(recent_rewards) if recent_rewards else 0
-            reward_improvement = ((avg_recent - avg_early) / abs(avg_early) * 100) if avg_early != 0 else 0
+            
+            # Calculate improvement percentage
+            if avg_early != 0:
+                reward_improvement = ((avg_recent - avg_early) / abs(avg_early) * 100)
+            elif avg_recent > 0:
+                reward_improvement = 100.0  # 100% improvement from 0
+            elif avg_recent < 0:
+                reward_improvement = -100.0  # 100% decline to negative
+            else:
+                reward_improvement = 0.0
         else:
-            reward_improvement = 0
+            reward_improvement = 0.0
             avg_early = 0
             avg_recent = 0
         
@@ -1307,14 +1318,20 @@ class NextGenDashboard:
         ppo_episodes = sum(1 for agent in self.rl_controller.agents.values() if hasattr(agent, 'current_episode'))
         dqn_steps = self.dqn_controller.training_steps if hasattr(self.dqn_controller, 'training_steps') else 0
         
-        # Consensus efficiency (how often agents agree)
-        if len(self.decision_history) >= 20:
-            # Sample recent decisions to check vote patterns
-            consensus_count = sum(1 for d in self.decision_history[-50:] 
-                                 if d.get('agent', '') in ['PPO', 'DQN'])
-            consensus_rate = (consensus_count / min(50, len(self.decision_history))) * 100
+        # Consensus efficiency (how often agents agree on decisions)
+        # Consensus means multiple agents voted for the same action (PPO+DQN, DQN+DT, PPO+DT, etc.)
+        if len(self.decision_history) >= 10:
+            # Check recent decisions for consensus patterns
+            recent_decisions = self.decision_history[-50:] if len(self.decision_history) >= 50 else self.decision_history
+            
+            # Count decisions where multiple agents agreed (indicated by + in agent name)
+            consensus_count = sum(1 for d in recent_decisions 
+                                 if '+' in d.get('agent', ''))  # PPO+DQN, DQN+DT, etc.
+            
+            # Calculate consensus rate
+            consensus_rate = (consensus_count / len(recent_decisions) * 100) if recent_decisions else 0.0
         else:
-            consensus_rate = 50.0
+            consensus_rate = 0.0
         
         # Create improvement timeline chart
         window_size = 20
