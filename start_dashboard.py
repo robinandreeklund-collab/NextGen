@@ -1887,6 +1887,9 @@ class NextGenDashboard:
             ], style={'backgroundColor': THEME_COLORS['surface'], 'borderRadius': '8px',
                      'padding': '20px', 'marginBottom': '30px'}),
             
+            # New: Portfolio Performance Chart with Time Interval Selectors
+            self.create_portfolio_time_chart(),
+            
             # Recently Sold table (last 20 sold stocks)
             self.create_recently_sold_table(),
         ])
@@ -1968,6 +1971,173 @@ class NextGenDashboard:
             ], style={'overflowX': 'auto'})
         ], style={'backgroundColor': THEME_COLORS['surface'], 'borderRadius': '8px',
                  'padding': '20px', 'border': f'1px solid {THEME_COLORS["border"]}'})
+    
+    def create_portfolio_time_chart(self) -> html.Div:
+        """Create Portfolio Performance Chart with Time Interval Selectors (1H, 24H, 7D, 30D)."""
+        import plotly.graph_objs as go
+        from datetime import datetime, timedelta
+        
+        # Determine the selected time interval (default to 24H)
+        selected_interval = '24H'
+        
+        # Calculate portfolio value history based on reward history
+        portfolio_value_history = []
+        time_labels = []
+        
+        # Get the number of data points based on iteration count
+        total_iterations = self.iteration_count
+        
+        # Map intervals to number of data points
+        interval_map = {
+            '1H': min(30, total_iterations),   # Last 30 iterations (~1 hour at 2s intervals)
+            '24H': min(720, total_iterations),  # Last 720 iterations (~24 hours)
+            '7D': min(5040, total_iterations),  # Last 5040 iterations (~7 days)
+            '30D': min(21600, total_iterations) # Last 21600 iterations (~30 days)
+        }
+        
+        num_points = interval_map.get(selected_interval, 720)
+        
+        # Build portfolio value history from simulation data
+        if hasattr(self, 'reward_history') and 'base' in self.reward_history and len(self.reward_history['base']) > 0:
+            # Use cumulative rewards to build portfolio value over time
+            start_capital = self.portfolio_manager.start_capital
+            cumulative_value = start_capital
+            
+            # Take last N points from reward history
+            rewards = self.reward_history['base'][-num_points:] if len(self.reward_history['base']) >= num_points else self.reward_history['base']
+            
+            for i, reward in enumerate(rewards):
+                cumulative_value += reward
+                portfolio_value_history.append(cumulative_value)
+                time_labels.append(i)
+        else:
+            # Fallback: simulate some portfolio value data
+            current_value = self.portfolio_manager.get_portfolio_value(self.current_prices)
+            for i in range(num_points):
+                value = self.portfolio_manager.start_capital * (current_value / self.portfolio_manager.start_capital) * ((i + 1) / num_points)
+                portfolio_value_history.append(value)
+                time_labels.append(i)
+        
+        # Create the portfolio value chart
+        portfolio_time_fig = go.Figure()
+        
+        # Add portfolio value line
+        portfolio_time_fig.add_trace(go.Scatter(
+            x=time_labels,
+            y=portfolio_value_history,
+            mode='lines',
+            name='Portfolio Value',
+            line=dict(color=THEME_COLORS['primary'], width=2),
+            fill='tozeroy',
+            fillcolor='rgba(77, 171, 247, 0.2)',
+            hovertemplate='Value: $%{y:.2f}<extra></extra>'
+        ))
+        
+        # Add benchmark line (starting capital)
+        portfolio_time_fig.add_trace(go.Scatter(
+            x=[0, max(1, len(time_labels) - 1)],
+            y=[self.portfolio_manager.start_capital, self.portfolio_manager.start_capital],
+            mode='lines',
+            name='Start Capital',
+            line=dict(color=THEME_COLORS['text_secondary'], width=1, dash='dash'),
+            hovertemplate='Start: $%{y:.2f}<extra></extra>'
+        ))
+        
+        portfolio_time_fig.update_layout(
+            **self.get_chart_layout(f"Portfolio Performance ({selected_interval})"),
+            height=350,
+            yaxis_title="Portfolio Value ($)",
+            xaxis_title="Time",
+            showlegend=True,
+            legend=dict(x=0.02, y=0.98, bgcolor='rgba(0,0,0,0.3)')
+        )
+        
+        # Calculate performance metrics for the selected interval
+        if len(portfolio_value_history) > 0:
+            start_value = portfolio_value_history[0]
+            end_value = portfolio_value_history[-1]
+            pnl = end_value - start_value
+            pnl_pct = (pnl / start_value * 100) if start_value > 0 else 0
+            max_value = max(portfolio_value_history)
+            min_value = min(portfolio_value_history)
+            volatility = (max_value - min_value) / start_value * 100 if start_value > 0 else 0
+        else:
+            pnl = 0
+            pnl_pct = 0
+            max_value = self.portfolio_manager.start_capital
+            min_value = self.portfolio_manager.start_capital
+            volatility = 0
+        
+        return html.Div([
+            html.H3("Portfolio Performance Over Time", 
+                   style={'fontSize': '18px', 'marginBottom': '15px', 'color': THEME_COLORS['text']}),
+            
+            # Time interval selector buttons
+            html.Div([
+                html.Div("Select Time Interval:", 
+                        style={'fontSize': '12px', 'color': THEME_COLORS['text_secondary'], 
+                              'marginRight': '15px', 'display': 'inline-block'}),
+                html.Button('1H', id='interval-1h',
+                           style={'padding': '8px 16px', 'marginRight': '8px',
+                                 'backgroundColor': THEME_COLORS['surface_light'],
+                                 'color': THEME_COLORS['text'],
+                                 'border': f'1px solid {THEME_COLORS["border"]}',
+                                 'borderRadius': '4px', 'cursor': 'pointer', 'fontSize': '12px'}),
+                html.Button('24H', id='interval-24h',
+                           style={'padding': '8px 16px', 'marginRight': '8px',
+                                 'backgroundColor': THEME_COLORS['primary'],
+                                 'color': 'white',
+                                 'border': f'1px solid {THEME_COLORS["border"]}',
+                                 'borderRadius': '4px', 'cursor': 'pointer', 'fontSize': '12px', 'fontWeight': '600'}),
+                html.Button('7D', id='interval-7d',
+                           style={'padding': '8px 16px', 'marginRight': '8px',
+                                 'backgroundColor': THEME_COLORS['surface_light'],
+                                 'color': THEME_COLORS['text'],
+                                 'border': f'1px solid {THEME_COLORS["border"]}',
+                                 'borderRadius': '4px', 'cursor': 'pointer', 'fontSize': '12px'}),
+                html.Button('30D', id='interval-30d',
+                           style={'padding': '8px 16px',
+                                 'backgroundColor': THEME_COLORS['surface_light'],
+                                 'color': THEME_COLORS['text'],
+                                 'border': f'1px solid {THEME_COLORS["border"]}',
+                                 'borderRadius': '4px', 'cursor': 'pointer', 'fontSize': '12px'}),
+            ], style={'marginBottom': '20px'}),
+            
+            # Performance metrics for selected interval
+            html.Div([
+                html.Div([
+                    html.Div("P/L", style={'fontSize': '11px', 'color': THEME_COLORS['text_secondary'], 'marginBottom': '5px'}),
+                    html.Div(f"${pnl:+.2f}", style={'fontSize': '18px', 'fontWeight': '600', 
+                                                     'color': THEME_COLORS['success'] if pnl >= 0 else THEME_COLORS['danger']}),
+                ], style={'flex': '1', 'padding': '15px', 'backgroundColor': THEME_COLORS['surface_light'], 
+                         'borderRadius': '6px', 'marginRight': '10px'}),
+                html.Div([
+                    html.Div("Return", style={'fontSize': '11px', 'color': THEME_COLORS['text_secondary'], 'marginBottom': '5px'}),
+                    html.Div(f"{pnl_pct:+.2f}%", style={'fontSize': '18px', 'fontWeight': '600', 
+                                                        'color': THEME_COLORS['success'] if pnl_pct >= 0 else THEME_COLORS['danger']}),
+                ], style={'flex': '1', 'padding': '15px', 'backgroundColor': THEME_COLORS['surface_light'], 
+                         'borderRadius': '6px', 'marginRight': '10px'}),
+                html.Div([
+                    html.Div("High", style={'fontSize': '11px', 'color': THEME_COLORS['text_secondary'], 'marginBottom': '5px'}),
+                    html.Div(f"${max_value:.2f}", style={'fontSize': '18px', 'fontWeight': '600', 'color': THEME_COLORS['text']}),
+                ], style={'flex': '1', 'padding': '15px', 'backgroundColor': THEME_COLORS['surface_light'], 
+                         'borderRadius': '6px', 'marginRight': '10px'}),
+                html.Div([
+                    html.Div("Low", style={'fontSize': '11px', 'color': THEME_COLORS['text_secondary'], 'marginBottom': '5px'}),
+                    html.Div(f"${min_value:.2f}", style={'fontSize': '18px', 'fontWeight': '600', 'color': THEME_COLORS['text']}),
+                ], style={'flex': '1', 'padding': '15px', 'backgroundColor': THEME_COLORS['surface_light'], 
+                         'borderRadius': '6px', 'marginRight': '10px'}),
+                html.Div([
+                    html.Div("Volatility", style={'fontSize': '11px', 'color': THEME_COLORS['text_secondary'], 'marginBottom': '5px'}),
+                    html.Div(f"{volatility:.2f}%", style={'fontSize': '18px', 'fontWeight': '600', 'color': THEME_COLORS['warning']}),
+                ], style={'flex': '1', 'padding': '15px', 'backgroundColor': THEME_COLORS['surface_light'], 'borderRadius': '6px'}),
+            ], style={'display': 'flex', 'marginBottom': '20px'}),
+            
+            # Chart
+            dcc.Graph(figure=portfolio_time_fig, config={'displayModeBar': False}, style={'height': '350px'}),
+            
+        ], style={'backgroundColor': THEME_COLORS['surface'], 'borderRadius': '8px',
+                 'padding': '20px', 'marginBottom': '30px', 'border': f'1px solid {THEME_COLORS["border"]}'})
     
     def create_rl_analysis_panel(self) -> html.Div:
         
