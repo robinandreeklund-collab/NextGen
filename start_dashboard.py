@@ -1997,24 +1997,52 @@ class NextGenDashboard:
         
         num_points = interval_map.get(selected_interval, 720)
         
+        # Get current portfolio value
+        current_portfolio_value = self.portfolio_manager.get_portfolio_value(self.current_prices)
+        start_capital = self.portfolio_manager.start_capital
+        
         # Build portfolio value history from simulation data
         if hasattr(self, 'reward_history') and 'base' in self.reward_history and len(self.reward_history['base']) > 0:
-            # Use cumulative rewards to build portfolio value over time
-            start_capital = self.portfolio_manager.start_capital
-            cumulative_value = start_capital
+            # Use reward history to reconstruct portfolio values
+            # reward_history['base'] contains delta values (change in portfolio value)
+            rewards = self.reward_history['base']
             
-            # Take last N points from reward history
-            rewards = self.reward_history['base'][-num_points:] if len(self.reward_history['base']) >= num_points else self.reward_history['base']
-            
-            for i, reward in enumerate(rewards):
-                cumulative_value += reward
-                portfolio_value_history.append(cumulative_value)
-                time_labels.append(i)
+            # If we have enough data, use the actual reward history
+            if len(rewards) >= num_points:
+                # Take last N points
+                rewards_subset = rewards[-num_points:]
+                
+                # Calculate starting value for this interval
+                # Work backwards from current portfolio value
+                total_delta = sum(rewards_subset)
+                interval_start_value = current_portfolio_value - total_delta
+                
+                # Build the history
+                cumulative_value = interval_start_value
+                for i, reward in enumerate(rewards_subset):
+                    cumulative_value += reward
+                    portfolio_value_history.append(cumulative_value)
+                    time_labels.append(i)
+            else:
+                # Not enough data - use what we have and pad with current value
+                cumulative_value = start_capital
+                for i, reward in enumerate(rewards):
+                    cumulative_value += reward
+                    portfolio_value_history.append(cumulative_value)
+                    time_labels.append(i)
+                
+                # Pad with current value if needed
+                if len(portfolio_value_history) == 0:
+                    portfolio_value_history = [start_capital, current_portfolio_value]
+                    time_labels = [0, 1]
         else:
-            # Fallback: simulate some portfolio value data
-            current_value = self.portfolio_manager.get_portfolio_value(self.current_prices)
+            # No reward history - create simple visualization
+            # Show gradual transition from start capital to current value
+            if num_points < 2:
+                num_points = 2
             for i in range(num_points):
-                value = self.portfolio_manager.start_capital * (current_value / self.portfolio_manager.start_capital) * ((i + 1) / num_points)
+                progress = i / (num_points - 1)
+                value = start_capital + (current_portfolio_value - start_capital) * progress
                 portfolio_value_history.append(value)
                 time_labels.append(i)
         
