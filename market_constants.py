@@ -8,9 +8,14 @@ This ensures consistency between production code and tests.
 # The 5 fixed stocks supported by the live market interface
 MARKET_SYMBOLS = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA']
 
-# Market metadata
+# Market metadata - additional configuration for the live market
 MARKET_INFO = {
     'exchange': 'NASDAQ',
-    'symbol_count': len(MARKET_SYMBOLS),
-    'symbols': MARKET_SYMBOLS
+    'currency': 'USD',
+    'timezone': 'America/New_York',
+    'market_hours': {
+        'open': '09:30',
+        'close': '16:00'
+    },
+    'api_provider': 'Finnhub'
 }
