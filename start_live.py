@@ -26,8 +26,15 @@ def main():
     print("⚠️  Ensure you have a valid Finnhub API key configured")
     print()
     
-    # Create dashboard in live mode (live_mode=True)
-    dashboard = NextGenDashboard(live_mode=True)
+    # Define the 5 fixed stocks supported by the market
+    market_symbols = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA']
+    
+    print(f"📊 Market symbols: {', '.join(market_symbols)}")
+    print(f"📡 Will establish {len(market_symbols)} WebSocket connections")
+    print()
+    
+    # Create dashboard in live mode with market symbols
+    dashboard = NextGenDashboard(live_mode=True, market_symbols=market_symbols)
     
     # Run dashboard
     dashboard.run(host='0.0.0.0', port=8050, debug=False)

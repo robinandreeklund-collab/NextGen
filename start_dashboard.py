@@ -93,17 +93,23 @@ THEME_COLORS = {
 class NextGenDashboard:
     """Full-scale NextGen Dashboard with all panels."""
     
-    def __init__(self, live_mode: bool = False):
+    def __init__(self, live_mode: bool = False, market_symbols: Optional[List[str]] = None):
         """Initialize dashboard.
         
         Args:
             live_mode: If True, connects to live WebSocket data. If False, uses simulated data.
+            market_symbols: List of symbols to use in live mode. If provided, limits connections to these symbols.
         """
         self.live_mode = live_mode
         self.api_key = "d3in10hr01qmn7fkr2a0d3in10hr01qmn7fkr2ag"
         
         # Symbols for tracking (will be updated by orchestrator)
-        self.symbols = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA']  # Initial fallback
+        # In live mode, use provided market_symbols; otherwise use default fallback
+        if live_mode and market_symbols:
+            self.symbols = market_symbols
+            print(f"📊 Live mode: Using {len(self.symbols)} market symbols")
+        else:
+            self.symbols = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA']  # Initial fallback
         
         # Base prices for simulation
         self.base_prices = {
@@ -119,6 +125,9 @@ class NextGenDashboard:
         
         # Initialize modules
         self.message_bus = MessageBus()
+        
+        # Store market_symbols for use in setup_modules
+        self.market_symbols = market_symbols
         
         # Setup modules (including orchestrator)
         self.setup_modules()
@@ -259,9 +268,20 @@ class NextGenDashboard:
         self.gnn_analyzer = GNNTimespanAnalyzer(self.message_bus, input_dim=32, temporal_window=20)
         
         # Finnhub Orchestrator (Sprint 9)
+        # In live mode with market_symbols, pass them to orchestrator
+        orchestrator_config = None
+        if self.live_mode and self.market_symbols:
+            orchestrator_config = {
+                'default_symbols': self.market_symbols,
+                'websocket_limit': len(self.market_symbols),
+                'max_concurrent_streams': len(self.market_symbols)
+            }
+            print(f"📡 Configuring orchestrator for {len(self.market_symbols)} market symbols")
+        
         self.orchestrator = FinnhubOrchestrator(
             api_key=self.api_key,
             message_bus=self.message_bus,
+            config=orchestrator_config,
             live_mode=self.live_mode
         )
         
