@@ -11,7 +11,6 @@ Then open http://localhost:8050 in your browser.
 """
 
 from start_dashboard import NextGenDashboard
-from market_constants import MARKET_SYMBOLS
 
 
 def main():
@@ -27,15 +26,8 @@ def main():
     print("⚠️  Ensure you have a valid Finnhub API key configured")
     print()
     
-    # Use the 5 fixed stocks supported by the market (from market_constants)
-    market_symbols = MARKET_SYMBOLS
-    
-    print(f"📊 Market symbols: {', '.join(market_symbols)}")
-    print(f"📡 Will establish {len(market_symbols)} WebSocket connections")
-    print()
-    
-    # Create dashboard in live mode with market symbols
-    dashboard = NextGenDashboard(live_mode=True, market_symbols=market_symbols)
+    # Create dashboard in live mode (live_mode=True)
+    dashboard = NextGenDashboard(live_mode=True)
     
     # Run dashboard
     dashboard.run(host='0.0.0.0', port=8050, debug=False)

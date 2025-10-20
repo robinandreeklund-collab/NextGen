@@ -13,7 +13,6 @@ import os
 import pytest
 
 from start_dashboard import NextGenDashboard, THEME_COLORS
-from market_constants import MARKET_SYMBOLS
 
 
 class TestNextGenDashboard:
@@ -38,24 +37,6 @@ class TestNextGenDashboard:
         assert dashboard.symbols == ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA']
         assert dashboard.running is False
         assert dashboard.app is not None
-    
-    def test_dashboard_initialization_with_market_symbols(self):
-        """Test dashboard initialization with custom market symbols in live mode."""
-        # Use the shared constant to ensure consistency
-        market_symbols = MARKET_SYMBOLS
-        dashboard = NextGenDashboard(live_mode=True, market_symbols=market_symbols)
-        
-        assert dashboard.live_mode is True
-        assert dashboard.symbols == market_symbols
-        assert len(dashboard.symbols) == 5
-        assert dashboard.market_symbols == market_symbols
-        assert dashboard.running is False
-        
-        # Verify orchestrator is configured with limited symbols
-        assert hasattr(dashboard, 'orchestrator')
-        assert dashboard.orchestrator.config['websocket_limit'] == len(market_symbols)
-        assert dashboard.orchestrator.config['max_concurrent_streams'] == len(market_symbols)
-        assert dashboard.orchestrator.config['default_symbols'] == market_symbols
     
     def test_modules_initialized(self):
         """Test that all required modules are initialized."""
