@@ -80,15 +80,17 @@ class VoteEngine:
         self.votes.append(vote)
         self.total_votes_received += 1
         
+        # Limit votes list to prevent memory leak (keep last 100 votes)
+        # With 11 agents voting frequently, this list grows VERY fast
+        if len(self.votes) > 100:
+            self.votes = self.votes[-100:]
+        
         # Sprint 5: Skapa och publicera vote_matrix automatiskt
         # I nuvarande implementation (en decision_engine), publicera direkt
         # I framtiden kan detta vänta på flera agenter eller tidsgräns
         matrix = self.create_vote_matrix()
         self.publish_vote_matrix(matrix)
         self.vote_matrices_published += 1
-        
-        # INTE rensa röster automatiskt - låt användaren göra det explicit
-        # Detta möjliggör inspektion och statistik över aktiva röster
     
     def _on_parameter_adjustment(self, adjustment: Dict[str, Any]) -> None:
         """
