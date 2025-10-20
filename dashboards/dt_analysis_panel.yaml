@@ -181,11 +181,11 @@ dt_analysis_panel:
           title: "Prediction Accuracy by Agent"
           data_source: ensemble_metrics
           fields:
-            - ppo_accuracy: "PPO"
-            - dqn_accuracy: "DQN"
-            - dt_accuracy: "DT"
-            - gan_accuracy: "GAN"
-            - gnn_accuracy: "GNN"
+            - agent_accuracy.ppo_accuracy: "PPO"
+            - agent_accuracy.dqn_accuracy: "DQN"
+            - agent_accuracy.dt_accuracy: "DT"
+            - agent_accuracy.gan_accuracy: "GAN"
+            - agent_accuracy.gnn_accuracy: "GNN"
           colors: ["#4dabf7", "#51cf66", "#845ef7", "#ff6b6b", "#ffd43b"]
           
         - type: line_chart
